@@ -1,0 +1,5 @@
+title,description,narrator,genre,duration,releaseYear,fileUrl,thumbnailUrl,views,downloads,isFeatured,isActive,uploaderEmail
+The Great Adventure,An epic journey of discovery and wonder,John Doe,Drama,7200,2024,https://example.com/video1.mp4,https://example.com/thumb1.jpg,0,0,FALSE,TRUE,admin@fiestaflix.com
+Comedy Night Live,Hilarious stand-up comedy special featuring the best comedians,Jane Smith,Comedy,5400,2023,https://example.com/video2.mp4,https://example.com/thumb2.jpg,0,0,TRUE,TRUE,admin@fiestaflix.com
+Mystery of the Lost City,A thrilling mystery set in ancient ruins,Robert Johnson,Thriller,6300,2024,https://example.com/video3.mp4,https://example.com/thumb3.jpg,0,0,FALSE,TRUE,admin@fiestaflix.com
+Love in Paris,A beautiful romantic story set in the city of love,Emily Brown,Romance,4800,2023,https://example.com/video4.mp4,https://example.com/thumb4.jpg,0,0,FALSE,TRUE,admin@fiestaflix.com

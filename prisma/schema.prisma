@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  FAN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          UserRole  @default(FAN)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  uploadedMovies Movie[]     @relation("UploadedMovies")
+  fanClips       FanClip[]
+  requests       MovieRequest[]
+  likes          Like[]
+  follows        Follow[]    @relation("Follower")
+  notifications  Notification[]
+  comments       Comment[]
+
+  @@index([email])
+}
+
+model Movie {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  narrator    String
+  genre       String
+  duration    Int      // in seconds
+  releaseYear Int?
+  fileUrl     String
+  thumbnailUrl String?
+  resolutions Json     // { "144p": "...", "360p": "...", "480p": "...", "720p": "..." }
+  views       Int      @default(0)
+  downloads   Int      @default(0)
+  isFeatured  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  uploaderId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  uploader    User      @relation("UploadedMovies", fields: [uploaderId], references: [id], onDelete: Cascade)
+  requests    MovieRequest[]
+
+  @@index([narrator])
+  @@index([genre])
+  @@index([isFeatured])
+}
+
+model FanClip {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  videoUrl    String
+  thumbnailUrl String?
+  duration    Int      // in seconds
+  userId      String
+  likesCount  Int      @default(0)
+  isApproved  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isApproved])
+}
+
+model MovieRequest {
+  id          String   @id @default(cuid())
+  movieTitle  String
+  description String?
+  userId      String
+  votesCount  Int      @default(1)
+  isFulfilled Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie       Movie?    @relation(fields: [movieId], references: [id])
+  movieId     String?
+
+  @@index([userId])
+  @@index([isFulfilled])
+  @@index([votesCount])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  targetId  String   // can be movieId or fanClipId
+  targetType String   // "MOVIE" or "FAN_CLIP"
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetId, targetType])
+  @@index([userId])
+}
+
+model Follow {
+  id           String   @id @default(cuid())
+  followerId   String
+  followingId  String   // can be userId or interpreterName
+  followingType String  // "USER" or "INTERPRETER"
+  createdAt    DateTime @default(now())
+
+  // Relations
+  follower     User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId, followingType])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  userId    String
+  targetId  String   // can be movieId or fanClipId
+  targetType String  // "MOVIE" or "FAN_CLIP"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([targetId, targetType])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // "NEW_MOVIE", "NEW_FOLLOWER", "COMMENT", "LIKE"
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+}
