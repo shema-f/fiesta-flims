@@ -158,6 +158,40 @@ function createMockPrisma() {
   });
 }
 
+function wrapWithFallback(realPrisma: any, mockPrisma: any) {
+  return new Proxy(realPrisma, {
+    get: (target, prop: string) => {
+      if (prop in target) {
+        const val = target[prop];
+        if (typeof val === 'object' && val !== null) {
+          return new Proxy(val, {
+            get: (modelTarget, modelProp: string) => {
+              const modelMethod = modelTarget[modelProp];
+              if (typeof modelMethod === 'function') {
+                return async (...args: any[]) => {
+                  try {
+                    return await modelMethod.apply(modelTarget, args);
+                  } catch (err: any) {
+                    console.warn(`[Prisma] Connection fallback for ${prop}.${modelProp}:`, err?.message || err);
+                    const fallbackModel = mockPrisma[prop];
+                    if (fallbackModel && typeof fallbackModel[modelProp] === 'function') {
+                      return await fallbackModel[modelProp](...args);
+                    }
+                    return null;
+                  }
+                };
+              }
+              return modelMethod;
+            },
+          });
+        }
+        return val;
+      }
+      return mockPrisma[prop];
+    },
+  });
+}
+
 let prismaInstance: any;
 
 const globalForPrisma = globalThis as unknown as {
@@ -167,18 +201,27 @@ const globalForPrisma = globalThis as unknown as {
 if (globalForPrisma.prisma) {
   prismaInstance = globalForPrisma.prisma;
 } else {
-  try {
-    if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('mysql://') && !process.env.DATABASE_URL.includes('localhost')) {
-      prismaInstance = new PrismaClient({
+  const dbUrl = process.env.DATABASE_URL;
+  const isDirectDb = Boolean(
+    dbUrl &&
+    dbUrl.startsWith('mysql://') &&
+    !dbUrl.includes('localhost') &&
+    !dbUrl.includes('127.0.0.1')
+  );
+
+  const mock = createMockPrisma();
+
+  if (isDirectDb) {
+    try {
+      const real = new PrismaClient({
         log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
       });
-    } else {
-      console.warn('[AI Studio] Database not connected — using mock Prisma store');
-      prismaInstance = createMockPrisma();
+      prismaInstance = wrapWithFallback(real, mock);
+    } catch {
+      prismaInstance = mock;
     }
-  } catch {
-    console.warn('[AI Studio] Database not connected — using mock Prisma store');
-    prismaInstance = createMockPrisma();
+  } else {
+    prismaInstance = mock;
   }
 }
 
@@ -187,4 +230,3 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export const prisma = prismaInstance;
-
