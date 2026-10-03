@@ -73,6 +73,8 @@ const authOptions: AuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'fiesta-flix-auth-secret-key-32-chars-long-minimum!',
 };
 
+export const dynamic = 'force-dynamic';
+
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

@@ -158,49 +158,18 @@ function createMockPrisma() {
   });
 }
 
-function wrapWithFallback(realPrisma: any, mockPrisma: any) {
-  return new Proxy(realPrisma, {
-    get: (target, prop: string) => {
-      if (prop in target) {
-        const val = target[prop];
-        if (typeof val === 'object' && val !== null) {
-          return new Proxy(val, {
-            get: (modelTarget, modelProp: string) => {
-              const modelMethod = modelTarget[modelProp];
-              if (typeof modelMethod === 'function') {
-                return async (...args: any[]) => {
-                  try {
-                    return await modelMethod.apply(modelTarget, args);
-                  } catch (err: any) {
-                    console.warn(`[Prisma] Connection fallback for ${prop}.${modelProp}:`, err?.message || err);
-                    const fallbackModel = mockPrisma[prop];
-                    if (fallbackModel && typeof fallbackModel[modelProp] === 'function') {
-                      return await fallbackModel[modelProp](...args);
-                    }
-                    return null;
-                  }
-                };
-              }
-              return modelMethod;
-            },
-          });
-        }
-        return val;
-      }
-      return mockPrisma[prop];
-    },
-  });
-}
+let realClientCache: any = null;
 
-let prismaInstance: any;
+function getLazyRealPrisma(): any {
+  if (realClientCache !== null) {
+    return realClientCache;
+  }
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: any;
-};
+  // During build / prerender phase, avoid instantiating PrismaClient
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return null;
+  }
 
-if (globalForPrisma.prisma) {
-  prismaInstance = globalForPrisma.prisma;
-} else {
   const dbUrl = process.env.DATABASE_URL;
   const isDirectDb = Boolean(
     dbUrl &&
@@ -209,24 +178,68 @@ if (globalForPrisma.prisma) {
     !dbUrl.includes('127.0.0.1')
   );
 
-  const mock = createMockPrisma();
+  if (!isDirectDb) {
+    return null;
+  }
 
-  if (isDirectDb) {
-    try {
-      const real = new PrismaClient({
-        log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
-      });
-      prismaInstance = wrapWithFallback(real, mock);
-    } catch {
-      prismaInstance = mock;
-    }
-  } else {
-    prismaInstance = mock;
+  try {
+    realClientCache = new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+    });
+    return realClientCache;
+  } catch (err: any) {
+    console.warn('[Prisma] Failed to initialize PrismaClient, falling back to mock:', err?.message || err);
+    return null;
   }
 }
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prismaInstance;
+const mockPrisma = createMockPrisma();
+
+function createResilientPrisma(): any {
+  return new Proxy(mockPrisma, {
+    get: (_target, modelName: string) => {
+      if (modelName === '$connect' || modelName === '$disconnect') {
+        return async () => {};
+      }
+      if (modelName === '$transaction') {
+        return async (cb: any) => (typeof cb === 'function' ? cb(mockPrisma) : Promise.all(cb));
+      }
+
+      return new Proxy({}, {
+        get: (_subTarget, methodName: string) => {
+          return async (...args: any[]) => {
+            const real = getLazyRealPrisma();
+            if (real && real[modelName] && typeof real[modelName][methodName] === 'function') {
+              try {
+                return await real[modelName][methodName](...args);
+              } catch (err: any) {
+                console.warn(`[Prisma] Real query error on ${modelName}.${methodName}:`, err?.message || err);
+                const mockModel = mockPrisma[modelName];
+                if (mockModel && typeof mockModel[methodName] === 'function') {
+                  return await mockModel[methodName](...args);
+                }
+                return null;
+              }
+            }
+
+            const fallbackModel = mockPrisma[modelName];
+            if (fallbackModel && typeof fallbackModel[methodName] === 'function') {
+              return await fallbackModel[methodName](...args);
+            }
+            return null;
+          };
+        },
+      });
+    },
+  });
 }
 
-export const prisma = prismaInstance;
+const globalForPrisma = globalThis as unknown as {
+  prisma: any;
+};
+
+export const prisma = globalForPrisma.prisma || createResilientPrisma();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
