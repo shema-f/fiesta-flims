@@ -11,6 +11,11 @@ import type { ApiMovie } from '@/lib/apiTypes';
 
 type LoadStatus = 'loading' | 'ready' | 'error' | 'notfound';
 
+interface VideoSource {
+  label: string;
+  url: string;
+}
+
 interface MovieView {
   title: string;
   year: number | null;
@@ -21,6 +26,7 @@ interface MovieView {
   narrator: string;
   description: string;
   views: number | null;
+  sources: VideoSource[];
 }
 
 function formatDuration(seconds: number) {
@@ -32,6 +38,30 @@ function formatDuration(seconds: number) {
 
 function formatViews(views: number) {
   return views.toLocaleString();
+}
+
+/**
+ * Flatten the Prisma `resolutions` JSON ({ "720p": "url", ... }) into a
+ * list of playable sources, falling back to `fileUrl` when empty.
+ * Sorted highest quality first.
+ */
+function parseSources(fileUrl: string, resolutions: unknown): VideoSource[] {
+  const sources: VideoSource[] = [];
+  if (resolutions && typeof resolutions === 'object' && !Array.isArray(resolutions)) {
+    for (const [label, url] of Object.entries(resolutions as Record<string, unknown>)) {
+      if (typeof url === 'string' && url.length > 0) {
+        sources.push({ label, url });
+      }
+    }
+  }
+  if (sources.length === 0 && fileUrl) {
+    sources.push({ label: 'Default', url: fileUrl });
+  }
+  const rank = (label: string) => {
+    const n = parseInt(label, 10);
+    return Number.isNaN(n) ? -1 : n;
+  };
+  return sources.sort((a, b) => rank(b.label) - rank(a.label));
 }
 
 const DEFAULT_DESCRIPTION =
@@ -51,6 +81,9 @@ export default function MovieDetailPage() {
   const [status, setStatus] = useState<LoadStatus>(staticMovie ? 'ready' : 'loading');
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(1234);
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const [watchSource, setWatchSource] = useState<VideoSource | null>(null);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
   const loadMovie = useCallback(async () => {
     if (staticMovie) {
@@ -99,6 +132,16 @@ export default function MovieDetailPage() {
       cancelled = true;
     };
   }, [status, staticMovie, apiMovie]);
+
+  // Close the player with Escape.
+  useEffect(() => {
+    if (!isPlayerOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsPlayerOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isPlayerOpen]);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -177,6 +220,7 @@ export default function MovieDetailPage() {
         narrator: staticMovie.narrator || 'Rocky Kimomo',
         description: DEFAULT_DESCRIPTION,
         views: null,
+        sources: [],
       }
     : {
         title: apiMovie!.title,
@@ -188,7 +232,48 @@ export default function MovieDetailPage() {
         narrator: apiMovie!.narrator,
         description: apiMovie!.description || DEFAULT_DESCRIPTION,
         views: apiMovie!.views,
+        sources: parseSources(apiMovie!.fileUrl, apiMovie!.resolutions),
       };
+
+  const downloadFileName = (source: VideoSource) => {
+    const extension = source.url.match(/\.(mp4|webm|mkv|mov|m4v)(?=$|\?)/i)?.[0] || '.mp4';
+    const base = view.title.replace(/[\\/:*?"<>|]+/g, '-');
+    return source.label === 'Default'
+      ? `${base}${extension}`
+      : `${base}-${source.label}${extension}`;
+  };
+
+  const triggerDownload = (source: VideoSource) => {
+    const anchor = document.createElement('a');
+    anchor.href = source.url;
+    anchor.download = downloadFileName(source);
+    anchor.target = '_blank';
+    anchor.rel = 'noopener';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  };
+
+  const handleWatch = () => {
+    if (view.sources.length === 0) {
+      alert(`Streaming "${view.title}" is not available yet.`);
+      return;
+    }
+    setWatchSource(view.sources[0]);
+    setIsPlayerOpen(true);
+  };
+
+  const handleDownload = () => {
+    if (view.sources.length === 0) {
+      alert(`Downloading "${view.title}" is not available yet.\n\nNote: In production, this would download the video with Fiesta Flix watermark.`);
+      return;
+    }
+    if (view.sources.length === 1) {
+      triggerDownload(view.sources[0]);
+      return;
+    }
+    setIsDownloadOpen((open) => !open);
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -278,21 +363,57 @@ export default function MovieDetailPage() {
                 <p className="text-lg text-muted mb-8 max-w-2xl">{view.description}</p>
 
                 <div className="flex flex-wrap gap-4">
-                  <button className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-primary to-orange-400 text-white font-bold text-lg shadow-lg shadow-primary/40 hover:-translate-y-1 hover:shadow-xl transition-all">
+                  <button
+                    onClick={handleWatch}
+                    className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-primary to-orange-400 text-white font-bold text-lg shadow-lg shadow-primary/40 hover:-translate-y-1 hover:shadow-xl transition-all"
+                  >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                       <polygon points="5 3 19 12 5 21 5 3" />
                     </svg>
                     Watch Now
                   </button>
 
-                  <button className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white/10 text-white font-bold text-lg border border-white/20 hover:bg-white/20 hover:-translate-y-1 transition-all">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="7 10 12 15 17 10" />
-                      <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Download
-                  </button>
+                  <div className="relative inline-flex">
+                    <button
+                      onClick={handleDownload}
+                      className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white/10 text-white font-bold text-lg border border-white/20 hover:bg-white/20 hover:-translate-y-1 transition-all"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                      Download
+                    </button>
+
+                    {isDownloadOpen && view.sources.length > 1 && (
+                      <>
+                        <button
+                          aria-label="Close download menu"
+                          className="fixed inset-0 z-10 cursor-default"
+                          onClick={() => setIsDownloadOpen(false)}
+                        />
+                        <div className="absolute bottom-full mb-2 left-0 z-20 min-w-52 bg-card border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                          <p className="px-4 py-2 text-xs text-muted border-b border-white/10">
+                            Choose quality
+                          </p>
+                          {view.sources.map((source) => (
+                            <a
+                              key={source.label}
+                              href={source.url}
+                              download={downloadFileName(source)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={() => setIsDownloadOpen(false)}
+                              className="block px-4 py-2.5 text-sm font-medium hover:bg-white/10 transition-colors"
+                            >
+                              {source.label === 'Default' ? 'Original' : source.label}
+                            </a>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
 
                   <button
                     onClick={handleLike}
@@ -340,6 +461,58 @@ export default function MovieDetailPage() {
             </div>
           </div>
         </section>
+        {isPlayerOpen && watchSource && (
+          <div
+            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            onClick={() => setIsPlayerOpen(false)}
+          >
+            <div
+              className="bg-card rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4 gap-4">
+                  <h2 className="text-xl font-bold truncate">{view.title}</h2>
+                  <button
+                    onClick={() => setIsPlayerOpen(false)}
+                    aria-label="Close player"
+                    className="w-10 h-10 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all text-xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <video
+                  key={watchSource.url}
+                  src={watchSource.url}
+                  poster={view.image ?? undefined}
+                  controls
+                  autoPlay
+                  playsInline
+                  className="w-full aspect-video rounded-xl bg-black"
+                />
+
+                {view.sources.length > 1 && (
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {view.sources.map((source) => (
+                      <button
+                        key={source.label}
+                        onClick={() => setWatchSource(source)}
+                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                          source.url === watchSource.url
+                            ? 'bg-gradient-to-r from-primary to-orange-400 text-white'
+                            : 'bg-white/10 text-muted hover:bg-white/20 hover:text-foreground'
+                        }`}
+                      >
+                        {source.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <Footer />
