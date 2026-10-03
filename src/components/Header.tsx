@@ -28,7 +28,7 @@ export default function Header() {
 
   const navItems = [
     { href: '/', label: 'Home' },
-    { href: '/#movies', label: 'Movies' },
+    { href: '/movies', label: 'Movies' },
     { href: '/rwandan-movies', label: '🇷🇼 Rwandan' },
     { href: '/#series', label: 'TV Shows' },
     { href: '/interpreters', label: 'Interpreters' },

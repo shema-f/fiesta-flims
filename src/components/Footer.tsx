@@ -119,7 +119,7 @@ export default function Footer() {
             <h4 className="text-base font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2.5">
               <li><Link href="#home" className="text-muted text-sm hover:text-primary transition-colors">Home</Link></li>
-              <li><Link href="#movies" className="text-muted text-sm hover:text-primary transition-colors">Movies</Link></li>
+              <li><Link href="/movies" className="text-muted text-sm hover:text-primary transition-colors">Movies</Link></li>
               <li><Link href="/rwandan-movies" className="text-muted text-sm hover:text-primary transition-colors">🇷🇼 Rwandan Movies</Link></li>
               <li><Link href="#series" className="text-muted text-sm hover:text-primary transition-colors">TV Shows</Link></li>
               <li><Link href="/interpreters" className="text-muted text-sm hover:text-primary transition-colors">Interpreters</Link></li>

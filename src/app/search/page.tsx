@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,7 +8,7 @@ import MovieCard from '@/components/MovieCard';
 import { movieData } from '@/lib/movieData';
 import { narratorsData } from '@/lib/narratorData';
 
-export default function SearchPage() {
+function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
 
@@ -130,5 +131,19 @@ export default function SearchPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <p className="text-muted">Loading search results...</p>
+        </div>
+      }
+    >
+      <SearchResults />
+    </Suspense>
   );
 }

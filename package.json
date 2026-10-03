@@ -26,7 +26,6 @@
   "devDependencies": {
     "@playwright/test": "^1.48.0",
     "@types/bcryptjs": "^2.4.6",
-    "@types/csv-parser": "^3.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

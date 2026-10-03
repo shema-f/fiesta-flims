@@ -40,7 +40,7 @@ const handler = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
-          image: user.image,
+          image: user.image ?? undefined,
         };
       },
     }),
@@ -50,7 +50,6 @@ const handler = NextAuth({
   },
   pages: {
     signIn: '/login',
-    signUp: '/signup',
     error: '/login',
   },
   callbacks: {
@@ -62,7 +61,7 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       if (session?.user) {
-        session.user.role = token.role as string;
+        session.user.role = token.role as 'ADMIN' | 'FAN';
       }
       return session;
     },

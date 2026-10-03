@@ -5,6 +5,7 @@ export interface Movie {
   genre: string;
   rating: number;
   image: string;
+  narrator?: string;
   trending?: boolean;
 }
 
