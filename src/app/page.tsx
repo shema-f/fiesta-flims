@@ -22,7 +22,7 @@ export default function Home() {
   const popularMovies = movieData.filter((movie) => !movie.trending);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-0">
       <Header />
       
       <main className="flex-1">

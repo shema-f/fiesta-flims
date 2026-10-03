@@ -1,13 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CatalogMovieCard from '@/components/CatalogMovieCard';
-import { movieData } from '@/lib/movieData';
+import RatingStars from '@/components/RatingStars';
+import { useFavorites } from '@/contexts/FavoritesContext';
+import { movieData, type Movie } from '@/lib/movieData';
 import type { ApiMovie } from '@/lib/apiTypes';
 import { 
   Play, 
@@ -23,9 +25,9 @@ import {
   X, 
   Film, 
   Eye, 
-  Sparkles,
-  ExternalLink 
+  Maximize2 
 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 type LoadStatus = 'loading' | 'ready' | 'error' | 'notfound';
 
@@ -35,6 +37,7 @@ interface VideoSource {
 }
 
 interface MovieView {
+  id: number | string;
   title: string;
   year: number | null;
   image: string | null;
@@ -95,15 +98,19 @@ export default function MovieDetailPage() {
     [staticId]
   );
 
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const isMovieFavorited = staticMovie ? isFavorite(staticMovie.id) : isFavorite(id);
+
   const [apiMovie, setApiMovie] = useState<ApiMovie | null>(null);
   const [related, setRelated] = useState<ApiMovie[]>([]);
   const [status, setStatus] = useState<LoadStatus>(staticMovie ? 'ready' : 'loading');
-  const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(1240);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [watchSource, setWatchSource] = useState<VideoSource | null>(null);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const videoElementRef = useRef<HTMLVideoElement | null>(null);
 
   const loadMovie = useCallback(async () => {
     if (staticMovie) {
@@ -163,6 +170,7 @@ export default function MovieDetailPage() {
       ];
 
       return {
+        id: staticMovie.id,
         title: staticMovie.title,
         year: staticMovie.year,
         image: staticMovie.image,
@@ -185,6 +193,7 @@ export default function MovieDetailPage() {
     if (apiMovie) {
       const parsed = parseSources(apiMovie.fileUrl, apiMovie.resolutions);
       return {
+        id: apiMovie.id,
         title: apiMovie.title,
         year: apiMovie.releaseYear,
         image: apiMovie.thumbnailUrl,
@@ -207,6 +216,7 @@ export default function MovieDetailPage() {
     }
 
     return {
+      id: 0,
       title: 'Movie',
       year: 2025,
       image: null,
@@ -257,9 +267,22 @@ export default function MovieDetailPage() {
     }
   };
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
+  const handleFavoriteToggle = () => {
+    if (staticMovie) {
+      toggleFavorite(staticMovie);
+    } else if (apiMovie) {
+      const mockAsMovie: Movie = {
+        id: Number(apiMovie.id) || Date.now(),
+        title: apiMovie.title,
+        year: apiMovie.releaseYear || 2025,
+        genre: apiMovie.genre,
+        rating: 8.8,
+        image: apiMovie.thumbnailUrl || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900',
+        narrator: apiMovie.narrator,
+      };
+      toggleFavorite(mockAsMovie);
+    }
+    setLikeCount((prev) => (isMovieFavorited ? prev - 1 : prev + 1));
   };
 
   const handleCopyLink = () => {
@@ -267,6 +290,16 @@ export default function MovieDetailPage() {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleFullscreenMobile = () => {
+    if (videoElementRef.current) {
+      if (videoElementRef.current.requestFullscreen) {
+        videoElementRef.current.requestFullscreen();
+      } else if ((videoElementRef.current as any).webkitRequestFullscreen) {
+        (videoElementRef.current as any).webkitRequestFullscreen();
+      }
     }
   };
 
@@ -310,7 +343,7 @@ export default function MovieDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-0">
       <Header />
 
       <main className="flex-1 pt-20">
@@ -403,20 +436,29 @@ export default function MovieDetailPage() {
                   {view.description}
                 </p>
 
+                {/* Rating Stars Interactive Widget */}
+                <div className="flex items-center justify-center md:justify-start gap-4 pt-1">
+                  <div className="bg-zinc-900/80 px-4 py-2 rounded-2xl border border-zinc-800">
+                    <RatingStars movieId={view.id} initialRating={view.rating || 8.5} />
+                  </div>
+                </div>
+
                 {/* Main Action CTAs */}
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={handleWatch}
-                    className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white font-bold text-base shadow-xl shadow-primary/30 transition-all hover:scale-105"
+                    className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white font-bold text-base shadow-xl shadow-primary/30 transition-all touch-manipulation"
                   >
                     <Play className="w-5 h-5 fill-current" />
                     <span>Watch Online</span>
-                  </button>
+                  </motion.button>
 
                   <div className="relative inline-flex">
                     <button
                       onClick={handleDownload}
-                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-base border border-zinc-700 transition-all hover:scale-105"
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-base border border-zinc-700 transition-all hover:scale-105 touch-manipulation"
                     >
                       <Download className="w-5 h-5" />
                       <span>Download</span>
@@ -444,17 +486,19 @@ export default function MovieDetailPage() {
                     )}
                   </div>
 
-                  <button
-                    onClick={handleLike}
-                    className={`inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm transition-all border ${
-                      isLiked
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleFavoriteToggle}
+                    className={`inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm transition-all border touch-manipulation ${
+                      isMovieFavorited
                         ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/30'
                         : 'bg-zinc-900/80 text-zinc-300 border-zinc-700 hover:bg-zinc-800'
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                    <span>{likeCount.toLocaleString()}</span>
-                  </button>
+                    <Heart className={`w-4 h-4 ${isMovieFavorited ? 'fill-current' : ''}`} />
+                    <span>{isMovieFavorited ? 'Saved in Watchlist' : 'Add to Favorites'}</span>
+                  </motion.button>
 
                   <button
                     onClick={handleCopyLink}
@@ -495,7 +539,7 @@ export default function MovieDetailPage() {
                   href={view.telegramChannelPost}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#229ED9] hover:bg-[#1E8BC0] text-white font-bold text-sm shadow-lg shadow-[#229ED9]/30 transition-all hover:scale-105"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#229ED9] hover:bg-[#1E8BC0] text-white font-bold text-sm shadow-lg shadow-[#229ED9]/30 transition-all hover:scale-105 touch-manipulation"
                 >
                   <Download className="w-4 h-4" />
                   <span>Download in Telegram Channel</span>
@@ -505,7 +549,7 @@ export default function MovieDetailPage() {
                   href={view.telegramBotLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm border border-zinc-700 transition-colors"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm border border-zinc-700 transition-colors touch-manipulation"
                 >
                   <Send className="w-4 h-4 text-sky-400" />
                   <span>Get via Telegram Bot</span>
@@ -552,45 +596,58 @@ export default function MovieDetailPage() {
           </div>
         </section>
 
-        {/* Video Player Modal */}
+        {/* Video Player Modal (Optimized for Mobile and Desktop) */}
         {isPlayerOpen && watchSource && (
           <div
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-3 sm:p-6 backdrop-blur animate-fadeIn"
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-2 sm:p-6 backdrop-blur animate-fadeIn"
             onClick={() => setIsPlayerOpen(false)}
           >
             <div
-              className="bg-zinc-950 border border-zinc-800 rounded-3xl max-w-5xl w-full overflow-hidden shadow-2xl flex flex-col"
+              className="bg-zinc-950 border border-zinc-800 rounded-2xl sm:rounded-3xl max-w-5xl w-full overflow-hidden shadow-2xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 sm:p-5 flex items-center justify-between border-b border-zinc-800 gap-4">
-                <div className="flex items-center gap-3 truncate">
+              <div className="p-3.5 sm:p-5 flex items-center justify-between border-b border-zinc-800 gap-4">
+                <div className="flex items-center gap-2 sm:gap-3 truncate">
                   <Play className="w-5 h-5 text-primary shrink-0" />
-                  <h3 className="text-base sm:text-lg font-bold text-white truncate">
+                  <h3 className="text-sm sm:text-lg font-bold text-white truncate">
                     {view.title} <span className="text-xs font-normal text-zinc-400">({watchSource.label})</span>
                   </h3>
                 </div>
-                <button
-                  onClick={() => setIsPlayerOpen(false)}
-                  className="w-9 h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-colors"
-                  aria-label="Close video player"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleFullscreenMobile}
+                    className="p-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white"
+                    title="Fullscreen"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setIsPlayerOpen(false)}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-colors"
+                    aria-label="Close video player"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               <div className="relative aspect-video bg-black w-full">
                 <video
+                  ref={videoElementRef}
                   key={watchSource.url}
                   src={watchSource.url}
                   poster={view.backdrop || view.image || undefined}
                   controls
                   autoPlay
                   playsInline
+                  // @ts-ignore
+                  webkit-playsinline="true"
                   className="w-full h-full object-contain"
                 />
               </div>
 
-              <div className="p-4 sm:p-5 bg-zinc-900/60 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
+              <div className="p-3 sm:p-5 bg-zinc-900/60 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-zinc-200">Quality:</span>
                   {view.sources.map((source) => (
@@ -616,7 +673,7 @@ export default function MovieDetailPage() {
                     className="inline-flex items-center gap-1.5 text-sky-400 hover:text-sky-300 font-semibold"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>Download file in Telegram instead</span>
+                    <span>Watch in Telegram app</span>
                   </a>
                 </div>
               </div>

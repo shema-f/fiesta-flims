@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFavorites } from '@/contexts/FavoritesContext';
 import { Search, Send, Menu, X, User as UserIcon, LogOut, Shield } from 'lucide-react';
 
 export default function Header() {
@@ -11,6 +12,8 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { favorites } = useFavorites();
+  const favCount = favorites.length;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,6 +33,7 @@ export default function Header() {
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/movies', label: 'Movies' },
+    { href: '/favorites', label: 'Favorites', badge: favCount },
     { href: '/rwandan-movies', label: '🇷🇼 Rwandan' },
     { href: '/#series', label: 'Series' },
     { href: '/interpreters', label: 'Interpreters' },
@@ -67,9 +71,14 @@ export default function Header() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="text-zinc-300 hover:text-white text-sm font-semibold transition-colors relative group py-1"
+                  className="text-zinc-300 hover:text-white text-sm font-semibold transition-colors relative group py-1 flex items-center gap-1.5"
                 >
                   {item.label}
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                      {item.badge}
+                    </span>
+                  )}
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-primary to-orange-400 transition-all duration-300 group-hover:w-full" />
                 </Link>
               </li>
