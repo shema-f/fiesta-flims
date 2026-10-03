@@ -24,6 +24,11 @@ export async function uploadFile(
   key: string,
   contentType: string
 ): Promise<string> {
+  if (!process.env.BACKBLAZE_KEY_ID || !process.env.BACKBLAZE_APPLICATION_KEY) {
+    console.warn('[AI Studio] Backblaze credentials not set — using local mock URL');
+    return `/uploads/${key}`;
+  }
+
   const s3Client = createS3Client();
   const buffer = file instanceof ArrayBuffer ? Buffer.from(file) : file;
 
@@ -47,6 +52,10 @@ export async function uploadFile(
  * @param key - File path/key in the bucket
  */
 export async function deleteFile(key: string): Promise<void> {
+  if (!process.env.BACKBLAZE_KEY_ID || !process.env.BACKBLAZE_APPLICATION_KEY) {
+    return;
+  }
+
   const s3Client = createS3Client();
 
   const command = new DeleteObjectCommand({

@@ -11,7 +11,11 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: 'Fiesta Flix - Stream & Download Movies',
-  description: 'Your ultimate destination for streaming and downloading movies in HD quality.',
+  description: 'Stream and download movies with authentic Kinyarwanda narration.',
+  openGraph: {
+    title: 'Fiesta Flix - Stream & Download Movies',
+    description: 'Stream and download movies with authentic Kinyarwanda narration.',
+  },
 };
 
 export default function RootLayout({

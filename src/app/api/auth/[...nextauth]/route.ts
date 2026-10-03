@@ -40,7 +40,7 @@ const handler = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
-          image: user.image ?? undefined,
+          image: user.image,
         };
       },
     }),
@@ -50,6 +50,7 @@ const handler = NextAuth({
   },
   pages: {
     signIn: '/login',
+    newUser: '/signup',
     error: '/login',
   },
   callbacks: {
@@ -61,12 +62,12 @@ const handler = NextAuth({
     },
     async session({ session, token }) {
       if (session?.user) {
-        session.user.role = token.role as 'ADMIN' | 'FAN';
+        session.user.role = (token.role as 'ADMIN' | 'FAN') || 'FAN';
       }
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'fiesta-flix-auth-secret-key-32-chars-long-minimum!',
 });
 
 export { handler as GET, handler as POST };

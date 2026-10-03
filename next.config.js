@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  ...(process.env.VERCEL ? {} : { output: 'standalone' }),
   images: {
     remotePatterns: [
       {
@@ -11,3 +12,4 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
+

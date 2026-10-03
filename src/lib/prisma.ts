@@ -1,14 +1,190 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import { movieData } from './movieData';
+
+// In-memory demo data
+const adminPasswordHash = bcrypt.hashSync('admin123', 10);
+const fanPasswordHash = bcrypt.hashSync('fan123', 10);
+
+interface MockUser {
+  id: string;
+  name: string;
+  email: string;
+  password?: string | null;
+  role: 'ADMIN' | 'FAN';
+  image?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const mockUsers: MockUser[] = [
+  {
+    id: 'user-admin-1',
+    name: 'Admin User',
+    email: 'admin@fiestaflix.com',
+    password: adminPasswordHash,
+    role: 'ADMIN',
+    image: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'user-fan-1',
+    name: 'Movie Fan',
+    email: 'fan@fiestaflix.com',
+    password: fanPasswordHash,
+    role: 'FAN',
+    image: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
+
+const mockMovies = movieData.map((m, idx) => ({
+  id: `movie-${m.id}`,
+  title: m.title,
+  description: `Experience this amazing movie with fantastic Kinyarwanda narration.`,
+  narrator: 'Rocky Kimomo',
+  genre: m.genre,
+  duration: 7200,
+  releaseYear: m.year,
+  fileUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  thumbnailUrl: m.image,
+  resolutions: { '720p': 'default', '1080p': 'hd' },
+  views: 1200 + idx * 150,
+  downloads: 300 + idx * 40,
+  isFeatured: !!m.trending,
+  isActive: true,
+  uploaderId: 'user-admin-1',
+  uploader: { id: 'user-admin-1', name: 'Admin User' },
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}));
+
+function createMockPrisma() {
+  const userHandler = {
+    findUnique: async ({ where }: { where: { email?: string; id?: string } }) => {
+      const email = where.email?.toLowerCase();
+      const user = mockUsers.find(
+        (u) => (email && u.email.toLowerCase() === email) || (where.id && u.id === where.id)
+      );
+      return user ? { ...user } : null;
+    },
+    findFirst: async ({ where }: { where?: any } = {}) => {
+      if (where?.email) {
+        return mockUsers.find((u) => u.email.toLowerCase() === where.email.toLowerCase()) || null;
+      }
+      return mockUsers[0] ? { ...mockUsers[0] } : null;
+    },
+    findMany: async () => [...mockUsers],
+    create: async ({ data }: { data: any }) => {
+      const newUser: MockUser = {
+        id: `user-${Date.now()}`,
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: data.role || 'FAN',
+        image: data.image || null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      mockUsers.push(newUser);
+      return { ...newUser };
+    },
+    update: async ({ where, data }: { where: any; data: any }) => {
+      const user = mockUsers.find((u) => u.id === where.id || u.email === where.email);
+      if (user) {
+        Object.assign(user, data);
+        return { ...user };
+      }
+      return data;
+    },
+    delete: async ({ where }: { where: any }) => {
+      const idx = mockUsers.findIndex((u) => u.id === where.id || u.email === where.email);
+      if (idx !== -1) return mockUsers.splice(idx, 1)[0];
+      return {};
+    },
+    count: async () => mockUsers.length,
+  };
+
+  const movieHandler = {
+    findMany: async () => [...mockMovies],
+    findFirst: async () => mockMovies[0] || null,
+    findUnique: async ({ where }: { where: { id: string } }) => {
+      return mockMovies.find((m) => m.id === where.id) || null;
+    },
+    create: async ({ data }: { data: any }) => {
+      const newMovie = { id: `movie-${Date.now()}`, ...data };
+      mockMovies.push(newMovie);
+      return newMovie;
+    },
+    update: async ({ data }: { data: any }) => data,
+    delete: async () => ({}),
+    count: async () => mockMovies.length,
+  };
+
+  const genericModelHandler = {
+    findMany: async () => [],
+    findFirst: async () => null,
+    findUnique: async () => null,
+    create: async (args: any) => args?.data ?? {},
+    update: async (args: any) => args?.data ?? {},
+    delete: async () => ({}),
+    deleteMany: async () => ({ count: 0 }),
+    updateMany: async () => ({ count: 0 }),
+    count: async () => 0,
+    groupBy: async () => [],
+    aggregate: async () => ({ _count: 0 }),
+  };
+
+  const models: Record<string, any> = {
+    user: userHandler,
+    movie: movieHandler,
+  };
+
+  return new Proxy(models, {
+    get: (target, prop: string) => {
+      if (prop === '$connect' || prop === '$disconnect') {
+        return async () => {};
+      }
+      if (prop === '$transaction') {
+        return async (cb: any) => (typeof cb === 'function' ? cb(target) : Promise.all(cb));
+      }
+      if (prop in target) {
+        return target[prop];
+      }
+      return genericModelHandler;
+    },
+  });
+}
+
+let prismaInstance: any;
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+  prisma: any;
 };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log:
-      process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
+if (globalForPrisma.prisma) {
+  prismaInstance = globalForPrisma.prisma;
+} else {
+  try {
+    if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('mysql://') && !process.env.DATABASE_URL.includes('localhost')) {
+      prismaInstance = new PrismaClient({
+        log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+      });
+    } else {
+      console.warn('[AI Studio] Database not connected — using mock Prisma store');
+      prismaInstance = createMockPrisma();
+    }
+  } catch {
+    console.warn('[AI Studio] Database not connected — using mock Prisma store');
+    prismaInstance = createMockPrisma();
+  }
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prismaInstance;
+}
+
+export const prisma = prismaInstance;
+
