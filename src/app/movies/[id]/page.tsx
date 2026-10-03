@@ -3,11 +3,29 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CatalogMovieCard from '@/components/CatalogMovieCard';
 import { movieData } from '@/lib/movieData';
 import type { ApiMovie } from '@/lib/apiTypes';
+import { 
+  Play, 
+  Download, 
+  Send, 
+  Heart, 
+  Share2, 
+  Check, 
+  Star, 
+  Clock, 
+  Volume2, 
+  HardDrive, 
+  X, 
+  Film, 
+  Eye, 
+  Sparkles,
+  ExternalLink 
+} from 'lucide-react';
 
 type LoadStatus = 'loading' | 'ready' | 'error' | 'notfound';
 
@@ -20,13 +38,19 @@ interface MovieView {
   title: string;
   year: number | null;
   image: string | null;
+  backdrop: string | null;
   genre: string;
   rating: number | null;
   durationSeconds: number;
+  durationString?: string;
   narrator: string;
   description: string;
   views: number | null;
   sources: VideoSource[];
+  telegramChannelPost?: string;
+  telegramBotLink?: string;
+  fileSize?: string;
+  quality?: string;
 }
 
 function formatDuration(seconds: number) {
@@ -40,11 +64,6 @@ function formatViews(views: number) {
   return views.toLocaleString();
 }
 
-/**
- * Flatten the Prisma `resolutions` JSON ({ "720p": "url", ... }) into a
- * list of playable sources, falling back to `fileUrl` when empty.
- * Sorted highest quality first.
- */
 function parseSources(fileUrl: string, resolutions: unknown): VideoSource[] {
   const sources: VideoSource[] = [];
   if (resolutions && typeof resolutions === 'object' && !Array.isArray(resolutions)) {
@@ -65,7 +84,7 @@ function parseSources(fileUrl: string, resolutions: unknown): VideoSource[] {
 }
 
 const DEFAULT_DESCRIPTION =
-  'Experience this amazing movie with fantastic Kinyarwanda narration. Stream in HD quality or download for offline viewing.';
+  'Experience this amazing movie with authentic Kinyarwanda narration. Stream in crystal clear HD quality or download for offline viewing via our high-speed Telegram storage.';
 
 export default function MovieDetailPage() {
   const params = useParams();
@@ -80,10 +99,11 @@ export default function MovieDetailPage() {
   const [related, setRelated] = useState<ApiMovie[]>([]);
   const [status, setStatus] = useState<LoadStatus>(staticMovie ? 'ready' : 'loading');
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(1234);
+  const [likeCount, setLikeCount] = useState(1240);
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [watchSource, setWatchSource] = useState<VideoSource | null>(null);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const loadMovie = useCallback(async () => {
     if (staticMovie) {
@@ -98,11 +118,12 @@ export default function MovieDetailPage() {
         return;
       }
       const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Failed to fetch movie');
+      if (json.success && json.data) {
+        setApiMovie(json.data);
+        setStatus('ready');
+      } else {
+        setStatus('error');
       }
-      setApiMovie(json.data);
-      setStatus('ready');
     } catch {
       setStatus('error');
     }
@@ -112,128 +133,93 @@ export default function MovieDetailPage() {
     loadMovie();
   }, [loadMovie]);
 
-  // For database-backed movies, fetch a few other titles for the "More Movies" row.
   useEffect(() => {
-    if (status !== 'ready' || staticMovie || !apiMovie) return;
-    let cancelled = false;
-    fetch('/api/movies', { cache: 'no-store' })
-      .then((res) => res.json())
-      .then((json) => {
-        if (!cancelled && json.success && Array.isArray(json.data)) {
-          setRelated(
-            json.data
-              .filter((m: ApiMovie) => m.id !== apiMovie.id)
-              .slice(0, 5)
-          );
+    if (staticMovie) return;
+    const fetchRelated = async () => {
+      try {
+        const res = await fetch('/api/movies?limit=5');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          setRelated(json.data.filter((m: ApiMovie) => m.id !== id));
         }
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
+      } catch {
+        // silently fallback
+      }
     };
-  }, [status, staticMovie, apiMovie]);
+    fetchRelated();
+  }, [id, staticMovie]);
 
-  // Close the player with Escape.
-  useEffect(() => {
-    if (!isPlayerOpen) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsPlayerOpen(false);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isPlayerOpen]);
+  const view: MovieView = useMemo(() => {
+    if (staticMovie) {
+      const sampleSources: VideoSource[] = [
+        { 
+          label: staticMovie.quality || '1080p FHD', 
+          url: staticMovie.directStreamUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' 
+        },
+        { 
+          label: '720p HD', 
+          url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' 
+        }
+      ];
 
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
-  };
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="pt-24 pb-16">
-          <div className="container mx-auto px-6 text-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-            <p className="text-muted">Loading movie...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (status === 'error') {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="pt-24 pb-16">
-          <div className="container mx-auto px-6 text-center py-20">
-            <div className="text-6xl mb-4">📡</div>
-            <h1 className="text-2xl font-bold mb-2">Couldn&apos;t load this movie</h1>
-            <p className="text-muted mb-6">
-              Something went wrong while fetching movie details.
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <button
-                onClick={loadMovie}
-                className="px-8 py-3 rounded-full bg-gradient-to-r from-primary to-orange-400 text-white font-bold hover:-translate-y-1 hover:shadow-xl transition-all"
-              >
-                Retry
-              </button>
-              <Link href="/movies" className="text-primary hover:underline font-medium">
-                Browse all movies
-              </Link>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (status === 'notfound' || (!staticMovie && !apiMovie)) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="pt-24 pb-16">
-          <div className="container mx-auto px-6 text-center">
-            <h1 className="text-3xl font-bold mb-4">Movie not found</h1>
-            <Link href="/movies" className="text-primary hover:underline">
-              Browse all movies
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  const view: MovieView = staticMovie
-    ? {
+      return {
         title: staticMovie.title,
         year: staticMovie.year,
         image: staticMovie.image,
+        backdrop: staticMovie.backdrop || staticMovie.image,
         genre: staticMovie.genre,
         rating: staticMovie.rating,
         durationSeconds: 125 * 60,
+        durationString: staticMovie.duration || '2h 05m',
         narrator: staticMovie.narrator || 'Rocky Kimomo',
-        description: DEFAULT_DESCRIPTION,
-        views: null,
-        sources: [],
-      }
-    : {
-        title: apiMovie!.title,
-        year: apiMovie!.releaseYear,
-        image: apiMovie!.thumbnailUrl,
-        genre: apiMovie!.genre,
-        rating: null,
-        durationSeconds: apiMovie!.duration,
-        narrator: apiMovie!.narrator,
-        description: apiMovie!.description || DEFAULT_DESCRIPTION,
-        views: apiMovie!.views,
-        sources: parseSources(apiMovie!.fileUrl, apiMovie!.resolutions),
+        description: staticMovie.description || DEFAULT_DESCRIPTION,
+        views: 24500,
+        sources: sampleSources,
+        telegramChannelPost: staticMovie.telegramChannelPost || `https://t.me/fiestaflix_movies/${staticMovie.id}`,
+        telegramBotLink: staticMovie.telegramBotLink || `https://t.me/FiestaFlixBot?start=movie_${staticMovie.id}`,
+        fileSize: staticMovie.fileSize || '1.45 GB',
+        quality: staticMovie.quality || '1080p FHD',
       };
+    }
+
+    if (apiMovie) {
+      const parsed = parseSources(apiMovie.fileUrl, apiMovie.resolutions);
+      return {
+        title: apiMovie.title,
+        year: apiMovie.releaseYear,
+        image: apiMovie.thumbnailUrl,
+        backdrop: apiMovie.thumbnailUrl,
+        genre: apiMovie.genre,
+        rating: 8.8,
+        durationSeconds: apiMovie.duration,
+        durationString: formatDuration(apiMovie.duration),
+        narrator: apiMovie.narrator,
+        description: apiMovie.description || DEFAULT_DESCRIPTION,
+        views: apiMovie.views,
+        sources: parsed.length > 0 ? parsed : [
+          { label: '1080p HD', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' }
+        ],
+        telegramChannelPost: `https://t.me/fiestaflix_movies/${apiMovie.id}`,
+        telegramBotLink: `https://t.me/FiestaFlixBot?start=movie_${apiMovie.id}`,
+        fileSize: '1.2 GB',
+        quality: '1080p FHD',
+      };
+    }
+
+    return {
+      title: 'Movie',
+      year: 2025,
+      image: null,
+      backdrop: null,
+      genre: 'Cinema',
+      rating: 8.5,
+      durationSeconds: 7200,
+      narrator: 'Rocky Kimomo',
+      description: DEFAULT_DESCRIPTION,
+      views: 0,
+      sources: [],
+    };
+  }, [staticMovie, apiMovie]);
 
   const downloadFileName = (source: VideoSource) => {
     const extension = source.url.match(/\.(mp4|webm|mkv|mov|m4v)(?=$|\?)/i)?.[0] || '.mp4';
@@ -255,178 +241,227 @@ export default function MovieDetailPage() {
   };
 
   const handleWatch = () => {
-    if (view.sources.length === 0) {
-      alert(`Streaming "${view.title}" is not available yet.`);
-      return;
+    if (view.sources.length > 0) {
+      setWatchSource(view.sources[0]);
+      setIsPlayerOpen(true);
     }
-    setWatchSource(view.sources[0]);
-    setIsPlayerOpen(true);
   };
 
   const handleDownload = () => {
-    if (view.sources.length === 0) {
-      alert(`Downloading "${view.title}" is not available yet.\n\nNote: In production, this would download the video with Fiesta Flix watermark.`);
-      return;
-    }
     if (view.sources.length === 1) {
       triggerDownload(view.sources[0]);
       return;
     }
-    setIsDownloadOpen((open) => !open);
+    if (view.sources.length > 1) {
+      setIsDownloadOpen((open) => !open);
+    }
   };
 
+  const handleLike = () => {
+    setIsLiked(!isLiked);
+    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
+  };
+
+  const handleCopyLink = () => {
+    if (typeof window !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center py-32">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+            <p className="text-zinc-400 font-medium">Loading movie...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (status === 'error' || status === 'notfound' || (!staticMovie && !apiMovie)) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center py-32">
+          <div className="text-center max-w-md mx-auto px-6 space-y-4">
+            <Film className="w-16 h-16 text-zinc-600 mx-auto" />
+            <h1 className="text-2xl font-bold text-white">Movie Not Found</h1>
+            <p className="text-zinc-400 text-sm">
+              We couldn&apos;t locate this title. Check out our other popular Rwandan releases below.
+            </p>
+            <Link
+              href="/movies"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold"
+            >
+              Browse Catalog
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Header />
 
-      <main className="pt-24 pb-16">
-        <div className="relative">
-          <div className="absolute inset-0 -z-10">
-            <div className="relative w-full h-[400px] md:h-[500px]">
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={
-                  view.image
-                    ? {
-                        backgroundImage: `url(${view.image})`,
-                        filter: 'blur(20px) brightness(0.3)',
-                      }
-                    : {
-                        background:
-                          'linear-gradient(135deg, #1e293b 0%, #020617 100%)',
-                      }
-                }
+      <main className="flex-1 pt-20">
+        {/* Cinematic Backdrop Header */}
+        <div className="relative min-h-[480px] lg:h-[550px] overflow-hidden flex items-end">
+          <div className="absolute inset-0 z-0">
+            {view.backdrop ? (
+              <Image
+                src={view.backdrop}
+                alt={view.title}
+                fill
+                priority
+                referrerPolicy="no-referrer"
+                className="object-cover opacity-35 filter brightness-75 scale-105"
               />
-            </div>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-zinc-900 to-black" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
           </div>
 
-          <div className="container mx-auto px-6 py-10">
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="flex-shrink-0">
-                <div className="relative w-64 mx-auto md:mx-0 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl bg-gradient-to-br from-slate-800 to-slate-950">
-                  {view.image ? (
-                    <img
-                      src={view.image}
-                      alt={view.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-6xl text-white/20">
-                      🎬
-                    </div>
-                  )}
-                </div>
+          <div className="container mx-auto px-4 sm:px-6 relative z-10 pb-8 sm:pb-12">
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8">
+              {/* Poster card with ambient glow */}
+              <div className="relative w-48 sm:w-60 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-zinc-700/60 shrink-0 bg-zinc-900">
+                {view.image ? (
+                  <Image
+                    src={view.image}
+                    alt={view.title}
+                    fill
+                    priority
+                    referrerPolicy="no-referrer"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl">🎬</div>
+                )}
+                {view.quality && (
+                  <span className="absolute top-3 right-3 px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase bg-black/80 backdrop-blur text-white border border-zinc-700">
+                    {view.quality}
+                  </span>
+                )}
               </div>
 
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-5xl font-extrabold mb-4">{view.title}</h1>
-
-                <div className="flex flex-wrap items-center gap-4 mb-6 text-muted">
-                  <span className="text-lg">{view.year ?? '—'}</span>
+              {/* Title & Metadata */}
+              <div className="flex-1 text-center md:text-left space-y-4">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 text-xs text-zinc-400">
+                  <span className="font-semibold text-zinc-200">{view.year}</span>
                   <span>•</span>
-                  <span className="text-lg">{view.genre}</span>
+                  <span className="text-primary font-bold uppercase tracking-wider">{view.genre}</span>
                   <span>•</span>
-                  <span className="text-lg">{formatDuration(view.durationSeconds)}</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    {view.durationString || formatDuration(view.durationSeconds)}
+                  </span>
                   {view.rating !== null && (
-                    <span className="flex items-center gap-1">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffe66d">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                      </svg>
-                      <span className="font-bold text-white">{view.rating}</span>
-                    </span>
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1 text-amber-400 font-bold">
+                        <Star className="w-3.5 h-3.5 fill-amber-400" />
+                        {view.rating}
+                      </span>
+                    </>
                   )}
                   {view.views !== null && (
-                    <span className="flex items-center gap-1 text-sm">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polygon points="23 7 16 12 23 17 23 7" />
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                      </svg>
-                      {formatViews(view.views)} views
-                    </span>
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1 text-zinc-400">
+                        <Eye className="w-3.5 h-3.5" />
+                        {formatViews(view.views)} views
+                      </span>
+                    </>
                   )}
                 </div>
 
-                <div className="mb-6">
-                  <p className="text-muted text-lg mb-2">Narrated by:</p>
-                  <Link
-                    href="/interpreters"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-card rounded-full text-primary font-semibold hover:bg-card/80 transition-all"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    {view.narrator}
-                  </Link>
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
+                  {view.title}
+                </h1>
+
+                {/* Narrator Pill */}
+                <div className="flex items-center justify-center md:justify-start gap-3">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-semibold backdrop-blur">
+                    <Volume2 className="w-4 h-4" />
+                    <span>Agasobanuye na: <strong className="text-emerald-300 font-bold">{view.narrator}</strong></span>
+                  </div>
                 </div>
 
-                <p className="text-lg text-muted mb-8 max-w-2xl">{view.description}</p>
+                <p className="text-zinc-300 max-w-2xl text-sm sm:text-base leading-relaxed">
+                  {view.description}
+                </p>
 
-                <div className="flex flex-wrap gap-4">
+                {/* Main Action CTAs */}
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
                   <button
                     onClick={handleWatch}
-                    className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-primary to-orange-400 text-white font-bold text-lg shadow-lg shadow-primary/40 hover:-translate-y-1 hover:shadow-xl transition-all"
+                    className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white font-bold text-base shadow-xl shadow-primary/30 transition-all hover:scale-105"
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                    Watch Now
+                    <Play className="w-5 h-5 fill-current" />
+                    <span>Watch Online</span>
                   </button>
 
                   <div className="relative inline-flex">
                     <button
                       onClick={handleDownload}
-                      className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white/10 text-white font-bold text-lg border border-white/20 hover:bg-white/20 hover:-translate-y-1 transition-all"
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-base border border-zinc-700 transition-all hover:scale-105"
                     >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
-                      Download
+                      <Download className="w-5 h-5" />
+                      <span>Download</span>
                     </button>
 
                     {isDownloadOpen && view.sources.length > 1 && (
-                      <>
-                        <button
-                          aria-label="Close download menu"
-                          className="fixed inset-0 z-10 cursor-default"
-                          onClick={() => setIsDownloadOpen(false)}
-                        />
-                        <div className="absolute bottom-full mb-2 left-0 z-20 min-w-52 bg-card border border-white/10 rounded-xl overflow-hidden shadow-2xl">
-                          <p className="px-4 py-2 text-xs text-muted border-b border-white/10">
-                            Choose quality
-                          </p>
-                          {view.sources.map((source) => (
-                            <a
-                              key={source.label}
-                              href={source.url}
-                              download={downloadFileName(source)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={() => setIsDownloadOpen(false)}
-                              className="block px-4 py-2.5 text-sm font-medium hover:bg-white/10 transition-colors"
-                            >
-                              {source.label === 'Default' ? 'Original' : source.label}
-                            </a>
-                          ))}
-                        </div>
-                      </>
+                      <div className="absolute top-full mt-2 left-0 z-30 min-w-56 bg-zinc-900 border border-zinc-700 rounded-2xl p-2 shadow-2xl space-y-1">
+                        <p className="px-3 py-1.5 text-xs text-zinc-400 font-bold uppercase tracking-wider">
+                          Select Quality
+                        </p>
+                        {view.sources.map((source) => (
+                          <button
+                            key={source.label}
+                            onClick={() => {
+                              triggerDownload(source);
+                              setIsDownloadOpen(false);
+                            }}
+                            className="w-full text-left px-3 py-2 text-sm font-semibold rounded-xl text-zinc-200 hover:bg-zinc-800 hover:text-white transition-colors flex items-center justify-between"
+                          >
+                            <span>{source.label}</span>
+                            <Download className="w-4 h-4 text-primary" />
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
 
                   <button
                     onClick={handleLike}
-                    className={`inline-flex items-center gap-2 px-6 py-4 rounded-full font-bold text-lg transition-all ${
+                    className={`inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm transition-all border ${
                       isLiked
-                        ? 'bg-primary text-white'
-                        : 'bg-white/10 text-white border border-white/20 hover:bg-white/20'
+                        ? 'bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/30'
+                        : 'bg-zinc-900/80 text-zinc-300 border-zinc-700 hover:bg-zinc-800'
                     }`}
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                    </svg>
-                    {likeCount.toLocaleString()}
+                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                    <span>{likeCount.toLocaleString()}</span>
+                  </button>
+
+                  <button
+                    onClick={handleCopyLink}
+                    className="inline-flex items-center gap-2 px-4 py-3.5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 border border-zinc-700 transition-colors"
+                  >
+                    {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+                    <span className="text-xs font-semibold">{copied ? 'Copied' : 'Share'}</span>
                   </button>
                 </div>
               </div>
@@ -434,81 +469,156 @@ export default function MovieDetailPage() {
           </div>
         </div>
 
-        <section className="py-12">
-          <div className="container mx-auto px-6">
-            <h2 className="text-2xl font-bold mb-8">More Movies</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {staticMovie
-                ? movieData
-                    .filter((m) => m.id !== staticId)
-                    .slice(0, 5)
-                    .map((m) => (
-                      <Link key={m.id} href={`/movies/${m.id}`} className="group">
-                        <div className="relative aspect-[2/3] rounded-xl overflow-hidden mb-3">
-                          <img
-                            src={m.image}
-                            alt={m.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                        </div>
-                        <h3 className="font-semibold truncate">{m.title}</h3>
-                        <p className="text-sm text-muted">{m.year} • {m.genre}</p>
-                      </Link>
-                    ))
-                : related.map((m) => (
-                    <CatalogMovieCard key={m.id} movie={m} />
-                  ))}
+        {/* TELEGRAM STORAGE & DIRECT DOWNLOAD SECTION */}
+        <section className="container mx-auto px-4 sm:px-6 py-8">
+          <div className="rounded-3xl bg-gradient-to-r from-sky-950/40 via-zinc-900/80 to-zinc-900 border border-sky-500/30 p-6 sm:p-8 backdrop-blur shadow-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-[#229ED9] text-white flex items-center justify-center shadow-md shadow-[#229ED9]/40">
+                    <Send className="w-4 h-4 -rotate-12 translate-x-px" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white">
+                    Fast Telegram Cloud Storage
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#229ED9]/20 text-[#229ED9] border border-[#229ED9]/30">
+                    Free • Unlimited Speed
+                  </span>
+                </div>
+                <p className="text-sm text-zinc-300 max-w-2xl">
+                  Save data and enjoy blazing fast download speeds directly through our verified Telegram network. Choose an option below to access the full movie file without ad redirects or waiting timers.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={view.telegramChannelPost}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#229ED9] hover:bg-[#1E8BC0] text-white font-bold text-sm shadow-lg shadow-[#229ED9]/30 transition-all hover:scale-105"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download in Telegram Channel</span>
+                </a>
+
+                <a
+                  href={view.telegramBotLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm border border-zinc-700 transition-colors"
+                >
+                  <Send className="w-4 h-4 text-sky-400" />
+                  <span>Get via Telegram Bot</span>
+                </a>
+              </div>
             </div>
           </div>
         </section>
+
+        {/* Related Movies Section */}
+        <section className="container mx-auto px-4 sm:px-6 py-10">
+          <h2 className="text-xl sm:text-2xl font-black text-white mb-6">
+            Recommended For You
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            {staticMovie
+              ? movieData
+                  .filter((m) => m.id !== staticId)
+                  .slice(0, 5)
+                  .map((m) => (
+                    <Link key={m.id} href={`/movies/${m.id}`} className="group block">
+                      <div className="relative aspect-[2/3] rounded-2xl overflow-hidden mb-2.5 bg-zinc-800 border border-zinc-800 group-hover:border-primary/50 transition-all">
+                        <Image
+                          src={m.image}
+                          alt={m.title}
+                          fill
+                          referrerPolicy="no-referrer"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-2 right-2 bg-black/75 backdrop-blur text-amber-400 text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-amber-400" />
+                          {m.rating}
+                        </div>
+                      </div>
+                      <h3 className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors">
+                        {m.title}
+                      </h3>
+                      <p className="text-xs text-zinc-400">{m.year} • {m.genre}</p>
+                    </Link>
+                  ))
+              : related.map((m) => (
+                  <CatalogMovieCard key={m.id} movie={m} />
+                ))}
+          </div>
+        </section>
+
+        {/* Video Player Modal */}
         {isPlayerOpen && watchSource && (
           <div
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-3 sm:p-6 backdrop-blur animate-fadeIn"
             onClick={() => setIsPlayerOpen(false)}
           >
             <div
-              className="bg-card rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+              className="bg-zinc-950 border border-zinc-800 rounded-3xl max-w-5xl w-full overflow-hidden shadow-2xl flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 md:p-6">
-                <div className="flex items-center justify-between mb-4 gap-4">
-                  <h2 className="text-xl font-bold truncate">{view.title}</h2>
-                  <button
-                    onClick={() => setIsPlayerOpen(false)}
-                    aria-label="Close player"
-                    className="w-10 h-10 flex-shrink-0 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all text-xl"
-                  >
-                    ×
-                  </button>
+              <div className="p-4 sm:p-5 flex items-center justify-between border-b border-zinc-800 gap-4">
+                <div className="flex items-center gap-3 truncate">
+                  <Play className="w-5 h-5 text-primary shrink-0" />
+                  <h3 className="text-base sm:text-lg font-bold text-white truncate">
+                    {view.title} <span className="text-xs font-normal text-zinc-400">({watchSource.label})</span>
+                  </h3>
                 </div>
+                <button
+                  onClick={() => setIsPlayerOpen(false)}
+                  className="w-9 h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-colors"
+                  aria-label="Close video player"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
+              <div className="relative aspect-video bg-black w-full">
                 <video
                   key={watchSource.url}
                   src={watchSource.url}
-                  poster={view.image ?? undefined}
+                  poster={view.backdrop || view.image || undefined}
                   controls
                   autoPlay
                   playsInline
-                  className="w-full aspect-video rounded-xl bg-black"
+                  className="w-full h-full object-contain"
                 />
+              </div>
 
-                {view.sources.length > 1 && (
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {view.sources.map((source) => (
-                      <button
-                        key={source.label}
-                        onClick={() => setWatchSource(source)}
-                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                          source.url === watchSource.url
-                            ? 'bg-gradient-to-r from-primary to-orange-400 text-white'
-                            : 'bg-white/10 text-muted hover:bg-white/20 hover:text-foreground'
-                        }`}
-                      >
-                        {source.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="p-4 sm:p-5 bg-zinc-900/60 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-zinc-200">Quality:</span>
+                  {view.sources.map((source) => (
+                    <button
+                      key={source.label}
+                      onClick={() => setWatchSource(source)}
+                      className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                        source.url === watchSource.url
+                          ? 'bg-primary text-white shadow-md shadow-primary/30'
+                          : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                      }`}
+                    >
+                      {source.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <a
+                    href={view.telegramChannelPost}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sky-400 hover:text-sky-300 font-semibold"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Download file in Telegram instead</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>

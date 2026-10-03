@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Play, Volume2, Eye, Send, Film } from 'lucide-react';
 import type { ApiMovie } from '@/lib/apiTypes';
 
 interface CatalogMovieCardProps {
@@ -22,58 +23,61 @@ function formatViews(views: number) {
 
 export default function CatalogMovieCard({ movie }: CatalogMovieCardProps) {
   return (
-    <Link href={`/movies/${movie.id}`} className="block">
-      <div className="bg-card rounded-2xl overflow-hidden transition-all duration-400 cursor-pointer hover:-translate-y-2 hover:shadow-2xl">
-        <div className="relative w-full aspect-[2/3] overflow-hidden bg-gradient-to-br from-slate-800 to-slate-950">
+    <Link href={`/movies/${movie.id}`} className="block group">
+      <div className="bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-800/80 transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/20 flex flex-col h-full">
+        <div className="relative w-full aspect-[2/3] overflow-hidden bg-zinc-800">
           {movie.thumbnailUrl ? (
             <img
               src={movie.thumbnailUrl}
               alt={movie.title}
               loading="lazy"
-              className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+              referrerPolicy="no-referrer"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-5xl text-white/20">
-              🎬
+            <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-600 gap-2">
+              <Film className="w-10 h-10 stroke-1" />
+              <span className="text-xs uppercase font-bold tracking-wider">No Poster</span>
             </div>
           )}
 
           {movie.isFeatured && (
-            <div className="absolute top-3 right-3 bg-gradient-to-r from-primary to-orange-400 px-3 py-1.5 rounded-full text-xs font-semibold">
+            <div className="absolute top-2.5 right-2.5 bg-gradient-to-r from-primary to-orange-400 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase shadow-md">
               Featured
             </div>
           )}
 
-          <div className="absolute bottom-3 right-3 bg-black/70 px-2 py-1 rounded-full text-xs font-medium">
+          <div className="absolute bottom-2.5 right-2.5 bg-black/75 backdrop-blur text-zinc-300 px-2 py-1 rounded-md text-[11px] font-semibold border border-zinc-700/60">
             {formatDuration(movie.duration)}
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary to-orange-400 text-white text-sm font-semibold">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-orange-500 text-white text-xs font-bold shadow-lg shadow-primary/40">
+              <Play className="w-4 h-4 fill-current" />
               Watch Now
             </span>
           </div>
         </div>
 
-        <div className="p-4">
-          <h3 className="text-base font-semibold mb-1 truncate">{movie.title}</h3>
-          <div className="flex items-center gap-3 text-sm text-muted">
-            <span>{movie.releaseYear ?? '—'}</span>
-            <span>•</span>
-            <span className="truncate">{movie.genre}</span>
+        <div className="p-4 flex flex-col flex-1 justify-between">
+          <div>
+            <h3 className="text-sm sm:text-base font-bold text-white mb-1 truncate group-hover:text-primary transition-colors">
+              {movie.title}
+            </h3>
+            <div className="flex items-center gap-2 text-xs text-zinc-400">
+              <span>{movie.releaseYear ?? '2025'}</span>
+              <span>•</span>
+              <span className="truncate">{movie.genre}</span>
+            </div>
           </div>
-          <div className="flex items-center justify-between mt-2 text-xs">
-            <span className="flex items-center gap-1 text-primary font-semibold truncate">
-              🎤 {movie.narrator}
+
+          <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-zinc-800/80 text-xs">
+            <span className="flex items-center gap-1.5 text-emerald-400 font-semibold truncate">
+              <Volume2 className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{movie.narrator}</span>
             </span>
-            <span className="flex items-center gap-1 text-muted flex-shrink-0">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polygon points="23 7 16 12 23 17 23 7" />
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-              </svg>
+            <span className="flex items-center gap-1 text-zinc-400 shrink-0">
+              <Eye className="w-3.5 h-3.5" />
               {formatViews(movie.views)}
             </span>
           </div>

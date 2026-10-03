@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Movie } from '@/lib/movieData';
+import { Play, Download, Send, Star, Volume2 } from 'lucide-react';
+import type { Movie } from '@/lib/movieData';
 
 interface MovieCardProps {
   movie: Movie;
@@ -11,66 +12,97 @@ interface MovieCardProps {
 
 export default function MovieCard({ movie, onSelect }: MovieCardProps) {
   return (
-    <Link href={`/movies/${movie.id}`} className="block">
-      <div 
-        className="bg-card rounded-2xl overflow-hidden transition-all duration-400 cursor-pointer hover:-translate-y-2 hover:shadow-2xl"
-        onClick={(e) => {
-          if (onSelect) {
-            e.preventDefault();
-            onSelect(movie);
-          }
-        }}
-      >
-      <div className="relative w-full aspect-[2/3] overflow-hidden">
+    <div
+      onClick={() => onSelect && onSelect(movie)}
+      className="group relative bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-800/80 transition-all duration-300 cursor-pointer hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/20 flex flex-col"
+    >
+      {/* Poster Image Container */}
+      <div className="relative w-full aspect-[2/3] overflow-hidden bg-zinc-800">
         <Image
           src={movie.image}
           alt={movie.title}
           fill
-          className="object-cover transition-transform duration-500 hover:scale-110"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+          referrerPolicy="no-referrer"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
-          <div className="flex gap-2 mb-3">
-            <button className="w-14 h-14 rounded-full bg-gradient-to-r from-primary to-orange-400 flex items-center justify-center text-white hover:scale-110 transition-transform">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
+
+        {/* Gradient Overlay on Hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <button
+              type="button"
+              className="w-11 h-11 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/50 group-hover:scale-110 transition-transform"
+              aria-label={`Play ${movie.title}`}
+            >
+              <Play className="w-5 h-5 fill-current translate-x-0.5" />
             </button>
-            <button className="w-11 h-11 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white hover:bg-primary hover:scale-110 transition-all">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </button>
-            <button className="w-11 h-11 rounded-full bg-white/20 backdrop-blur flex items-center justify-center text-white hover:bg-primary hover:scale-110 transition-all">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
+
+            {movie.telegramChannelPost && (
+              <a
+                href={movie.telegramChannelPost}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title="Download in Telegram"
+                className="w-10 h-10 rounded-full bg-[#229ED9] hover:bg-[#1E8BC0] flex items-center justify-center text-white transition-all hover:scale-110 shadow-md shadow-[#229ED9]/30"
+              >
+                <Send className="w-4 h-4 -rotate-12 translate-x-px" />
+              </a>
+            )}
           </div>
         </div>
-        {movie.trending && (
-          <div className="absolute top-3 right-3 bg-gradient-to-r from-primary to-orange-400 px-3 py-1.5 rounded-full text-xs font-semibold">
-            Trending
+
+        {/* Top Badges */}
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+          {movie.trending ? (
+            <span className="bg-gradient-to-r from-primary to-orange-500 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide shadow-md">
+              Trending
+            </span>
+          ) : <span />}
+
+          {movie.quality && (
+            <span className="bg-black/75 backdrop-blur text-zinc-200 px-2 py-0.5 rounded-md text-[10px] font-semibold border border-zinc-700/60">
+              {movie.quality}
+            </span>
+          )}
+        </div>
+
+        {/* Narrator Badge at Bottom of Poster */}
+        {movie.narrator && (
+          <div className="absolute bottom-2.5 left-2.5 right-2.5 pointer-events-none group-hover:opacity-0 transition-opacity">
+            <span className="inline-flex items-center gap-1 bg-black/75 backdrop-blur text-emerald-400 px-2.5 py-1 rounded-full text-[11px] font-medium border border-emerald-500/30">
+              <Volume2 className="w-3 h-3" />
+              <span className="truncate">{movie.narrator}</span>
+            </span>
           </div>
         )}
       </div>
-      <div className="p-4">
-        <h3 className="text-base font-semibold mb-1 truncate">{movie.title}</h3>
-        <div className="flex items-center gap-3 text-sm text-muted">
-          <span>{movie.year}</span>
-          <span>•</span>
-          <span>{movie.genre}</span>
-          <span className="flex items-center gap-1">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffe66d">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-            </svg>
-            {movie.rating}
+
+      {/* Movie Details Footer */}
+      <div className="p-3.5 flex flex-col flex-1 justify-between">
+        <div>
+          <h3 className="text-sm sm:text-base font-bold text-white mb-1 truncate group-hover:text-primary transition-colors">
+            {movie.title}
+          </h3>
+          <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <span>{movie.year}</span>
+            <span>•</span>
+            <span className="truncate">{movie.genre}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-2.5 mt-2 border-t border-zinc-800/80">
+          <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
+            <Star className="w-3.5 h-3.5 fill-amber-400" />
+            <span>{movie.rating}</span>
+          </div>
+
+          <span className="text-[11px] text-zinc-400 group-hover:text-primary transition-colors font-medium">
+            Quick Preview →
           </span>
         </div>
       </div>
     </div>
-    </Link>
   );
 }

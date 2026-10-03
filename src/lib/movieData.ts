@@ -4,9 +4,18 @@ export interface Movie {
   year: number;
   genre: string;
   rating: number;
-  image: string;
+  image: string; // High-resolution portrait poster (2:3 aspect ratio)
+  backdrop?: string; // High-resolution widescreen backdrop (16:9 aspect ratio)
   trending?: boolean;
   narrator?: string;
+  duration?: string;
+  quality?: string;
+  fileSize?: string;
+  description?: string;
+  telegramChannelPost?: string; // e.g. https://t.me/fiestaflix_movies/101
+  telegramBotLink?: string;     // e.g. https://t.me/FiestaFlixBot?start=watch_101
+  telegramStreamUrl?: string;   // Streaming proxy link
+  directStreamUrl?: string;     // HTML5 playable video url
 }
 
 export const movieData: Movie[] = [
@@ -16,8 +25,17 @@ export const movieData: Movie[] = [
     year: 2025,
     genre: "Sci-Fi",
     rating: 8.9,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=epic%20sci-fi%20movie%20poster%20futuristic%20city%20dark%20atmosphere&image_size=portrait_4_3",
-    trending: true
+    narrator: "Rocky Kimomo",
+    duration: "2h 15m",
+    quality: "1080p FHD",
+    fileSize: "1.45 GB",
+    description: "In a cyber-kinetic Kigali 2077, an elite memory investigator discovers a temporal breach altering future events. Authentic Kinyarwanda narration by Rocky Kimomo.",
+    image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1920&auto=format&fit=crop",
+    trending: true,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/101",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_1",
+    directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
   },
   {
     id: 2,
@@ -25,8 +43,17 @@ export const movieData: Movie[] = [
     year: 2024,
     genre: "Thriller",
     rating: 8.5,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=thriller%20movie%20poster%20dark%20mysterious%20atmosphere&image_size=portrait_4_3",
-    trending: true
+    narrator: "Junior Giti",
+    duration: "1h 52m",
+    quality: "1080p FHD",
+    fileSize: "1.18 GB",
+    description: "A detective with insomnia uncovers an underground syndicate operating beneath the glowing city neon. Tense commentary by Junior Giti.",
+    image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1920&auto=format&fit=crop",
+    trending: true,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/102",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_2",
+    directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
   },
   {
     id: 3,
@@ -34,8 +61,17 @@ export const movieData: Movie[] = [
     year: 2025,
     genre: "Adventure",
     rating: 9.1,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=adventure%20movie%20poster%20ocean%20exploration%20epic%20journey&image_size=portrait_4_3",
-    trending: true
+    narrator: "Savimbi",
+    duration: "2h 30m",
+    quality: "4K UHD",
+    fileSize: "2.10 GB",
+    description: "An oceanographer and a rogue deep-sea diver venture into uncharted Mariana trenches where lost civilizations slumber.",
+    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop",
+    trending: true,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/103",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_3",
+    directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
   },
   {
     id: 4,
@@ -43,8 +79,16 @@ export const movieData: Movie[] = [
     year: 2024,
     genre: "Romance",
     rating: 7.8,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=romantic%20movie%20poster%20paris%20eiffel%20tower%20beautiful%20couple&image_size=portrait_4_3",
-    trending: false
+    narrator: "Dylan",
+    duration: "1h 44m",
+    quality: "1080p FHD",
+    fileSize: "980 MB",
+    description: "Two estranged musicians cross paths along the Seine during an autumn downpour. Emotional storytelling narrated by Dylan.",
+    image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?q=80&w=1920&auto=format&fit=crop",
+    trending: false,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/104",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_4"
   },
   {
     id: 5,
@@ -52,8 +96,16 @@ export const movieData: Movie[] = [
     year: 2025,
     genre: "Action",
     rating: 8.7,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=action%20movie%20poster%20cyberpunk%20neon%20lights%20hero&image_size=portrait_4_3",
-    trending: true
+    narrator: "Rocky Kimomo",
+    duration: "2h 05m",
+    quality: "1080p FHD",
+    fileSize: "1.62 GB",
+    description: "High-octane street racing meets corporate espionage on the wet highways of Tokyo. Electrifying energy by Rocky Kimomo.",
+    image: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1920&auto=format&fit=crop",
+    trending: true,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/105",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_5"
   },
   {
     id: 6,
@@ -61,8 +113,16 @@ export const movieData: Movie[] = [
     year: 2024,
     genre: "Fantasy",
     rating: 8.3,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=fantasy%20movie%20poster%20magical%20forest%20mystical%20creatures&image_size=portrait_4_3",
-    trending: false
+    narrator: "Yanga",
+    duration: "2h 10m",
+    quality: "720p HD",
+    fileSize: "890 MB",
+    description: "Ancient spirits awaken when an industrial expedition invades the primordial Nyungwe canopy. Legend narrated by Yanga.",
+    image: "https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1920&auto=format&fit=crop",
+    trending: false,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/106",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_6"
   },
   {
     id: 7,
@@ -70,8 +130,16 @@ export const movieData: Movie[] = [
     year: 2025,
     genre: "Sci-Fi",
     rating: 9.0,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=space%20movie%20poster%20astronaut%20galaxy%20stars&image_size=portrait_4_3",
-    trending: true
+    narrator: "PK",
+    duration: "2h 45m",
+    quality: "4K UHD",
+    fileSize: "2.85 GB",
+    description: "An interstellar vessel journeys across a wormhole in search of a habitable sanctuary for humanity. Narration with epic flair by PK.",
+    image: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1920&auto=format&fit=crop",
+    trending: true,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/107",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_7"
   },
   {
     id: 8,
@@ -79,8 +147,16 @@ export const movieData: Movie[] = [
     year: 2024,
     genre: "Comedy",
     rating: 7.5,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=comedy%20movie%20poster%20funny%20characters%20vibrant%20colors&image_size=portrait_4_3",
-    trending: false
+    narrator: "Junior Giti",
+    duration: "1h 38m",
+    quality: "1080p FHD",
+    fileSize: "920 MB",
+    description: "Three bumbling con artists accidentally steal a diplomat's priceless pet parrot. Hilarious punchlines and jokes by Junior Giti.",
+    image: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1920&auto=format&fit=crop",
+    trending: false,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/108",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_8"
   },
   {
     id: 9,
@@ -88,8 +164,16 @@ export const movieData: Movie[] = [
     year: 2025,
     genre: "Drama",
     rating: 8.6,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=drama%20movie%20poster%20mountain%20adventure%20inspirational&image_size=portrait_4_3",
-    trending: false
+    narrator: "Gaheza",
+    duration: "2h 02m",
+    quality: "1080p FHD",
+    fileSize: "1.30 GB",
+    description: "A mountaineer confronts past grief while scaling the treacherous northern face of Mount Karisimbi during a blizzard.",
+    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop",
+    trending: false,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/109",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_9"
   },
   {
     id: 10,
@@ -97,8 +181,16 @@ export const movieData: Movie[] = [
     year: 2024,
     genre: "Horror",
     rating: 8.2,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=horror%20movie%20poster%20scary%20ghost%20dark%20atmosphere&image_size=portrait_4_3",
-    trending: false
+    narrator: "Savimbi",
+    duration: "1h 48m",
+    quality: "1080p FHD",
+    fileSize: "1.10 GB",
+    description: "An abandoned broadcast tower begins transmitting chilling signals from spirits trapped in the analog frequencies.",
+    image: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1920&auto=format&fit=crop",
+    trending: false,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/110",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_10"
   },
   {
     id: 11,
@@ -106,8 +198,16 @@ export const movieData: Movie[] = [
     year: 2025,
     genre: "Action",
     rating: 8.8,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cyberpunk%20action%20movie%20poster%20warrior%20neon%20city&image_size=portrait_4_3",
-    trending: true
+    narrator: "Sankara",
+    duration: "2h 12m",
+    quality: "4K UHD",
+    fileSize: "2.40 GB",
+    description: "An augmented operative goes rogue to dismantle a biometric control grid threatening free citizens. Masterclass narration by Sankara.",
+    image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=1920&auto=format&fit=crop",
+    trending: true,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/111",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_11"
   },
   {
     id: 12,
@@ -115,8 +215,16 @@ export const movieData: Movie[] = [
     year: 2024,
     genre: "Documentary",
     rating: 8.0,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=documentary%20movie%20poster%20ancient%20ruins%20historical&image_size=portrait_4_3",
-    trending: false
+    narrator: "Sankara",
+    duration: "1h 35m",
+    quality: "1080p FHD",
+    fileSize: "850 MB",
+    description: "Archeological discoveries reveal the forgotten kings and metallurgical masters of the ancient Great Lakes empires.",
+    image: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1920&auto=format&fit=crop",
+    trending: false,
+    telegramChannelPost: "https://t.me/fiestaflix_movies/112",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=movie_12"
   }
 ];
 
@@ -127,7 +235,15 @@ export const tvShowsData: Movie[] = [
     year: 2025,
     genre: "Fantasy",
     rating: 9.2,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=fantasy%20tv%20show%20poster%20epic%20world%20dragons%20magic&image_size=portrait_4_3"
+    narrator: "Rocky Kimomo",
+    duration: "Season 1 (8 Eps)",
+    quality: "1080p FHD",
+    fileSize: "4.8 GB",
+    description: "Seven warlords contend for the Obsidian Throne while an ancient darkness creeps across the border mountains.",
+    image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1920&auto=format&fit=crop",
+    telegramChannelPost: "https://t.me/fiestaflix_series/201",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_101"
   },
   {
     id: 102,
@@ -135,7 +251,15 @@ export const tvShowsData: Movie[] = [
     year: 2024,
     genre: "Drama",
     rating: 8.4,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=drama%20tv%20show%20poster%20city%20night%20drama&image_size=portrait_4_3"
+    narrator: "Junior Giti",
+    duration: "Season 2 (10 Eps)",
+    quality: "1080p FHD",
+    fileSize: "5.2 GB",
+    description: "Ambitious tech entrepreneurs and venture tycoons battle for supremacy in East Africa's fastest-growing silicon valley.",
+    image: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1920&auto=format&fit=crop",
+    telegramChannelPost: "https://t.me/fiestaflix_series/202",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_102"
   },
   {
     id: 103,
@@ -143,7 +267,15 @@ export const tvShowsData: Movie[] = [
     year: 2025,
     genre: "Sci-Fi",
     rating: 8.9,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=sci-fi%20tv%20show%20poster%20future%20police%20cyberpunk&image_size=portrait_4_3"
+    narrator: "Savimbi",
+    duration: "Season 1 (6 Eps)",
+    quality: "4K UHD",
+    fileSize: "6.5 GB",
+    description: "A cybernetically enhanced officer and an AI hologram navigate moral corruption in a lawless mega-district.",
+    image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=1920&auto=format&fit=crop",
+    telegramChannelPost: "https://t.me/fiestaflix_series/203",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_103"
   },
   {
     id: 104,
@@ -151,7 +283,15 @@ export const tvShowsData: Movie[] = [
     year: 2024,
     genre: "Comedy",
     rating: 7.9,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=comedy%20tv%20show%20poster%20family%20funny%20moments&image_size=portrait_4_3"
+    narrator: "Dylan",
+    duration: "Season 1 (12 Eps)",
+    quality: "720p HD",
+    fileSize: "3.2 GB",
+    description: "A boisterous extended family opens an eccentric fusion restaurant in downtown Kigali with laugh-out-loud mishaps.",
+    image: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1920&auto=format&fit=crop",
+    telegramChannelPost: "https://t.me/fiestaflix_series/204",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_104"
   },
   {
     id: 105,
@@ -159,7 +299,15 @@ export const tvShowsData: Movie[] = [
     year: 2025,
     genre: "Thriller",
     rating: 8.7,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=thriller%20tv%20show%20poster%20spy%20espionage%20secret%20agent&image_size=portrait_4_3"
+    narrator: "PK",
+    duration: "Season 1 (8 Eps)",
+    quality: "1080p FHD",
+    fileSize: "4.9 GB",
+    description: "Counter-intelligence operatives play a deadly game of cat and mouse across five international capitals.",
+    image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1920&auto=format&fit=crop",
+    telegramChannelPost: "https://t.me/fiestaflix_series/205",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_105"
   },
   {
     id: 106,
@@ -167,6 +315,14 @@ export const tvShowsData: Movie[] = [
     year: 2024,
     genre: "Documentary",
     rating: 9.0,
-    image: "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=wildlife%20documentary%20tv%20show%20poster%20animals%20nature&image_size=portrait_4_3"
+    narrator: "Gaheza",
+    duration: "Season 1 (5 Eps)",
+    quality: "4K UHD",
+    fileSize: "7.1 GB",
+    description: "Breathtaking cinematography tracing the endangered mountain gorillas of the Virunga volcanoes and savannah wildlife.",
+    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=900&auto=format&fit=crop",
+    backdrop: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop",
+    telegramChannelPost: "https://t.me/fiestaflix_series/206",
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_106"
   }
 ];
