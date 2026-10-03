@@ -1,4 +1,7 @@
 {
   "name": "Fiesta Flix",
-  "description": "Stream and download movies with authentic Kinyarwanda narration."
+  "description": "Stream and download movies with authentic Kinyarwanda narration.",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

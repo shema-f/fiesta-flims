@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import Hero from '@/components/Hero';
+import TrendingShowcase from '@/components/TrendingShowcase';
 import MovieCarousel from '@/components/MovieCarousel';
 import MovieGrid from '@/components/MovieGrid';
 import MoviePreviewModal from '@/components/MoviePreviewModal';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import { movieData, tvShowsData, Movie } from '@/lib/movieData';
-import { Send, ShieldCheck, Zap, Download, Film, Sparkles } from 'lucide-react';
+import { Send, Download } from 'lucide-react';
 
 export default function Home() {
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
@@ -74,6 +75,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* 3-Second Trending Live Rotation Showcase */}
+        <TrendingShowcase onSelectMovie={handleMovieSelect} />
 
         {/* Trending Movies Section */}
         <div id="trending" className="py-6">

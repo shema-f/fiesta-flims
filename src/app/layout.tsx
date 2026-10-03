@@ -3,6 +3,7 @@ import { Poppins } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
 import MobileBottomNav from '@/components/MobileBottomNav';
+import FiestaBot from '@/components/FiestaBot';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <MobileBottomNav />
+          <FiestaBot />
         </Providers>
       </body>
     </html>
