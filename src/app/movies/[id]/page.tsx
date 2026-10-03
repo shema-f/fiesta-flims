@@ -8,6 +8,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CatalogMovieCard from '@/components/CatalogMovieCard';
 import RatingStars from '@/components/RatingStars';
+import TelegramDownloadHub from '@/components/TelegramDownloadHub';
+import ModernRatingSystem from '@/components/ModernRatingSystem';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { movieData, type Movie } from '@/lib/movieData';
 import type { ApiMovie } from '@/lib/apiTypes';
@@ -513,51 +515,26 @@ export default function MovieDetailPage() {
           </div>
         </div>
 
-        {/* TELEGRAM STORAGE & DIRECT DOWNLOAD SECTION */}
-        <section className="container mx-auto px-4 sm:px-6 py-8">
-          <div className="rounded-3xl bg-gradient-to-r from-sky-950/40 via-zinc-900/80 to-zinc-900 border border-sky-500/30 p-6 sm:p-8 backdrop-blur shadow-xl">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-[#229ED9] text-white flex items-center justify-center shadow-md shadow-[#229ED9]/40">
-                    <Send className="w-4 h-4 -rotate-12 translate-x-px" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white">
-                    Fast Telegram Cloud Storage
-                  </h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#229ED9]/20 text-[#229ED9] border border-[#229ED9]/30">
-                    Free • Unlimited Speed
-                  </span>
-                </div>
-                <p className="text-sm text-zinc-300 max-w-2xl">
-                  Save data and enjoy blazing fast download speeds directly through our verified Telegram network. Choose an option below to access the full movie file without ad redirects or waiting timers.
-                </p>
-              </div>
+        {/* PROMINENT TELEGRAM DOWNLOAD HUB */}
+        <div className="container mx-auto px-4 sm:px-6">
+          <TelegramDownloadHub
+            movieId={view.id}
+            movieTitle={view.title}
+            quality={view.quality}
+            fileSize={view.fileSize}
+            channelPostUrl={view.telegramChannelPost}
+            botLink={view.telegramBotLink}
+          />
+        </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <a
-                  href={view.telegramChannelPost}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#229ED9] hover:bg-[#1E8BC0] text-white font-bold text-sm shadow-lg shadow-[#229ED9]/30 transition-all hover:scale-105 touch-manipulation"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download in Telegram Channel</span>
-                </a>
-
-                <a
-                  href={view.telegramBotLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm border border-zinc-700 transition-colors touch-manipulation"
-                >
-                  <Send className="w-4 h-4 text-sky-400" />
-                  <span>Get via Telegram Bot</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* MODERN AUDIENCE RATING SYSTEM */}
+        <div className="container mx-auto px-4 sm:px-6 my-6">
+          <ModernRatingSystem
+            movieId={view.id}
+            initialRating={view.rating || 8.8}
+            voteCount={1420}
+          />
+        </div>
 
         {/* Related Movies Section */}
         <section className="container mx-auto px-4 sm:px-6 py-10">
