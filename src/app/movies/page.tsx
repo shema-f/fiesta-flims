@@ -8,29 +8,49 @@ import type { ApiMovie } from '@/lib/apiTypes';
 
 type LoadStatus = 'loading' | 'ready' | 'error';
 
+// Matches the API's default page size; the catalog must never be fetched whole.
+const PAGE_SIZE = 24;
+
 export default function MoviesPage() {
   const [movies, setMovies] = useState<ApiMovie[]>([]);
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [activeGenre, setActiveGenre] = useState('All');
   const [query, setQuery] = useState('');
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const loadMovies = useCallback(async () => {
-    setStatus('loading');
+  const loadMovies = useCallback(async (page = 1) => {
+    const isFirstPage = page === 1;
+    if (isFirstPage) setStatus('loading');
+    else setLoadingMore(true);
     try {
-      const res = await fetch('/api/movies', { cache: 'no-store' });
+      const res = await fetch(`/api/movies?page=${page}&limit=${PAGE_SIZE}`, {
+        cache: 'no-store',
+      });
       const json = await res.json();
       if (!res.ok || !json.success) {
         throw new Error(json.error || 'Failed to fetch movies');
       }
-      setMovies(json.data ?? []);
+      const batch: ApiMovie[] = json.data ?? [];
+      setMovies((prev) => (isFirstPage ? batch : [...prev, ...batch]));
+
+      const countHeader = res.headers.get('X-Total-Count');
+      if (countHeader !== null) {
+        setTotal(parseInt(countHeader, 10) || 0);
+      } else {
+        setTotal((prev) => (isFirstPage ? batch.length : prev + batch.length));
+      }
       setStatus('ready');
     } catch {
-      setStatus('error');
+      // A failed "load more" keeps the already-loaded catalog on screen.
+      if (isFirstPage) setStatus('error');
+    } finally {
+      setLoadingMore(false);
     }
   }, []);
 
   useEffect(() => {
-    loadMovies();
+    loadMovies(1);
   }, [loadMovies]);
 
   const genres = useMemo(
@@ -87,7 +107,7 @@ export default function MoviesPage() {
                 We couldn&apos;t reach the movie catalog. Please try again.
               </p>
               <button
-                onClick={loadMovies}
+                onClick={() => loadMovies(1)}
                 className="px-8 py-3 rounded-full bg-gradient-to-r from-primary to-orange-400 text-white font-bold hover:-translate-y-1 hover:shadow-xl transition-all"
               >
                 Retry
@@ -150,6 +170,18 @@ export default function MoviesPage() {
                       <CatalogMovieCard key={movie.id} movie={movie} />
                     ))}
                   </div>
+
+                  {movies.length < total && (
+                    <div className="flex justify-center mt-10">
+                      <button
+                        onClick={() => loadMovies(Math.floor(movies.length / PAGE_SIZE) + 1)}
+                        disabled={loadingMore}
+                        className="px-8 py-3 rounded-full bg-gradient-to-r from-primary to-orange-400 text-white font-bold hover:-translate-y-1 hover:shadow-xl transition-all disabled:opacity-60 disabled:hover:translate-y-0"
+                      >
+                        {loadingMore ? 'Loading…' : `Load more (${total - movies.length} left)`}
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </>

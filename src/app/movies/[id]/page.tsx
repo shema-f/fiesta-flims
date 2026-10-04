@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -26,10 +26,11 @@ import {
   HardDrive, 
   X, 
   Film, 
-  Eye, 
-  Maximize2 
+  Eye
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import FiestaVideoPlayer from '@/components/video/FiestaVideoPlayer';
+import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
 
 type LoadStatus = 'loading' | 'ready' | 'error' | 'notfound';
 
@@ -111,8 +112,10 @@ export default function MovieDetailPage() {
   const [watchSource, setWatchSource] = useState<VideoSource | null>(null);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const videoElementRef = useRef<HTMLVideoElement | null>(null);
+  const [playbackSrc, setPlaybackSrc] = useState<string | null>(null);
+  const [resumeSeconds, setResumeSeconds] = useState(0);
+  const [subtitleTracks, setSubtitleTracks] = useState<SubtitleTrack[]>([]);
+  const [preparingPlayback, setPreparingPlayback] = useState(false);
 
   const loadMovie = useCallback(async () => {
     if (staticMovie) {
@@ -252,12 +255,75 @@ export default function MovieDetailPage() {
     anchor.remove();
   };
 
-  const handleWatch = () => {
-    if (view.sources.length > 0) {
-      setWatchSource(view.sources[0]);
-      setIsPlayerOpen(true);
+  const handleWatch = async () => {
+    if (view.sources.length === 0) return;
+    setPreparingPlayback(true);
+
+    let url = view.sources[0].url;
+    let resume = 0;
+    let subs: SubtitleTrack[] = [];
+
+    // Resolve the delivery URL through the provider-agnostic API (spec §22).
+    try {
+      const playRes = await fetch(`/api/movies/${id}/play`);
+      if (playRes.ok) {
+        const playJson = await playRes.json();
+        const resolvedUrl = playJson?.data?.url;
+        if (typeof resolvedUrl === 'string' && /^https?:\/\//i.test(resolvedUrl)) {
+          url = resolvedUrl;
+        }
+      }
+    } catch {
+      // Fall back to the legacy source already in the catalog.
     }
+
+    // Subtitles + continue-watching resume are best-effort.
+    try {
+      const [subsRes, historyRes] = await Promise.all([
+        fetch(`/api/movies/${id}/subtitles`),
+        fetch('/api/watch-history'),
+      ]);
+      if (subsRes.ok) {
+        const subsJson = await subsRes.json();
+        subs = (subsJson?.data?.subtitles ?? []) as SubtitleTrack[];
+      }
+      if (historyRes.ok) {
+        const historyJson = await historyRes.json();
+        const entry = (historyJson?.data ?? []).find(
+          (h: { movieId: string; positionSeconds: number; completed: boolean }) =>
+            String(h.movieId) === String(id) && !h.completed
+        );
+        if (entry?.positionSeconds) resume = entry.positionSeconds;
+      }
+    } catch {
+      // Non-critical — playback still works without resume or subtitles.
+    }
+
+    setSubtitleTracks(subs);
+    setResumeSeconds(resume);
+    setPlaybackSrc(url);
+    setWatchSource(view.sources[0]);
+    setPreparingPlayback(false);
+    setIsPlayerOpen(true);
   };
+
+  // Persist progress sparingly (the player already throttles to ~5s).
+  const handleProgress = useCallback(
+    (positionSeconds: number, durationSeconds: number) => {
+      if (!durationSeconds) return;
+      void fetch('/api/watch-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          movieId: String(id),
+          positionSeconds: Math.round(positionSeconds),
+          durationSeconds: Math.round(durationSeconds),
+          completed: positionSeconds / durationSeconds > 0.95,
+        }),
+      }).catch(() => {});
+    },
+    [id]
+  );
 
   const handleDownload = () => {
     if (view.sources.length === 1) {
@@ -292,16 +358,6 @@ export default function MovieDetailPage() {
       navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleFullscreenMobile = () => {
-    if (videoElementRef.current) {
-      if (videoElementRef.current.requestFullscreen) {
-        videoElementRef.current.requestFullscreen();
-      } else if ((videoElementRef.current as any).webkitRequestFullscreen) {
-        (videoElementRef.current as any).webkitRequestFullscreen();
-      }
     }
   };
 
@@ -592,14 +648,6 @@ export default function MovieDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    type="button"
-                    onClick={handleFullscreenMobile}
-                    className="p-1.5 rounded-lg bg-zinc-800 text-zinc-300 hover:text-white"
-                    title="Fullscreen"
-                  >
-                    <Maximize2 className="w-4 h-4" />
-                  </button>
-                  <button
                     onClick={() => setIsPlayerOpen(false)}
                     className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-colors"
                     aria-label="Close video player"
@@ -610,18 +658,20 @@ export default function MovieDetailPage() {
               </div>
 
               <div className="relative aspect-video bg-black w-full">
-                <video
-                  ref={videoElementRef}
-                  key={watchSource.url}
-                  src={watchSource.url}
-                  poster={view.backdrop || view.image || undefined}
-                  controls
-                  autoPlay
-                  playsInline
-                  // @ts-ignore
-                  webkit-playsinline="true"
-                  className="w-full h-full object-contain"
-                />
+                {preparingPlayback && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
+                    <div className="w-10 h-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                  </div>
+                )}
+                {playbackSrc && (
+                  <FiestaVideoPlayer
+                    src={playbackSrc}
+                    poster={view.backdrop || view.image || undefined}
+                    subtitles={subtitleTracks}
+                    startPositionSeconds={resumeSeconds}
+                    onProgress={handleProgress}
+                  />
+                )}
               </div>
 
               <div className="p-3 sm:p-5 bg-zinc-900/60 flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-400">
@@ -630,7 +680,11 @@ export default function MovieDetailPage() {
                   {view.sources.map((source) => (
                     <button
                       key={source.label}
-                      onClick={() => setWatchSource(source)}
+                      onClick={() => {
+                        setWatchSource(source);
+                        setPlaybackSrc(source.url);
+                        setResumeSeconds(0);
+                      }}
                       className={`px-3 py-1 rounded-lg font-bold transition-all ${
                         source.url === watchSource.url
                           ? 'bg-primary text-white shadow-md shadow-primary/30'

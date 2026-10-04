@@ -5,6 +5,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { movieData } from '@/lib/movieData';
 import { narratorsData } from '@/lib/narratorData';
+import StoragePanel from '@/components/admin/StoragePanel';
+import MediaJobsPanel from '@/components/admin/MediaJobsPanel';
 
 const movieRequests = [
   {
@@ -150,6 +152,8 @@ export default function AdminPage() {
                     { id: 'requests', label: '📋 Movie Requests' },
                     { id: 'clips', label: '🎥 Fan Clips' },
                     { id: 'users', label: '👥 Users' },
+                    { id: 'storage', label: '🗄️ Storage' },
+                    { id: 'media', label: '⚙️ Media Jobs' },
                     { id: 'analytics', label: '📈 Analytics' },
                   ].map((tab) => (
                     <button
@@ -513,6 +517,10 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+
+              {activeTab === 'storage' && <StoragePanel />}
+
+              {activeTab === 'media' && <MediaJobsPanel />}
 
               {activeTab === 'analytics' && (
                 <div>
