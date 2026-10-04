@@ -1,116 +1,95 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import NarratorCard from '@/components/NarratorCard';
-import { narratorsData, featuresData, Narrator } from '@/lib/narratorData';
+import InterpreterCard from '@/components/interpreter/InterpreterCard';
+import { interpretersData, formatFollowers } from '@/lib/interpreters';
+import { Search, Mic2 } from 'lucide-react';
 
 export default function InterpretersPage() {
-  const [selectedNarrator, setSelectedNarrator] = useState<Narrator | null>(null);
-  const featuredNarrators = narratorsData.filter(n => n.featured);
-  const allNarrators = narratorsData;
-  const allInterpreterNames = narratorsData.map(n => n.name);
+  const [query, setQuery] = useState('');
 
-  const handleNarratorSelect = (narrator: Narrator) => {
-    setSelectedNarrator(narrator);
-    alert(`Selected Narrator: ${narrator.name}\nRating: ${narrator.rating}\nMovies: ${narrator.moviesCount}`);
-  };
+  const featured = useMemo(() => interpretersData.filter((i) => i.featured), []);
+  const totalFollowers = useMemo(
+    () => interpretersData.reduce((sum, i) => sum + i.followers, 0),
+    []
+  );
+
+  const filtered = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return interpretersData;
+    return interpretersData.filter(
+      (i) =>
+        i.name.toLowerCase().includes(term) ||
+        i.tags.some((t) => t.toLowerCase().includes(term)) ||
+        i.city.toLowerCase().includes(term)
+    );
+  }, [query]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
-      
-      <main className="pt-24">
-        <section className="py-16 bg-gradient-to-b from-primary/10 to-background">
-          <div className="container mx-auto px-6 text-center">
-            <h1 className="text-4xl md:text-6xl font-extrabold mb-4">
-              Meet Our <span className="bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">Interpreters</span>
-            </h1>
-            <p className="text-lg md:text-xl text-muted max-w-2xl mx-auto">
-              Discover the talented voices behind your favorite Kinyarwanda-dubbed movies
-            </p>
+
+      <main className="pt-24 pb-24">
+        <section className="container-tight pb-10 pt-8 text-center">
+          <span className="eyebrow">Abasobanuzi</span>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
+            The voices behind <span className="text-primary">Agasobanuye</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+            In Kinyarwanda cinema the narrator is part of the story. Follow your favourite voice and
+            discover everything they have ever translated.
+          </p>
+
+          <div className="mx-auto mt-8 grid max-w-lg grid-cols-3 gap-3">
+            {[
+              { label: 'Interpreters', value: interpretersData.length },
+              { label: 'Featured', value: featured.length },
+              { label: 'Followers', value: formatFollowers(totalFollowers) },
+            ].map((stat) => (
+              <div key={stat.label} className="card-surface px-4 py-3">
+                <p className="text-xl font-bold">{stat.value}</p>
+                <p className="text-[11px] uppercase tracking-wide text-muted">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </section>
 
-        <div className="container mx-auto px-6 py-10">
-          <div className="flex flex-col lg:flex-row gap-8">
-            <aside className="lg:w-64 flex-shrink-0">
-              <div className="bg-card/70 rounded-xl p-5 sticky top-24">
-                <h3 className="text-lg font-bold mb-4">Interpreters</h3>
-                <ul className="space-y-1 max-h-[500px] overflow-y-auto">
-                  {allInterpreterNames.map((name) => (
-                    <li key={name}>
-                      <Link 
-                        href={`#`}
-                        className="block px-3 py-2.5 rounded-md transition-all hover:bg-secondary/50 text-gray-300 hover:text-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          const narrator = narratorsData.find(n => n.name === name);
-                          if (narrator) handleNarratorSelect(narrator);
-                        }}
-                      >
-                        {name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </aside>
-
-            <div className="flex-1">
-              <section className="py-10">
-                <h2 className="text-2xl md:text-3xl font-bold mb-10">Featured Interpreters</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                  {featuredNarrators.map((narrator) => (
-                    <NarratorCard 
-                      key={narrator.id} 
-                      narrator={narrator} 
-                      onSelect={handleNarratorSelect}
-                    />
-                  ))}
-                </div>
-              </section>
-
-              <section className="py-10 bg-card/20 rounded-xl p-6">
-                <h2 className="text-2xl md:text-3xl font-bold mb-10">All Interpreters</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {allNarrators.map((narrator) => (
-                    <NarratorCard 
-                      key={narrator.id} 
-                      narrator={narrator} 
-                      onSelect={handleNarratorSelect}
-                    />
-                  ))}
-                </div>
-              </section>
-
-              <section className="py-10">
-                <h2 className="text-2xl md:text-3xl font-bold mb-10 text-center">Amazing Features</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {featuresData.map((feature, index) => (
-                    <div 
-                      key={index}
-                      className="bg-card p-8 rounded-2xl border border-white/10 hover:border-primary/30 transition-all duration-300"
-                    >
-                      <div className="text-5xl mb-4">{feature.icon}</div>
-                      <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
-                      <ul className="space-y-2">
-                        {feature.items.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-muted">
-                            <span className="text-primary mt-1">✓</span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </div>
+        <section className="container-tight pb-12">
+          <div className="section-title">
+            <h2 className="text-lg font-bold">Featured</h2>
+            <Mic2 className="h-4 w-4 text-muted" />
           </div>
-        </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((i) => (
+              <InterpreterCard key={i.id} interpreter={i} />
+            ))}
+          </div>
+        </section>
+
+        <section className="container-tight">
+          <div className="relative mb-6">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name, genre or city…"
+              className="w-full rounded-xl border border-white/[0.08] bg-card py-3 pl-11 pr-4 text-sm outline-none transition-colors placeholder:text-muted focus:border-primary"
+            />
+          </div>
+
+          {filtered.length === 0 ? (
+            <p className="py-16 text-center text-sm text-muted">No interpreters match “{query}”.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((i) => (
+                <InterpreterCard key={i.id} interpreter={i} />
+              ))}
+            </div>
+          )}
+        </section>
       </main>
 
       <Footer />

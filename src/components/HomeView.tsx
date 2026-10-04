@@ -1,16 +1,13 @@
-'use client';
-
-import { useState } from 'react';
+import Link from 'next/link';
+import { ArrowRight, Download, Wifi, Clapperboard } from 'lucide-react';
 import Header from '@/components/Header';
-import Hero from '@/components/Hero';
-import TrendingShowcase from '@/components/TrendingShowcase';
-import MovieCarousel from '@/components/MovieCarousel';
-import MovieGrid from '@/components/MovieGrid';
-import MoviePreviewModal from '@/components/MoviePreviewModal';
-import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
+import Hero from '@/components/Hero';
+import CTA from '@/components/CTA';
+import MovieRail from '@/components/MovieRail';
+import TrendingShowcase from '@/components/TrendingShowcase';
 import type { Movie } from '@/lib/movieData';
-import { Send, Download } from 'lucide-react';
+import { topInterpreters, formatFollowers } from '@/lib/interpreters';
 
 interface HomeViewProps {
   trendingMovies: Movie[];
@@ -19,97 +16,127 @@ interface HomeViewProps {
 }
 
 export default function HomeView({ trendingMovies, popularMovies, tvShows }: HomeViewProps) {
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-
-  const handleMovieSelect = (movie: Movie) => setSelectedMovie(movie);
+  const interpreters = topInterpreters(10);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-0">
+    <div className="flex min-h-screen flex-col bg-background text-foreground pb-20 md:pb-0">
       <Header />
 
       <main className="flex-1">
         <Hero />
 
-        {/* Telegram Storage Spotlight Banner */}
-        <section className="container mx-auto px-4 sm:px-6 -mt-6 sm:-mt-10 relative z-20">
-          <div className="rounded-3xl bg-gradient-to-r from-sky-950/80 via-zinc-900 to-zinc-900 border border-sky-500/30 p-6 sm:p-8 backdrop-blur shadow-2xl shadow-sky-950/40">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="flex items-start sm:items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-[#229ED9] text-white flex items-center justify-center shrink-0 shadow-lg shadow-[#229ED9]/40">
-                  <Send className="w-7 h-7 -rotate-12 translate-x-0.5" />
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold text-white tracking-tight">
-                      Telegram High-Speed Movie Cloud
-                    </h3>
-                    <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase bg-[#229ED9]/20 text-[#229ED9] border border-[#229ED9]/30">
-                      Unlimited & Free
-                    </span>
-                  </div>
-                  <p className="text-sm text-zinc-300 max-w-2xl">
-                    Every movie in our catalog is backed up to Telegram channels and bots. Download in 1-click on your phone, tablet, or PC with zero file size restrictions and resumable downloads.
-                  </p>
-                </div>
-              </div>
+        {trendingMovies.length > 0 && <TrendingShowcase movies={trendingMovies} />}
 
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <a
-                  href="https://t.me/fiestaflix_movies"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#229ED9] hover:bg-[#1E8BC0] text-white font-bold text-sm shadow-lg shadow-[#229ED9]/30 transition-all hover:scale-105"
-                >
-                  <Send className="w-4 h-4 -rotate-12" />
-                  <span>Join Movie Channel</span>
-                </a>
-                <a
-                  href="https://t.me/FiestaFlixBot"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-sm border border-zinc-700 transition-colors"
-                >
-                  <Download className="w-4 h-4 text-sky-400" />
-                  <span>Start Telegram Bot</span>
-                </a>
+        <MovieRail
+          title="🔥 Trending now"
+          subtitle="Agasobanuye everyone is watching"
+          movies={trendingMovies}
+          href="/movies"
+        />
+
+        {/* Top interpreters — the star of the platform */}
+        <section className="container-tight py-6">
+          <div className="section-title">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight">👑 Top interpreters</h2>
+              <p className="mt-0.5 text-xs text-muted">Follow the voices behind Agasobanuye</p>
+            </div>
+            <Link
+              href="/interpreters"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-muted transition-colors hover:text-foreground"
+            >
+              See all <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+            {interpreters.map((i) => (
+              <Link
+                key={i.id}
+                href={`/interpreters/${i.slug}`}
+                className="card-surface w-40 shrink-0 p-4 text-center transition-all hover:border-primary/30 sm:w-44"
+              >
+                <div className="mx-auto h-20 w-20 overflow-hidden rounded-2xl bg-surface">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={i.image}
+                    alt={i.name}
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <p className="mt-3 truncate text-sm font-bold">{i.name}</p>
+                <p className="mt-0.5 truncate text-[11px] text-muted">{i.tags.join(' · ')}</p>
+                <p className="mt-1.5 text-[11px] font-semibold text-primary">
+                  {formatFollowers(i.followers)} followers
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <MovieRail
+          title="🎬 All-time popular"
+          subtitle="Timeless Rwandan favourites"
+          movies={popularMovies}
+          href="/movies"
+        />
+
+        {/* Rwanda Cinema */}
+        <section className="container-tight py-6">
+          <Link
+            href="/rwandan-movies"
+            className="card-surface group flex flex-col items-start gap-6 overflow-hidden p-8 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div className="max-w-xl">
+              <span className="eyebrow">🇷🇼 Rwanda Cinema</span>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight">
+                Films that are uniquely ours
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                Foreign titles are everywhere — Rwandan cinema is where our identity lives. Movies,
+                short films, documentaries, classics and Fiesta Flix Originals.
+              </p>
+            </div>
+            <span className="btn-ghost shrink-0 group-hover:border-primary/40">
+              <Clapperboard className="h-4 w-4" />
+              Explore Rwanda Cinema
+            </span>
+          </Link>
+        </section>
+
+        <MovieRail title="📺 Series" subtitle="Binge the full season" movies={tvShows} href="/movies" />
+
+        {/* Offline / Data saver strip */}
+        <section className="container-tight py-8">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="card-surface flex items-start gap-4 p-6">
+              <Download className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <h3 className="text-sm font-bold">Downloads are first-class</h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  Pick a quality, see the exact size, and save for offline viewing — built for how
+                  Rwanda actually watches.
+                </p>
+              </div>
+            </div>
+            <div className="card-surface flex items-start gap-4 p-6">
+              <Wifi className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <h3 className="text-sm font-bold">Data Saver</h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  Slow connection? Drop to 480p in one tap and use roughly a quarter of the data.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 3-Second Trending Live Rotation Showcase */}
-        <TrendingShowcase movies={trendingMovies} onSelectMovie={handleMovieSelect} />
-
-        {/* Trending Movies Section */}
-        <div id="trending" className="py-6">
-          <MovieCarousel
-            title="🔥 Trending Now (Agasobanuye)"
-            movies={trendingMovies}
-            onMovieSelect={handleMovieSelect}
-          />
-        </div>
-
-        {/* Popular Movies Section */}
-        <div id="movies" className="py-4">
-          <MovieGrid
-            title="🎬 All-Time Popular Movies"
-            movies={popularMovies}
-            onMovieSelect={handleMovieSelect}
-          />
-        </div>
-
-        {/* TV Series Section */}
-        <div id="series" className="py-4">
-          <MovieGrid title="📺 Trending TV Shows & Series" movies={tvShows} onMovieSelect={handleMovieSelect} />
-        </div>
-
         <CTA />
       </main>
 
       <Footer />
-
-      {/* Modern Netflix-grade Movie Preview & Telegram Modal */}
-      <MoviePreviewModal movie={selectedMovie} onClose={() => setSelectedMovie(null)} />
     </div>
   );
 }

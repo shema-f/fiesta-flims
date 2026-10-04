@@ -31,6 +31,7 @@ import {
 import { motion } from 'motion/react';
 import FiestaVideoPlayer from '@/components/video/FiestaVideoPlayer';
 import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
+import { estimateSizeLabel, DATA_SAVER_TIP } from '@/lib/dataSizes';
 
 type LoadStatus = 'loading' | 'ready' | 'error' | 'notfound';
 
@@ -525,7 +526,7 @@ export default function MovieDetailPage() {
                     {isDownloadOpen && view.sources.length > 1 && (
                       <div className="absolute top-full mt-2 left-0 z-30 min-w-56 bg-zinc-900 border border-zinc-700 rounded-2xl p-2 shadow-2xl space-y-1">
                         <p className="px-3 py-1.5 text-xs text-zinc-400 font-bold uppercase tracking-wider">
-                          Select Quality
+                          Select quality to download
                         </p>
                         {view.sources.map((source) => (
                           <button
@@ -536,7 +537,12 @@ export default function MovieDetailPage() {
                             }}
                             className="w-full text-left px-3 py-2 text-sm font-semibold rounded-xl text-zinc-200 hover:bg-zinc-800 hover:text-white transition-colors flex items-center justify-between"
                           >
-                            <span>{source.label}</span>
+                            <span className="flex flex-col">
+                              <span>{source.label}</span>
+                              <span className="text-[11px] font-normal text-zinc-500">
+                                ~{estimateSizeLabel(source.label, view.durationSeconds)}
+                              </span>
+                            </span>
                             <Download className="w-4 h-4 text-primary" />
                           </button>
                         ))}
@@ -697,6 +703,22 @@ export default function MovieDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  {view.sources.length > 1 && (
+                    <button
+                      type="button"
+                      title={DATA_SAVER_TIP}
+                      onClick={() => {
+                        const lowest = view.sources[view.sources.length - 1];
+                        setWatchSource(lowest);
+                        setPlaybackSrc(lowest.url);
+                        setResumeSeconds(0);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-400 hover:bg-emerald-500/20"
+                    >
+                      <HardDrive className="w-3.5 h-3.5" />
+                      Data Saver
+                    </button>
+                  )}
                   <a
                     href={view.telegramChannelPost}
                     target="_blank"

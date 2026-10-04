@@ -44,7 +44,7 @@ const mockMovies = movieData.map((m, idx) => ({
   id: `movie-${m.id}`,
   title: m.title,
   description: `Experience this amazing movie with fantastic Kinyarwanda narration.`,
-  narrator: 'Rocky Kimomo',
+  narrator: m.narrator || 'Rocky Kimomo',
   genre: m.genre,
   duration: 7200,
   releaseYear: m.year,

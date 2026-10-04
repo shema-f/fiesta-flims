@@ -12,11 +12,16 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: 'Fiesta Flix - Stream & Download Movies',
-  description: 'Stream and download movies with authentic Kinyarwanda narration.',
+  title: {
+    default: 'Fiesta Flix — Filime. Ijwi. Umuco.',
+    template: '%s · Fiesta Flix',
+  },
+  description:
+    'The home of Kinyarwanda cinema and Agasobanuye. Stream movies, follow interpreters, download offline, and discover Rwandan film.',
   openGraph: {
-    title: 'Fiesta Flix - Stream & Download Movies',
-    description: 'Stream and download movies with authentic Kinyarwanda narration.',
+    title: 'Fiesta Flix — Filime. Ijwi. Umuco.',
+    description:
+      'The home of Kinyarwanda cinema and Agasobanuye. Stream, download and follow the voices behind the movies.',
   },
 };
 

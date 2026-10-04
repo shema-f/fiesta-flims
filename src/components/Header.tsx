@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { Search, Send, Menu, X, User as UserIcon, LogOut, Shield } from 'lucide-react';
+import { Search, Send, Menu, X, User as UserIcon, LogOut, Shield, Sparkles } from 'lucide-react';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -33,12 +33,11 @@ export default function Header() {
   const navItems = [
     { href: '/', label: 'Home' },
     { href: '/movies', label: 'Movies' },
-    { href: '/favorites', label: 'Favorites', badge: favCount },
-    { href: '/rwandan-movies', label: '🇷🇼 Rwandan' },
-    { href: '/#series', label: 'Series' },
+    { href: '/rwandan-movies', label: 'Rwanda Cinema' },
     { href: '/interpreters', label: 'Interpreters' },
+    { href: '/awards', label: 'Awards' },
     { href: '/community', label: 'Community' },
-    { href: '/request-movie', label: 'Request' },
+    { href: '/favorites', label: 'Favorites', badge: favCount },
   ];
 
   if (user?.role === 'ADMIN') {
@@ -95,7 +94,7 @@ export default function Header() {
               <input
                 id="searchInput"
                 type="text"
-                placeholder="Search movies, narrators..."
+                placeholder="Search movies, voices…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent border-none outline-none text-white text-xs w-36 lg:w-44 focus:w-56 lg:focus:w-72 placeholder:text-zinc-500 transition-all duration-300 ease-out focus:translate-x-1"
@@ -108,6 +107,15 @@ export default function Header() {
                 <Search className="w-4 h-4" />
               </button>
             </form>
+
+            {/* Plus CTA */}
+            <Link
+              href="/plus"
+              className="hidden lg:inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3.5 py-1.5 text-xs font-bold text-primary border border-primary/30 transition-all hover:bg-primary/25"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Plus</span>
+            </Link>
 
             {/* Telegram Channel Button */}
             <a
