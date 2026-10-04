@@ -203,19 +203,19 @@ export default function Footer() {
                   <span>Telegram Movie Cloud</span>
                 </a>
               </li>
-              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">FAQ & Download Help</a></li>
-              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">How to Stream in 4K</a></li>
-              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">Mobile App PWA</a></li>
+              <li><Link href="/help#faq" className="text-zinc-400 text-sm hover:text-primary transition-colors">FAQ & Download Help</Link></li>
+              <li><Link href="/help#4k" className="text-zinc-400 text-sm hover:text-primary transition-colors">How to Stream in 4K</Link></li>
+              <li><Link href="/help#pwa" className="text-zinc-400 text-sm hover:text-primary transition-colors">Mobile App PWA</Link></li>
             </ul>
           </div>
           
           <div>
             <h4 className="text-base font-bold text-white mb-4">Legal & Privacy</h4>
             <ul className="space-y-2.5">
-              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">DMCA Notice</a></li>
-              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">Content Guidelines</a></li>
+              <li><Link href="/privacy" className="text-zinc-400 text-sm hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="text-zinc-400 text-sm hover:text-primary transition-colors">Terms of Service</Link></li>
+              <li><Link href="/dmca" className="text-zinc-400 text-sm hover:text-primary transition-colors">DMCA Notice</Link></li>
+              <li><Link href="/content-guidelines" className="text-zinc-400 text-sm hover:text-primary transition-colors">Content Guidelines</Link></li>
             </ul>
           </div>
         </div>

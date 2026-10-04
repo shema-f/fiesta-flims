@@ -4,6 +4,7 @@ import './globals.css';
 import Providers from '@/components/Providers';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import FiestaBot from '@/components/FiestaBot';
+import InstallAppPrompt from '@/components/InstallAppPrompt';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   },
   description:
     'The home of Kinyarwanda cinema and Agasobanuye. Stream movies, follow interpreters, download offline, and discover Rwandan film.',
+  manifest: '/manifest.json',
   openGraph: {
     title: 'Fiesta Flix — Filime. Ijwi. Umuco.',
     description:
@@ -41,6 +43,7 @@ export default function RootLayout({
           {children}
           <MobileBottomNav />
           <FiestaBot />
+          <InstallAppPrompt />
         </Providers>
       </body>
     </html>

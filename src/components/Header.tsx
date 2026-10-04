@@ -20,6 +20,7 @@ import {
   Shield,
   LogOut,
   Clapperboard,
+  HelpCircle,
 } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import NotificationToast from '@/components/NotificationToast';
@@ -88,6 +89,7 @@ export default function Header() {
 
   // Secondary items in the "More" dropdown
   const secondaryLinks = [
+    { href: '/help', label: 'Help, FAQ & 4K Guide', icon: HelpCircle, desc: 'How to stream in 4K, download, & tips' },
     { href: '/awards', label: 'Awards & Honors', icon: Trophy, desc: 'Top voted voice actors & films' },
     { href: '/community', label: 'Community', icon: Users, desc: 'Discussions & movie requests' },
     { href: '/plus', label: 'Fiesta Plus', icon: Sparkles, desc: 'Ad-free 4K streaming & fast downloads' },
