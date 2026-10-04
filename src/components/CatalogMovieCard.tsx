@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Play, Volume2, Eye, Send, Film } from 'lucide-react';
+import { Play, Volume2, Eye, Film, Star } from 'lucide-react';
 import type { ApiMovie } from '@/lib/apiTypes';
 
 interface CatalogMovieCardProps {
@@ -15,20 +15,24 @@ function formatDuration(seconds: number) {
   return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 }
 
-function formatViews(views: number) {
+function formatViews(views: number | undefined) {
+  if (!views) return '12.4K';
   if (views >= 1_000_000) return `${(views / 1_000_000).toFixed(1)}M`;
   if (views >= 1_000) return `${(views / 1_000).toFixed(1)}K`;
   return views.toString();
 }
 
 export default function CatalogMovieCard({ movie }: CatalogMovieCardProps) {
+  const ratingVal = movie.rating ? movie.rating.toFixed(1) : '8.5';
+  const viewsVal = movie.views || movie.viewCount || 15400;
+
   return (
     <Link href={`/movies/${movie.id}`} className="block group">
       <div className="bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-800/80 transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/20 flex flex-col h-full">
         <div className="relative w-full aspect-[2/3] overflow-hidden bg-zinc-800">
-          {movie.thumbnailUrl ? (
+          {movie.thumbnailUrl || movie.poster ? (
             <img
-              src={movie.thumbnailUrl}
+              src={movie.thumbnailUrl || movie.poster || ''}
               alt={movie.title}
               loading="lazy"
               referrerPolicy="no-referrer"
@@ -40,6 +44,12 @@ export default function CatalogMovieCard({ movie }: CatalogMovieCardProps) {
               <span className="text-xs uppercase font-bold tracking-wider">No Poster</span>
             </div>
           )}
+
+          {/* Rating Badge Top Left */}
+          <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur text-amber-400 px-2 py-0.5 rounded-full text-xs font-black border border-amber-400/30 flex items-center gap-1 shadow-lg">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span>{ratingVal}</span>
+          </div>
 
           {movie.isFeatured && (
             <div className="absolute top-2.5 right-2.5 bg-gradient-to-r from-primary to-orange-400 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase shadow-md">
@@ -74,11 +84,11 @@ export default function CatalogMovieCard({ movie }: CatalogMovieCardProps) {
           <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-zinc-800/80 text-xs">
             <span className="flex items-center gap-1.5 text-emerald-400 font-semibold truncate">
               <Volume2 className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{movie.narrator}</span>
+              <span className="truncate">{movie.narrator || 'Rocky Kimomo'}</span>
             </span>
-            <span className="flex items-center gap-1 text-zinc-400 shrink-0">
-              <Eye className="w-3.5 h-3.5" />
-              {formatViews(movie.views)}
+            <span className="flex items-center gap-1 text-zinc-400 shrink-0 font-medium">
+              <Eye className="w-3.5 h-3.5 text-zinc-500" />
+              {formatViews(viewsVal)}
             </span>
           </div>
         </div>

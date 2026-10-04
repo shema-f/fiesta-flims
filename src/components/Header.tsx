@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { Search, Send, Menu, X, User as UserIcon, LogOut, Shield, Sparkles } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
+import NotificationToast from '@/components/NotificationToast';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -52,6 +54,7 @@ export default function Header() {
           : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b border-white/5'
       }`}
     >
+      <NotificationToast />
       <nav className="py-3.5">
         <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
           {/* Logo */}
@@ -138,6 +141,9 @@ export default function Header() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover:scale-125 transition-transform animate-pulse" />
               <span>Talk to Us</span>
             </a>
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {/* User Menu or Auth */}
             {user ? (

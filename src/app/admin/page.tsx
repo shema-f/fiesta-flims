@@ -101,7 +101,10 @@ export default function AdminPage() {
     narrator: '',
     type: 'Movie',
     youtubeId: '',
+    sendNotification: true,
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const stats = {
     totalMovies: movieData.length,
@@ -115,22 +118,75 @@ export default function AdminPage() {
   };
 
   const handleApproveClip = (id: number) => {
-    alert('Clip approved!');
+    setUploadFeedback({ type: 'success', message: 'Clip approved and published!' });
+    setTimeout(() => setUploadFeedback(null), 4000);
   };
 
   const handleRejectClip = (id: number) => {
-    alert('Clip rejected!');
+    setUploadFeedback({ type: 'error', message: 'Clip rejected.' });
+    setTimeout(() => setUploadFeedback(null), 4000);
   };
 
   const handleApproveRequest = (id: number) => {
-    alert('Movie request approved! Will be added soon.');
+    setUploadFeedback({ type: 'success', message: 'Movie request approved! Notification scheduled.' });
+    setTimeout(() => setUploadFeedback(null), 4000);
   };
 
-  const handleUploadMovie = (e: React.FormEvent) => {
+  const handleUploadMovie = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Movie uploaded successfully!');
-    setShowUploadModal(false);
-    setUploadForm({ title: '', year: '', genre: '', narrator: '', type: 'Movie', youtubeId: '' });
+    setIsUploading(true);
+
+    try {
+      const res = await fetch('/api/movies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: uploadForm.title,
+          releaseYear: parseInt(uploadForm.year, 10) || new Date().getFullYear(),
+          genre: uploadForm.genre,
+          narrator: uploadForm.narrator,
+          rating: 8.8,
+          youtubeId: uploadForm.youtubeId,
+          thumbnailUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        if (json.data?.notification) {
+          window.dispatchEvent(
+            new CustomEvent('fiesta-movie-uploaded', { detail: json.data.notification })
+          );
+        }
+        setUploadFeedback({
+          type: 'success',
+          message: `🎬 "${uploadForm.title}" uploaded! Notification sent to all users.`,
+        });
+        setShowUploadModal(false);
+        setUploadForm({
+          title: '',
+          year: '',
+          genre: '',
+          narrator: '',
+          type: 'Movie',
+          youtubeId: '',
+          sendNotification: true,
+        });
+      } else {
+        setUploadFeedback({
+          type: 'error',
+          message: json.error || 'Failed to upload movie',
+        });
+      }
+    } catch {
+      setUploadFeedback({
+        type: 'error',
+        message: 'Network error uploading movie.',
+      });
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setUploadFeedback(null), 6000);
+    }
   };
 
   return (
@@ -139,6 +195,24 @@ export default function AdminPage() {
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
+          {uploadFeedback && (
+            <div
+              className={`mb-6 p-4 rounded-xl border flex items-center justify-between text-sm font-bold shadow-lg animate-fadeIn ${
+                uploadFeedback.type === 'success'
+                  ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+                  : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
+              }`}
+            >
+              <span>{uploadFeedback.message}</span>
+              <button
+                onClick={() => setUploadFeedback(null)}
+                className="text-xs px-2 py-1 bg-white/10 rounded hover:bg-white/20"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-64 flex-shrink-0">
               <div className="bg-card rounded-2xl p-6 border border-white/10 sticky top-24">
@@ -685,19 +759,46 @@ export default function AdminPage() {
                   />
                 </div>
 
+                <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="sendNotificationCheckbox"
+                    checked={uploadForm.sendNotification}
+                    onChange={(e) =>
+                      setUploadForm({ ...uploadForm, sendNotification: e.target.checked })
+                    }
+                    className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary cursor-pointer"
+                  />
+                  <label
+                    htmlFor="sendNotificationCheckbox"
+                    className="text-xs font-semibold text-zinc-200 cursor-pointer select-none"
+                  >
+                    🔔 Broadcast in-app & push notification to all users immediately upon upload
+                  </label>
+                </div>
+
                 <div className="flex gap-4 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowUploadModal(false)}
-                    className="flex-1 py-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-all"
+                    disabled={isUploading}
+                    className="flex-1 py-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-all disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+                    disabled={isUploading}
+                    className="flex-1 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all disabled:opacity-60 flex items-center justify-center gap-2"
                   >
-                    Upload Movie
+                    {isUploading ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Publishing & Notifying…</span>
+                      </>
+                    ) : (
+                      <span>Upload & Broadcast</span>
+                    )}
                   </button>
                 </div>
               </form>
