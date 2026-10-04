@@ -171,12 +171,13 @@ function getLazyRealPrisma(): any {
   }
 
   const dbUrl = process.env.DATABASE_URL;
-  const isDirectDb = Boolean(
+  const isRemoteDb = Boolean(
     dbUrl &&
-    dbUrl.startsWith('mysql://') &&
+    /^(postgres|postgresql|mysql):\/\//.test(dbUrl) &&
     !dbUrl.includes('localhost') &&
     !dbUrl.includes('127.0.0.1')
   );
+  const isDirectDb = isRemoteDb;
 
   if (!isDirectDb) {
     return null;

@@ -8,16 +8,22 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "import:movies": "npx ts-node scripts/import-movies.ts"
+    "import:movies": "npx ts-node scripts/import-movies.ts",
+    "worker": "ts-node scripts/media-worker.ts",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed-providers": "ts-node scripts/seed-providers.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1048.0",
+    "@aws-sdk/s3-request-presigner": "^3.1048.0",
     "@google/genai": "^2.27.0",
     "@hookform/resolvers": "^3.9.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/client": "^5.19.0",
     "bcryptjs": "^2.4.3",
     "csv-parser": "^3.0.0",
+    "googleapis": "^144.0.0",
+    "hls.js": "^1.5.17",
     "lucide-react": "^1.51.0",
     "motion": "^14.0.0",
     "next": "^15.3.3",

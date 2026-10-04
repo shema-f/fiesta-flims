@@ -193,7 +193,7 @@ export default function MovieDetailPage() {
     }
 
     if (apiMovie) {
-      const parsed = parseSources(apiMovie.fileUrl, apiMovie.resolutions);
+      const parsed = parseSources(apiMovie.fileUrl ?? '', apiMovie.resolutions);
       return {
         id: apiMovie.id,
         title: apiMovie.title,

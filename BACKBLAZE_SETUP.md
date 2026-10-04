@@ -94,7 +94,7 @@ export function generateFileKey(prefix: string, filename: string): string {
 
 ### Upload a Movie
 ```typescript
-import { uploadFile, generateFileKey } from '@/lib/storage';
+import { uploadFile, generateFileKey } from '@/lib/backblaze';
 
 const fileBuffer = await movieFile.arrayBuffer();
 const key = generateFileKey('movies', 'my-movie.mp4');

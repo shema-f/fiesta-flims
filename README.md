@@ -1,104 +1,95 @@
 # Fiesta Flix
 
-Your ultimate destination for streaming and downloading movies in HD quality with Kinyarwanda narrations.
+Streaming and movie-download platform for Kinyarwanda-narrated films.
 
-## Features
-
-- 🎬 Movie streaming with YouTube integration
-- 📥 Download with custom watermark
-- 🎙️ Interpreter/narrator profiles
-- 🎭 Movie/Series badges
-- 📝 Movie request system
-- 👥 Community features (likes, comments, follows)
-- 🔐 Secure authentication with NextAuth.js
+Fiesta Flix is a **media orchestration platform**: the app asks the `StorageManager`
+for a logical asset ("the 1080p stream for movie 123") and the manager decides the
+best provider, quality and delivery method. The web app/API runs on Vercel;
+video bytes travel through object storage + CDN, never through Vercel.
 
 ## Tech Stack
 
-- **Framework**: Next.js 15
-- **Language**: TypeScript
-- **ORM**: Prisma 5
-- **Database**: MySQL (PlanetScale recommended)
-- **Auth**: NextAuth.js
-- **Styling**: Tailwind CSS
-- **Storage**: Backblaze B2
-- **CDN**: Cloudflare
+- **Framework**: Next.js 15 (App Router) + TypeScript
+- **Styling**: Tailwind CSS + motion/react
+- **ORM**: Prisma 5 · **Database**: PostgreSQL (Neon recommended)
+- **Auth**: NextAuth.js (JWT, roles: ADMIN / FAN)
+- **Streaming**: adaptive HLS (`hls.js`)
+- **Transcoding**: FFmpeg/FFprobe worker (run outside Vercel)
+- **Storage**: provider abstraction — Cloudflare R2, Backblaze B2, Amazon S3,
+  generic S3, Telegram, Google Drive, MediaFire
+
+## Architecture
+
+```
+USER → FIESTA FLIX WEB/PWA → NEXT.JS API → STORAGE MANAGER
+     → PROVIDER (R2 / B2 / S3 / Telegram / Drive / MediaFire)
+     → CDN → USER
+```
+
+Key modules:
+
+- `src/lib/storage/` — provider interface, registry, `StorageManager`
+  (source selection, failover, replication, health)
+- `src/lib/media/` — fingerprinting, FFprobe, FFmpeg→HLS, MediaJob service,
+  pipeline, tiering
+- `src/components/video/` — HLS player + quality/subtitle/audio/controls
+- `scripts/media-worker.ts` — background job worker (FFmpeg)
+
+## API
+
+Movies: `GET/POST /api/movies`, `GET /api/movies/:id`,
+`GET /api/movies/:id/{play,download,qualities,subtitles}`,
+`POST /api/movies/:id/view`, `GET/POST /api/watch-history`
+
+Admin (ADMIN only): `/api/admin/media/*`, `/api/admin/storage/*`
+
+Cron: `/api/cron/storage-health`, `/api/cron/tiering`
 
 ## Getting Started
 
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- MySQL database (or PlanetScale account)
-- Backblaze B2 account (for storage)
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/shema-f/fiesta-flims.git
-cd fiesta-flims
-```
-
-2. Install dependencies:
 ```bash
 npm install --legacy-peer-deps
-```
-
-3. Configure environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your actual values
-```
-
-4. Set up the database:
-```bash
-npx prisma generate
-npx prisma migrate dev --name init
-```
-
-5. Run the development server:
-```bash
+cp .env.example .env      # fill in DATABASE_URL, secrets, provider keys
+npx prisma migrate deploy # create the PostgreSQL schema
+npm run db:seed-providers # register storage providers (disabled by default)
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see the application.
+## Media processing
+
+FFmpeg does not run inside Vercel. Create a job from the admin API, then run a
+worker on any machine with FFmpeg installed:
+
+```bash
+npm run worker
+```
+
+Flow: upload → validate → hash → probe → transcode → HLS → upload → verify → READY.
+The same source file is never transcoded twice (SHA-256 fingerprint).
+
+## Deployment (Vercel + Neon)
+
+1. Create a Neon PostgreSQL database and copy the pooled `DATABASE_URL`.
+2. In Vercel, set all environment variables from `.env.example`.
+3. Deploy (Vercel runs `prisma generate && next build`).
+4. Apply the schema once: `npx prisma migrate deploy` (or from CI).
+5. Add storage provider credentials and enable them in the admin dashboard.
+6. Run the media worker on a separate host (Fly.io / Railway / VPS).
+
+`vercel.json` schedules the health and tiering crons.
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | MySQL database connection string |
-| `NEXTAUTH_URL` | Your app URL (http://localhost:3000 for dev) |
-| `NEXTAUTH_SECRET` | Secret key for NextAuth.js |
-| `JWT_SECRET` | Secret key for JWT tokens |
-| `BACKBLAZE_KEY_ID` | Backblaze B2 key ID |
-| `BACKBLAZE_APPLICATION_KEY` | Backblaze B2 application key |
-| `BACKBLAZE_BUCKET_NAME` | Backblaze B2 bucket name |
-| `BACKBLAZE_REGION` | Backblaze B2 region |
-| `BACKBLAZE_ENDPOINT` | Backblaze B2 endpoint |
+See `.env.example` for the full list (database, auth, R2/B2/S3, Telegram,
+Google Drive, MediaFire, media/worker tuning, cron secret).
 
-## Importing Movie Data
+## Notes
 
-1. Create a `movies.csv` file following the format in `MOVIE_DATA_IMPORT_GUIDE.md`
-2. Run the import script:
-```bash
-npm run import:movies
-```
-
-## Deployment
-
-The easiest way to deploy Fiesta Flix is on [Vercel](https://vercel.com):
-
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Add your environment variables
-4. Deploy!
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+- The existing catalog pages still read the legacy `movieData.ts` seed while the
+  catalog is migrated to PostgreSQL; the API and storage layers are already
+  database-backed.
+- No video bytes are ever proxied through Vercel.
 
 ## License
 
-This project is private and proprietary.
+Private and proprietary.

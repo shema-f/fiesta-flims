@@ -59,10 +59,16 @@ async function importMovies() {
           const isFeatured = movieData.isFeatured ? movieData.isFeatured.toLowerCase() === 'true' : false;
           const isActive = movieData.isActive ? movieData.isActive.toLowerCase() === 'true' : true;
 
+          const slug = movieData.title
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)/g, '');
+
           // Create movie
           const movie = await prisma.movie.create({
             data: {
               title: movieData.title,
+              slug,
               description: movieData.description || null,
               narrator: movieData.narrator,
               genre: movieData.genre,

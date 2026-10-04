@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Fiesta Flix — production Prisma schema (PostgreSQL)
+// Source of truth for the movie catalog, video assets, storage providers and media jobs.
 
 generator client {
   provider      = "prisma-client-js"
@@ -7,14 +7,100 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
 
 enum UserRole {
   ADMIN
   FAN
 }
+
+enum MovieStatus {
+  DRAFT
+  PROCESSING
+  READY
+  PUBLISHED
+  ARCHIVED
+  FAILED
+}
+
+enum ContentRightsStatus {
+  UNKNOWN
+  LICENSED
+  PUBLIC_DOMAIN
+  UNAUTHORIZED
+}
+
+enum MediaTier {
+  HOT
+  WARM
+  COLD
+}
+
+enum StorageProviderType {
+  TELEGRAM
+  GOOGLE_DRIVE
+  MEDIAFIRE
+  BACKBLAZE_B2
+  CLOUDFLARE_R2
+  AMAZON_S3
+  S3_COMPATIBLE
+}
+
+enum StoragePurpose {
+  STREAMING
+  DOWNLOAD
+  BACKUP
+}
+
+enum StorageObjectStatus {
+  PENDING
+  ACTIVE
+  MISSING
+  FAILED
+  DELETED
+}
+
+enum MediaJobType {
+  TRANSCODE
+  GENERATE_HLS
+  UPLOAD
+  REPLICATE
+  VERIFY
+}
+
+enum MediaJobStatus {
+  QUEUED
+  PROCESSING
+  TRANSCODING
+  UPLOADING
+  VERIFYING
+  READY
+  FAILED
+  CANCELLED
+}
+
+enum JobLogLevel {
+  INFO
+  WARN
+  ERROR
+}
+
+enum ProviderHealthStatus {
+  HEALTHY
+  DEGRADED
+  DOWN
+  UNKNOWN
+}
+
+// ---------------------------------------------------------------------------
+// Identity / auth
+// ---------------------------------------------------------------------------
 
 model User {
   id            String    @id @default(cuid())
@@ -27,62 +113,549 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Relations
-  uploadedMovies Movie[]     @relation("UploadedMovies")
-  fanClips       FanClip[]
-  requests       MovieRequest[]
-  likes          Like[]
-  follows        Follow[]    @relation("Follower")
-  notifications  Notification[]
-  comments       Comment[]
+  uploadedMovies  Movie[]         @relation("UploadedMovies")
+  fanClips        FanClip[]
+  requests        MovieRequest[]
+  likes           Like[]
+  follows         Follow[]        @relation("Follower")
+  notifications   Notification[]
+  comments        Comment[]
+  reviews         Review[]
+  ratings         Rating[]
+  favorites       Favorite[]
+  watchHistory    WatchHistory[]
+  viewEvents      ViewEvent[]
+  downloads       Download[]
+  mediaJobs       MediaJob[]      @relation("JobActor")
 
   @@index([email])
 }
 
+// ---------------------------------------------------------------------------
+// Catalog — movies and relational metadata
+// ---------------------------------------------------------------------------
+
 model Movie {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  narrator    String
-  genre       String
-  duration    Int      // in seconds
-  releaseYear Int?
-  fileUrl     String
-  thumbnailUrl String?
-  resolutions Json     // { "144p": "...", "360p": "...", "480p": "...", "720p": "..." }
-  views       Int      @default(0)
-  downloads   Int      @default(0)
-  isFeatured  Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  uploaderId  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                     String              @id @default(cuid())
+  slug                   String              @unique
+  title                  String
+  originalTitle          String?
+  description            String?
+  synopsis               String?
+  releaseYear            Int?
+  duration               Int                 @default(0) // seconds
+  ageRating              String?
+  status                 MovieStatus         @default(DRAFT)
+  tier                   MediaTier           @default(COLD)
+  poster                 String?
+  backdrop               String?
+  trailer                String?
+  rating                 Float               @default(0)
+  ratingCount            Int                 @default(0)
+  viewCount              Int                 @default(0)
+  downloadCount          Int                 @default(0)
 
-  // Relations
-  uploader    User      @relation("UploadedMovies", fields: [uploaderId], references: [id], onDelete: Cascade)
-  requests    MovieRequest[]
+  // Copyright / rights tracking (spec §41)
+  contentRightsStatus    ContentRightsStatus @default(UNKNOWN)
+  licenseStart           DateTime?
+  licenseEnd             DateTime?
+  rightsOwner            String?
+  distributionTerritories String[]           @default([])
 
-  @@index([narrator])
-  @@index([genre])
+  // Legacy/compat columns kept so existing UI keeps working during migration
+  narrator               String              @default("")
+  genre                  String              @default("")
+  fileUrl                String?
+  thumbnailUrl           String?
+  resolutions            Json?
+  views                  Int                 @default(0)
+  downloads              Int                 @default(0)
+  isFeatured             Boolean             @default(false)
+  isActive               Boolean             @default(true)
+
+  uploaderId             String
+  uploader               User                @relation("UploadedMovies", fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime            @updatedAt
+  publishedAt            DateTime?
+  lastAccessedAt         DateTime?
+
+  genres        MovieGenre[]
+  interpreters  MovieInterpreter[]
+  languages     MovieLanguage[]
+  videoAssets   VideoAsset[]
+  posters       MoviePoster[]
+  backdrops     MovieBackdrop[]
+  trailers      Trailer[]
+  reviews       Review[]
+  ratings       Rating[]
+  favorites     Favorite[]
+  watchHistory  WatchHistory[]
+  viewEvents     ViewEvent[]
+  downloadEvents Download[]
+  requests      MovieRequest[]
+  mediaJobs     MediaJob[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([releaseYear])
+  @@index([createdAt])
+  @@index([publishedAt])
+  @@index([viewCount])
+  @@index([tier])
   @@index([isFeatured])
+  @@index([isActive])
+  @@index([status, publishedAt])
 }
 
-model FanClip {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  videoUrl    String
-  thumbnailUrl String?
-  duration    Int      // in seconds
-  userId      String
-  likesCount  Int      @default(0)
-  isApproved  Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Genre {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  slug      String       @unique
+  movies    MovieGenre[]
 
-  // Relations
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([name])
+}
+
+model MovieGenre {
+  movieId String
+  genreId String
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, genreId])
+  @@index([genreId])
+}
+
+model Interpreter {
+  id          String             @id @default(cuid())
+  name        String             @unique
+  slug        String             @unique
+  bio         String?
+  image       String?
+  rating      Float              @default(0)
+  moviesCount Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  movies      MovieInterpreter[]
+
+  @@index([name])
+}
+
+model MovieInterpreter {
+  movieId       String
+  interpreterId String
+  role          String?
+  movie         Movie       @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  interpreter   Interpreter @relation(fields: [interpreterId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, interpreterId])
+  @@index([interpreterId])
+}
+
+model Language {
+  id        String          @id @default(cuid())
+  code      String          @unique
+  name      String
+  movies    MovieLanguage[]
+
+  @@index([name])
+}
+
+model MovieLanguage {
+  movieId    String
+  languageId String
+  isOriginal Boolean  @default(false)
+  movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  language   Language @relation(fields: [languageId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, languageId])
+  @@index([languageId])
+}
+
+model Country {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  @@index([name])
+}
+
+// ---------------------------------------------------------------------------
+// Video assets — logical movie separated from physical files
+// ---------------------------------------------------------------------------
+
+model VideoAsset {
+  id            String            @id @default(cuid())
+  movieId       String
+  movie         Movie             @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  label         String?
+  fingerprint   String?           @unique // SHA-256 of source file (spec §11 / §37)
+  status        MovieStatus       @default(PROCESSING)
+  sourceUrl     String?
+  duration      Int?
+  width         Int?
+  height        Int?
+  bitrate       Int?
+  codec         String?
+  sizeBytes     BigInt?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  qualities     VideoQuality[]
+  subtitles     VideoSubtitle[]
+  audioTracks   VideoAudioTrack[]
+  manifests     StreamingManifest[]
+  storageObjects StorageObject[]
+
+  @@index([movieId])
+  @@index([fingerprint])
+  @@index([status])
+}
+
+model VideoQuality {
+  id           String          @id @default(cuid())
+  videoAssetId String
+  videoAsset   VideoAsset      @relation(fields: [videoAssetId], references: [id], onDelete: Cascade)
+  label        String          // e.g. "1080p", "720p", "480p", "4K"
+  height       Int
+  width        Int?
+  bitrate      Int?
+  codec        String          @default("h264")
+  isHls        Boolean         @default(false)
+  sizeBytes    BigInt?
+  createdAt    DateTime        @default(now())
+
+  storageObjects StorageObject[]
+
+  @@unique([videoAssetId, label])
+  @@index([videoAssetId])
+  @@index([height])
+}
+
+model VideoSubtitle {
+  id           String     @id @default(cuid())
+  videoAssetId String
+  videoAsset   VideoAsset @relation(fields: [videoAssetId], references: [id], onDelete: Cascade)
+  language     String
+  label        String
+  url          String
+  isDefault    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  @@index([videoAssetId])
+}
+
+model VideoAudioTrack {
+  id           String     @id @default(cuid())
+  videoAssetId String
+  videoAsset   VideoAsset @relation(fields: [videoAssetId], references: [id], onDelete: Cascade)
+  language     String
+  label        String
+  codec        String     @default("aac")
+  channels     Int        @default(2)
+  isDefault    Boolean    @default(false)
+
+  @@index([videoAssetId])
+}
+
+model StreamingManifest {
+  id           String     @id @default(cuid())
+  videoAssetId String
+  videoAsset   VideoAsset @relation(fields: [videoAssetId], references: [id], onDelete: Cascade)
+  type         String     @default("HLS") // HLS | DASH
+  url          String
+  storageObjectId String?
+  createdAt    DateTime   @default(now())
+
+  @@index([videoAssetId])
+}
+
+// ---------------------------------------------------------------------------
+// Artwork
+// ---------------------------------------------------------------------------
+
+model MoviePoster {
+  id        String   @id @default(cuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  url       String
+  width     Int?
+  language  String?
+  createdAt DateTime @default(now())
+
+  @@index([movieId])
+}
+
+model MovieBackdrop {
+  id        String   @id @default(cuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  url       String
+  width     Int?
+  createdAt DateTime @default(now())
+
+  @@index([movieId])
+}
+
+model Trailer {
+  id        String   @id @default(cuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  url       String
+  label     String?
+  createdAt DateTime @default(now())
+
+  @@index([movieId])
+}
+
+// ---------------------------------------------------------------------------
+// Engagement
+// ---------------------------------------------------------------------------
+
+model Review {
+  id        String   @id @default(cuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([movieId])
+  @@index([userId])
+}
+
+model Rating {
+  id        String   @id @default(cuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([movieId, userId])
+  @@index([movieId])
+  @@index([userId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  movieId   String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([movieId, userId])
+  @@index([userId])
+  @@index([movieId])
+}
+
+model WatchHistory {
+  id              String   @id @default(cuid())
+  movieId         String
+  movie           Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  positionSeconds Int      @default(0)
+  durationSeconds Int      @default(0)
+  completed       Boolean  @default(false)
+  lastWatchedAt   DateTime @default(now())
+
+  @@unique([movieId, userId])
+  @@index([userId])
+  @@index([movieId])
+  @@index([lastWatchedAt])
+}
+
+model Download {
+  id         String   @id @default(cuid())
+  movieId    String
+  movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  quality    String?
+  providerId String?
+  status     String   @default("STARTED")
+  ipHash     String?
+  createdAt  DateTime @default(now())
+
+  @@index([movieId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ViewEvent {
+  id             String   @id @default(cuid())
+  movieId        String
+  movie          Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId      String?
+  quality        String?
+  provider       String?
+  country        String?
+  device         String?
+  startedAt      DateTime @default(now())
+  watchedSeconds Int      @default(0)
+  completed      Boolean  @default(false)
+  startupTimeMs  Int?
+  bufferEvents   Int?
+
+  @@index([movieId])
+  @@index([userId])
+  @@index([startedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Storage providers / objects
+// ---------------------------------------------------------------------------
+
+model StorageProvider {
+  id            String              @id @default(cuid())
+  type          StorageProviderType
+  name          String              @unique
+  slug          String              @unique
+  enabled       Boolean             @default(false)
+  priority      Int                 @default(50)
+  tiers         MediaTier[]         @default([COLD])
+  purposes      StoragePurpose[]    @default([BACKUP])
+  capabilities  Json                // { streaming, downloads, resumableUpload, signedUrls, rangeRequests, publicAccess }
+  config        Json?               // non-secret provider config
+  // Health
+  healthStatus  ProviderHealthStatus @default(UNKNOWN)
+  latencyMs     Int?
+  lastSuccessAt DateTime?
+  lastFailureAt DateTime?
+  failureCount  Int                 @default(0)
+  successRate   Float               @default(1)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  objects       StorageObject[]
+  healthChecks  ProviderHealthCheck[]
+  mediaJobs     MediaJob[]
+
+  @@index([enabled])
+  @@index([priority])
+  @@index([type])
+}
+
+model ProviderHealthCheck {
+  id             String              @id @default(cuid())
+  providerId     String
+  provider       StorageProvider     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  status         ProviderHealthStatus
+  latencyMs      Int?
+  success        Boolean
+  message        String?
+  checkedAt      DateTime            @default(now())
+
+  @@index([providerId])
+  @@index([checkedAt])
+}
+
+model StorageObject {
+  id                String              @id @default(cuid())
+  providerId        String
+  provider          StorageProvider     @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  videoAssetId      String?
+  videoAsset        VideoAsset?         @relation(fields: [videoAssetId], references: [id], onDelete: SetNull)
+  qualityId         String?
+  quality           VideoQuality?       @relation(fields: [qualityId], references: [id], onDelete: SetNull)
+  externalObjectId  String?             // S3 key, Drive file id
+  externalMessageId String?             // Telegram message id
+  path              String?
+  filename          String?
+  mimeType          String?
+  sizeBytes         BigInt?
+  checksum          String?
+  status            StorageObjectStatus @default(PENDING)
+  purpose           StoragePurpose      @default(BACKUP)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([providerId])
+  @@index([videoAssetId])
+  @@index([qualityId])
+  @@index([status])
+  @@index([purpose])
+  @@index([providerId, purpose, status])
+}
+
+// ---------------------------------------------------------------------------
+// Media processing jobs
+// ---------------------------------------------------------------------------
+
+model MediaJob {
+  id            String         @id @default(cuid())
+  movieId       String
+  movie         Movie          @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  sourceAssetId String?
+  providerId    String?
+  provider      StorageProvider? @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  jobType       MediaJobType
+  status        MediaJobStatus @default(QUEUED)
+  progress      Int            @default(0)
+  attempts      Int            @default(0)
+  fingerprint   String?
+  options       Json?
+  result        Json?
+  errorMessage  String?
+  actorId       String?
+  actor         User?          @relation("JobActor", fields: [actorId], references: [id], onDelete: SetNull)
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  logs          MediaJobLog[]
+
+  @@index([movieId])
+  @@index([status])
+  @@index([jobType])
+  @@index([createdAt])
+  @@index([status, createdAt])
+}
+
+model MediaJobLog {
+  id        String       @id @default(cuid())
+  jobId     String
+  job       MediaJob     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  level     JobLogLevel  @default(INFO)
+  message   String
+  metadata  Json?
+  createdAt DateTime     @default(now())
+
+  @@index([jobId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Community (unchanged behaviour, preserved)
+// ---------------------------------------------------------------------------
+
+model FanClip {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  videoUrl     String
+  thumbnailUrl String?
+  duration     Int
+  userId       String
+  likesCount   Int      @default(0)
+  isApproved   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isApproved])
@@ -97,11 +670,9 @@ model MovieRequest {
   isFulfilled Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  // Relations
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  movie       Movie?    @relation(fields: [movieId], references: [id])
   movieId     String?
+  movie       Movie?   @relation(fields: [movieId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isFulfilled])
@@ -109,28 +680,24 @@ model MovieRequest {
 }
 
 model Like {
-  id        String   @id @default(cuid())
-  userId    String
-  targetId  String   // can be movieId or fanClipId
-  targetType String   // "MOVIE" or "FAN_CLIP"
-  createdAt DateTime @default(now())
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  targetId   String
+  targetType String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, targetId, targetType])
   @@index([userId])
 }
 
 model Follow {
-  id           String   @id @default(cuid())
-  followerId   String
-  followingId  String   // can be userId or interpreterName
-  followingType String  // "USER" or "INTERPRETER"
-  createdAt    DateTime @default(now())
-
-  // Relations
-  follower     User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  id            String   @id @default(cuid())
+  followerId    String
+  followingId   String
+  followingType String
+  createdAt     DateTime @default(now())
+  follower      User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId, followingType])
   @@index([followerId])
@@ -138,16 +705,14 @@ model Follow {
 }
 
 model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  userId    String
-  targetId  String   // can be movieId or fanClipId
-  targetType String  // "MOVIE" or "FAN_CLIP"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  content    String
+  userId     String
+  targetId   String
+  targetType String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([targetId, targetType])
@@ -158,12 +723,10 @@ model Notification {
   userId    String
   title     String
   message   String
-  type      String   // "NEW_MOVIE", "NEW_FOLLOWER", "COMMENT", "LIKE"
+  type      String
   isRead    Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
-
-  // Relations
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
