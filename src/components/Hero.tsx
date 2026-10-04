@@ -8,14 +8,15 @@ export default function Hero() {
       <div 
         className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat scale-105 transform motion-safe:animate-pulse duration-[10000ms]"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop')`,
+          backgroundImage: `url('/hero-cinema.jpg')`,
         }}
       />
 
-      {/* Layered cinematic dark vignettes and gradient masks */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-black/85 to-black/70" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background via-transparent to-background/90" />
-      <div className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
+      {/* Layered cinematic dark vignettes and gradient masks tailored for the blue cinema auditorium */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-black/80 to-black/60" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background/95 via-transparent to-background/95" />
+      <div className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-blue-600/20 blur-[140px]" />
+      <div className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -z-10 h-[350px] w-[700px] rounded-full bg-primary/15 blur-[120px]" />
 
       <div className="container-tight pb-16 pt-28 sm:pt-36 text-center relative z-10">
         {/* Top Eyebrow Badge */}

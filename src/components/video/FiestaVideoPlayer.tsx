@@ -77,6 +77,31 @@ export default function FiestaVideoPlayer({
   const [deviceReady4k, setDeviceReady4k] = useState(true);
   const [qualityNotification, setQualityNotification] = useState<string | null>(null);
 
+  const currentLevelRef = useRef(currentLevel);
+  currentLevelRef.current = currentLevel;
+
+  // Dynamically adapt stream levels based on browser-reported network speed
+  const applyNetworkAdaptiveLevel = useCallback(
+    (speedMbps: number) => {
+      const hls = hlsRef.current;
+      if (!hls || !hls.levels || hls.levels.length === 0) return;
+
+      if (speedMbps >= 25 && deviceReady4k) {
+        hls.autoLevelCapping = -1; // Full 4K UHD stream allowed
+      } else if (speedMbps >= 12) {
+        const idx = hls.levels.findIndex((l: any) => l.height && l.height <= 1080);
+        hls.autoLevelCapping = idx >= 0 ? idx : -1;
+      } else if (speedMbps >= 5) {
+        const idx = hls.levels.findIndex((l: any) => l.height && l.height <= 720);
+        hls.autoLevelCapping = idx >= 0 ? idx : -1;
+      } else {
+        const idx = hls.levels.findIndex((l: any) => l.height && l.height <= 480);
+        hls.autoLevelCapping = idx >= 0 ? idx : 0;
+      }
+    },
+    [deviceReady4k]
+  );
+
   // Detect network speed and device 4K readiness
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -89,12 +114,24 @@ export default function FiestaVideoPlayer({
       const speed = conn.downlink || (conn.effectiveType === '4g' ? 35 : 12);
       setNetworkSpeedMbps(speed);
       const updateSpeed = () => {
-        if (conn.downlink) setNetworkSpeedMbps(conn.downlink);
+        if (conn.downlink) {
+          const newSpeed = conn.downlink;
+          setNetworkSpeedMbps(newSpeed);
+          if (currentLevelRef.current === -1) {
+            applyNetworkAdaptiveLevel(newSpeed);
+            setQualityNotification(
+              newSpeed >= 25
+                ? `✨ Browser Speed: ~${newSpeed.toFixed(0)} Mbps → 4K UHD Unlocked`
+                : `⚡ Browser Speed: ~${newSpeed.toFixed(0)} Mbps → Stream dynamically adapted to prevent buffering`
+            );
+            setTimeout(() => setQualityNotification(null), 3000);
+          }
+        }
       };
       conn.addEventListener('change', updateSpeed);
       return () => conn.removeEventListener('change', updateSpeed);
     }
-  }, []);
+  }, [applyNetworkAdaptiveLevel]);
 
   const isHls = useMemo(() => src.includes('.m3u8'), [src]);
 
@@ -297,15 +334,37 @@ export default function FiestaVideoPlayer({
     video.playbackRate = rate;
   }, []);
 
-  const selectLevel = useCallback((index: number) => {
-    setCurrentLevel(index);
-    if (hlsRef.current) {
-      hlsRef.current.currentLevel = index;
-    }
-    if (index >= 0) {
-      setIs4kActive(index === 4 || index === (hlsRef.current?.levels?.length ? hlsRef.current.levels.length - 1 : 4));
-    }
-  }, []);
+  const selectLevel = useCallback(
+    (index: number) => {
+      setCurrentLevel(index);
+      if (hlsRef.current) {
+        if (index === -1) {
+          hlsRef.current.currentLevel = -1; // hls auto
+          applyNetworkAdaptiveLevel(networkSpeedMbps);
+          setIs4kActive(true);
+          setQualityNotification(
+            `⚡ Adaptive 4K Active • Dynamic stream adapting to browser speed (~${networkSpeedMbps.toFixed(0)} Mbps)`
+          );
+        } else {
+          hlsRef.current.currentLevel = index;
+          const selected = levels.find((l) => l.index === index);
+          const is4k = (selected?.height && selected.height >= 2160) || index === 4;
+          setIs4kActive(is4k);
+          if (is4k) {
+            if (networkSpeedMbps >= 25) {
+              setQualityNotification(`✨ 4K UHD Locked • 2160p (Speed: ~${networkSpeedMbps.toFixed(0)} Mbps optimal)`);
+            } else {
+              setQualityNotification(`⚠️ 4K UHD Locked • Speed (~${networkSpeedMbps.toFixed(0)} Mbps) may experience buffering on slow lines`);
+            }
+          } else {
+            setQualityNotification(`📺 Stream set to ${selected?.label || 'Manual resolution'}`);
+          }
+        }
+        setTimeout(() => setQualityNotification(null), 3200);
+      }
+    },
+    [levels, networkSpeedMbps, applyNetworkAdaptiveLevel]
+  );
 
   const toggle4k = useCallback(() => {
     setIs4kActive((prev) => {
@@ -314,10 +373,13 @@ export default function FiestaVideoPlayer({
         // Find highest level or set 4K
         const maxLevel = hlsRef.current?.levels?.length ? hlsRef.current.levels.length - 1 : 4;
         selectLevel(maxLevel);
-        const speedText = networkSpeedMbps > 25 ? `${networkSpeedMbps.toFixed(0)} Mbps (Optimal)` : `${networkSpeedMbps.toFixed(0)} Mbps (May buffer)`;
+        const speedText =
+          networkSpeedMbps >= 25
+            ? `${networkSpeedMbps.toFixed(0)} Mbps (Optimal)`
+            : `${networkSpeedMbps.toFixed(0)} Mbps (May buffer)`;
         setQualityNotification(`✨ 4K UHD Enabled • 2160p HDR • Network: ${speedText}`);
       } else {
-        selectLevel(-1); // Auto
+        selectLevel(-1); // Auto adaptive
         setQualityNotification(`⚡ Adaptive Auto Quality • Network-Optimized (~${networkSpeedMbps.toFixed(0)} Mbps)`);
       }
       setTimeout(() => setQualityNotification(null), 3200);
