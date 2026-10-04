@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { MessageCircle, Send, Sparkles, Clock, ShieldCheck, HeartHandshake } from 'lucide-react';
 
 export default function Footer() {
   const [isPulsing, setIsPulsing] = useState(false);
@@ -9,7 +10,7 @@ export default function Footer() {
   useEffect(() => {
     const interval = setInterval(() => {
       setIsPulsing(prev => !prev);
-    }, 1500);
+    }, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -27,7 +28,7 @@ export default function Footer() {
     },
     {
       name: 'Telegram',
-      url: 'https://t.me/fiestaflix',
+      url: 'https://t.me/fiestaflix_movies',
       icon: (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
           <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
@@ -44,7 +45,7 @@ export default function Footer() {
           <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
         </svg>
       ),
-      color: '#000000',
+      color: '#ffffff',
       animated: false,
     },
     {
@@ -72,17 +73,24 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-[#050505] pt-25 pb-6 border-t border-white/10">
+    <footer className="bg-[#050505] pt-20 pb-8 border-t border-white/10 relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
+
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-10">
-          <div className="lg:col-span-2">
-            <h3 className="text-2xl font-extrabold mb-4 bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
-              Fiesta<span className="text-white">Flix</span>
-            </h3>
-            <p className="text-muted text-sm mb-6">
-              Your ultimate destination for streaming and downloading movies in HD quality.
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+          {/* Brand & Talk to Us Showcase */}
+          <div className="lg:col-span-2 space-y-6">
+            <div>
+              <h3 className="text-2xl font-black mb-2 bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
+                Fiesta<span className="text-white">Flix</span>
+              </h3>
+              <p className="text-zinc-400 text-sm max-w-sm">
+                Your premier destination for streaming and downloading movies with authentic Kinyarwanda narration (*Agasobanuye*).
+              </p>
+            </div>
             
+            {/* Social Icons with Glowing "Talk to us!" Indicator */}
             <div className="flex items-center gap-4">
               {socialLinks.map((social) => (
                 <a
@@ -90,70 +98,132 @@ export default function Footer() {
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`relative flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 ${
+                  className={`relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${
                     social.animated 
-                      ? 'bg-green-500/20 hover:bg-green-500/30 scale-110' 
-                      : 'bg-white/10 hover:bg-white/20 hover:-translate-y-1'
+                      ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 scale-105 shadow-lg shadow-emerald-500/10' 
+                      : 'bg-white/5 hover:bg-white/15 hover:-translate-y-1 border border-white/10'
                   }`}
                   style={{ color: social.color }}
                   aria-label={social.name}
                 >
-                  {social.animated && (
-                    <span 
-                      className={`absolute -inset-0.5 rounded-2xl ${isPulsing ? 'animate-ping opacity-75' : 'opacity-0'}`}
-                      style={{ backgroundColor: social.color + '40' }}
-                    />
-                  )}
                   {social.icon}
+
+                  {/* Modern Elevated "Talk to us!" Pill Badge */}
                   {social.animated && (
-                    <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap animate-bounce">
-                      Talk to us!
+                    <span className="absolute -top-3.5 -right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[11px] font-black whitespace-nowrap shadow-lg shadow-emerald-500/40 border border-emerald-300/40 transform hover:scale-105 transition-transform">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                      <span>Talk to us!</span>
                     </span>
                   )}
                 </a>
               ))}
             </div>
+
+            {/* Dedicated "Talk to Us" Live Support Card */}
+            <div className="p-4 rounded-2xl bg-zinc-900/70 border border-zinc-800/80 backdrop-blur-md space-y-3 max-w-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    Talk to Us Directly
+                  </span>
+                </div>
+                <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  Online 24/7
+                </span>
+              </div>
+              
+              <p className="text-xs text-zinc-300">
+                Have a movie request, interpreter inquiry, or technical issue? Our Rwandan support team is always ready to chat.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <a
+                  href="https://wa.me/250780000000"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-600/20 hover:scale-[1.02]"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>WhatsApp Chat</span>
+                </a>
+                <a
+                  href="https://t.me/FiestaFlixBot"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white text-xs font-bold border border-zinc-700 transition-all hover:scale-[1.02]"
+                >
+                  <Send className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Telegram Bot</span>
+                </a>
+              </div>
+            </div>
           </div>
           
           <div>
-            <h4 className="text-base font-semibold mb-4">Quick Links</h4>
+            <h4 className="text-base font-bold text-white mb-4">Quick Links</h4>
             <ul className="space-y-2.5">
-              <li><Link href="#home" className="text-muted text-sm hover:text-primary transition-colors">Home</Link></li>
-              <li><Link href="/movies" className="text-muted text-sm hover:text-primary transition-colors">Movies</Link></li>
-              <li><Link href="/rwandan-movies" className="text-muted text-sm hover:text-primary transition-colors">🇷🇼 Rwandan Movies</Link></li>
-              <li><Link href="#series" className="text-muted text-sm hover:text-primary transition-colors">TV Shows</Link></li>
-              <li><Link href="/interpreters" className="text-muted text-sm hover:text-primary transition-colors">Interpreters</Link></li>
-              <li><Link href="/community" className="text-muted text-sm hover:text-primary transition-colors">Community</Link></li>
-              <li><Link href="/request-movie" className="text-muted text-sm hover:text-primary transition-colors">📋 Request Movie</Link></li>
-              <li><Link href="/search" className="text-muted text-sm hover:text-primary transition-colors">Search</Link></li>
+              <li><Link href="/" className="text-zinc-400 text-sm hover:text-primary transition-colors">Home</Link></li>
+              <li><Link href="/movies" className="text-zinc-400 text-sm hover:text-primary transition-colors">Movies Catalog</Link></li>
+              <li><Link href="/favorites" className="text-zinc-400 text-sm hover:text-primary transition-colors">❤️ My Favorites</Link></li>
+              <li><Link href="/rwandan-movies" className="text-zinc-400 text-sm hover:text-primary transition-colors">🇷🇼 Rwandan Movies</Link></li>
+              <li><Link href="/#series" className="text-zinc-400 text-sm hover:text-primary transition-colors">TV Shows & Series</Link></li>
+              <li><Link href="/interpreters" className="text-zinc-400 text-sm hover:text-primary transition-colors">Interpreters</Link></li>
+              <li><Link href="/community" className="text-zinc-400 text-sm hover:text-primary transition-colors">Community Forum</Link></li>
+              <li><Link href="/request-movie" className="text-zinc-400 text-sm hover:text-primary transition-colors">📋 Request Movie</Link></li>
             </ul>
           </div>
           
           <div>
-            <h4 className="text-base font-semibold mb-4">Support</h4>
+            <h4 className="text-base font-bold text-white mb-4">Talk to Us & Support</h4>
             <ul className="space-y-2.5">
-              <li><a href="#" className="text-muted text-sm hover:text-primary transition-colors">FAQ</a></li>
-              <li><a href="#" className="text-muted text-sm hover:text-primary transition-colors">Contact Us</a></li>
-              <li><a href="#" className="text-muted text-sm hover:text-primary transition-colors">Help Center</a></li>
-              <li><a href="#" className="text-muted text-sm hover:text-primary transition-colors">Download App</a></li>
+              <li>
+                <a 
+                  href="https://wa.me/250780000000" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-emerald-400 text-sm font-semibold hover:text-emerald-300 transition-colors flex items-center gap-1.5"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Talk to Us on WhatsApp</span>
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://t.me/fiestaflix_movies" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-zinc-400 text-sm hover:text-primary transition-colors flex items-center gap-1.5"
+                >
+                  <Send className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Telegram Movie Cloud</span>
+                </a>
+              </li>
+              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">FAQ & Download Help</a></li>
+              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">How to Stream in 4K</a></li>
+              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">Mobile App PWA</a></li>
             </ul>
           </div>
           
           <div>
-            <h4 className="text-base font-semibold mb-4">Legal</h4>
+            <h4 className="text-base font-bold text-white mb-4">Legal & Privacy</h4>
             <ul className="space-y-2.5">
-              <li><a href="#" className="text-muted text-sm hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="text-muted text-sm hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="text-muted text-sm hover:text-primary transition-colors">DMCA</a></li>
-              <li><a href="#" className="text-muted text-sm hover:text-primary transition-colors">Cookie Policy</a></li>
+              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">Privacy Policy</a></li>
+              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">Terms of Service</a></li>
+              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">DMCA Notice</a></li>
+              <li><a href="#" className="text-zinc-400 text-sm hover:text-primary transition-colors">Content Guidelines</a></li>
             </ul>
           </div>
         </div>
         
-        <div className="pt-6 border-t border-white/10 text-center">
-          <p className="text-muted text-sm">
-            &copy; 2026 Fiesta Flix. All rights reserved.
+        <div className="pt-6 border-t border-zinc-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+          <p>
+            &copy; 2026 Fiesta Flix. All rights reserved. Made for Rwandan movie lovers worldwide.
           </p>
+          <div className="flex items-center gap-2 text-zinc-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span>Fast CDN Streaming • 100% Ad-Free Telegram Downloads</span>
+          </div>
         </div>
       </div>
     </footer>

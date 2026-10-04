@@ -58,6 +58,25 @@ body {
   }
 }
 
+@keyframes searchSlideIn {
+  0% {
+    transform: translateX(-6px);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(4px);
+    opacity: 1;
+  }
+}
+
+#searchInput {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#searchInput:focus {
+  animation: searchSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .animate-fadeInUp {
   animation: fadeInUp 1s ease;
 }

@@ -90,16 +90,21 @@ export default function Header() {
             {/* Search Input */}
             <form
               onSubmit={handleSearch}
-              className="hidden sm:flex items-center bg-zinc-900/80 rounded-full px-3.5 py-1.5 border border-zinc-700/80 focus-within:border-primary transition-all"
+              className="hidden sm:flex items-center bg-zinc-900/80 rounded-full px-3.5 py-1.5 border border-zinc-700/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40 focus-within:shadow-[0_0_20px_rgba(249,115,22,0.3)] focus-within:bg-zinc-900 transition-all duration-300 ease-out group"
             >
               <input
+                id="searchInput"
                 type="text"
-                placeholder="Search movies..."
+                placeholder="Search movies, narrators..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-white text-xs w-36 lg:w-44 placeholder:text-zinc-500"
+                className="bg-transparent border-none outline-none text-white text-xs w-36 lg:w-44 focus:w-56 lg:focus:w-72 placeholder:text-zinc-500 transition-all duration-300 ease-out focus:translate-x-1"
               />
-              <button type="submit" className="text-zinc-400 hover:text-primary transition-colors" aria-label="Search">
+              <button 
+                type="submit" 
+                className="text-zinc-400 group-focus-within:text-primary transition-all duration-300 hover:scale-110 active:scale-95" 
+                aria-label="Search"
+              >
                 <Search className="w-4 h-4" />
               </button>
             </form>
@@ -113,6 +118,17 @@ export default function Header() {
             >
               <Send className="w-3.5 h-3.5 -rotate-12" />
               <span>Telegram</span>
+            </a>
+
+            {/* Talk to Us WhatsApp Button */}
+            <a
+              href="https://wa.me/250780000000"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all shadow-sm shadow-emerald-500/10 group"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover:scale-125 transition-transform animate-pulse" />
+              <span>Talk to Us</span>
             </a>
 
             {/* User Menu or Auth */}
