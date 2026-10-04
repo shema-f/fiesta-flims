@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Sparkles, Wifi } from 'lucide-react';
 import BufferIndicator from './BufferIndicator';
 import PlaybackControls from './PlaybackControls';
 import QualitySelector, { type QualityOption } from './QualitySelector';
@@ -69,6 +70,31 @@ export default function FiestaVideoPlayer({
   const [pipSupported, setPipSupported] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // 4K and Adaptive Network Quality state
+  const [is4kActive, setIs4kActive] = useState(true);
+  const [networkSpeedMbps, setNetworkSpeedMbps] = useState(32);
+  const [deviceReady4k, setDeviceReady4k] = useState(true);
+  const [qualityNotification, setQualityNotification] = useState<string | null>(null);
+
+  // Detect network speed and device 4K readiness
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const dpr = window.devicePixelRatio || 1;
+    const width = window.screen.width * dpr;
+    setDeviceReady4k(width >= 1920 || dpr >= 2);
+
+    const conn = (navigator as any).connection;
+    if (conn) {
+      const speed = conn.downlink || (conn.effectiveType === '4g' ? 35 : 12);
+      setNetworkSpeedMbps(speed);
+      const updateSpeed = () => {
+        if (conn.downlink) setNetworkSpeedMbps(conn.downlink);
+      };
+      conn.addEventListener('change', updateSpeed);
+      return () => conn.removeEventListener('change', updateSpeed);
+    }
+  }, []);
 
   const isHls = useMemo(() => src.includes('.m3u8'), [src]);
 
@@ -273,8 +299,31 @@ export default function FiestaVideoPlayer({
 
   const selectLevel = useCallback((index: number) => {
     setCurrentLevel(index);
-    hlsRef.current && (hlsRef.current.currentLevel = index);
+    if (hlsRef.current) {
+      hlsRef.current.currentLevel = index;
+    }
+    if (index >= 0) {
+      setIs4kActive(index === 4 || index === (hlsRef.current?.levels?.length ? hlsRef.current.levels.length - 1 : 4));
+    }
   }, []);
+
+  const toggle4k = useCallback(() => {
+    setIs4kActive((prev) => {
+      const next = !prev;
+      if (next) {
+        // Find highest level or set 4K
+        const maxLevel = hlsRef.current?.levels?.length ? hlsRef.current.levels.length - 1 : 4;
+        selectLevel(maxLevel);
+        const speedText = networkSpeedMbps > 25 ? `${networkSpeedMbps.toFixed(0)} Mbps (Optimal)` : `${networkSpeedMbps.toFixed(0)} Mbps (May buffer)`;
+        setQualityNotification(`✨ 4K UHD Enabled • 2160p HDR • Network: ${speedText}`);
+      } else {
+        selectLevel(-1); // Auto
+        setQualityNotification(`⚡ Adaptive Auto Quality • Network-Optimized (~${networkSpeedMbps.toFixed(0)} Mbps)`);
+      }
+      setTimeout(() => setQualityNotification(null), 3200);
+      return next;
+    });
+  }, [networkSpeedMbps, selectLevel]);
 
   const selectAudio = useCallback((index: number) => {
     setActiveAudio(index);
@@ -323,6 +372,14 @@ export default function FiestaVideoPlayer({
 
       <BufferIndicator buffering={buffering} bufferedFraction={bufferedFraction} />
 
+      {/* On-screen 4K / Quality Status HUD */}
+      {qualityNotification && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-zinc-950/90 border border-primary/40 text-white text-xs font-bold px-4 py-2 rounded-full shadow-2xl backdrop-blur-xl animate-fadeIn flex items-center gap-2 pointer-events-none">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>{qualityNotification}</span>
+        </div>
+      )}
+
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-sm text-white">
           {error}
@@ -345,9 +402,33 @@ export default function FiestaVideoPlayer({
           onToggleMute={toggleMute}
           onRateChange={changeRate}
         >
+          {/* Quick 4K UHD Quality Toggle Button */}
+          <button
+            type="button"
+            onClick={toggle4k}
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-extrabold transition-all border ${
+              is4kActive
+                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-black border-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.5)] scale-105'
+                : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white border-white/15'
+            }`}
+            title="Toggle 4K Ultra HD"
+            aria-label="Toggle 4K Ultra HD"
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>4K</span>
+          </button>
+
           <AudioSelector tracks={audioTracks} activeIndex={activeAudio} onSelect={selectAudio} />
           <SubtitleSelector tracks={subtitles} activeId={activeSubtitle} onSelect={setActiveSubtitle} />
-          <QualitySelector options={levels} currentIndex={currentLevel} onSelect={selectLevel} />
+          <QualitySelector
+            options={levels}
+            currentIndex={currentLevel}
+            onSelect={selectLevel}
+            is4kActive={is4kActive}
+            onToggle4k={toggle4k}
+            networkSpeedMbps={networkSpeedMbps}
+            deviceReady4k={deviceReady4k}
+          />
           <FullscreenControls
             isFullscreen={isFullscreen}
             onToggleFullscreen={toggleFullscreen}

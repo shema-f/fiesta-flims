@@ -21,21 +21,31 @@ import {
   LogOut,
   Clapperboard,
   HelpCircle,
+  Play,
+  ArrowRight,
 } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import NotificationToast from '@/components/NotificationToast';
 import AppLogo from '@/components/AppLogo';
+
+interface SearchResultPreview {
+  movies: Array<{ id: string; title: string; releaseYear: number; narrator?: string; poster?: string }>;
+  interpreters: Array<{ id: number; slug: string; name: string; image: string; followers: number }>;
+}
 
 export default function Header() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResultPreview | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +70,9 @@ export default function Header() {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false);
       }
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchResults(null);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -72,15 +85,48 @@ export default function Header() {
     }
   }, [searchOpen]);
 
+  // Live Instant Search with debounce
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      setSearchResults(null);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((json) => {
+          if (json?.data) {
+            setSearchResults({
+              movies: (json.data.movies || []).slice(0, 4),
+              interpreters: (json.data.interpreters || []).slice(0, 3),
+            });
+          }
+          setIsSearching(false);
+        })
+        .catch(() => {
+          setIsSearching(false);
+        });
+    }, 180);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      setSearchResults(null);
+      setSearchOpen(false);
       window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
     }
   };
 
-  // Primary core links — clean, focused, no clutter
+  // Primary core links — includes Home and shows active page indicator
   const primaryLinks = [
+    { href: '/', label: 'Home' },
     { href: '/movies', label: 'Movies' },
     { href: '/rwandan-movies', label: 'Rwanda Cinema' },
     { href: '/interpreters', label: 'Interpreters' },
@@ -122,7 +168,7 @@ export default function Header() {
       <div className="container mx-auto px-4 sm:px-6">
         <nav className="h-16 flex items-center justify-between gap-4">
           {/* LEFT: BRAND LOGO */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6 lg:gap-8">
             <Link
               href="/"
               className="flex items-center gap-2.5 group transition-transform hover:opacity-95"
@@ -133,20 +179,27 @@ export default function Header() {
               </span>
             </Link>
 
-            {/* DESKTOP CORE NAV LINKS */}
-            <ul className="hidden md:flex items-center gap-1 lg:gap-2">
+            {/* DESKTOP CORE NAV LINKS WITH PROMINENT ACTIVE PAGE INDICATOR */}
+            <ul className="hidden md:flex items-center gap-1 lg:gap-1.5">
               {primaryLinks.map((item) => {
-                const isActive = pathname === item.href;
+                const isActive =
+                  item.href === '/'
+                    ? pathname === '/'
+                    : pathname === item.href || pathname.startsWith(item.href + '/');
+
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-full text-xs tracking-wide transition-all flex items-center gap-1.5 ${
                         isActive
-                          ? 'bg-white/10 text-white font-bold'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
+                          ? 'bg-primary/20 text-white font-extrabold border border-primary/40 shadow-[0_0_14px_rgba(249,115,22,0.35)] ring-1 ring-primary/20'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.05] font-medium'
                       }`}
                     >
+                      {isActive && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                      )}
                       <span>{item.label}</span>
                       {item.badge !== undefined && item.badge > 0 && (
                         <span className="w-4 h-4 rounded-full bg-primary/20 text-primary border border-primary/40 text-[9px] font-bold flex items-center justify-center leading-none">
@@ -182,8 +235,10 @@ export default function Header() {
                     <div className="space-y-1">
                       {secondaryLinks.map((sub) => {
                         const Icon = sub.icon;
+                        const isSubActive = pathname === sub.href;
+
                         const content = (
-                          <div className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group cursor-pointer">
+                          <div className={`flex items-start gap-3 p-2.5 rounded-xl transition-colors group cursor-pointer ${isSubActive ? 'bg-primary/10 border border-primary/30' : 'hover:bg-white/[0.06]'}`}>
                             <div className="p-2 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 group-hover:text-primary group-hover:border-primary/30 transition-colors">
                               <Icon className="w-4 h-4" />
                             </div>
@@ -245,42 +300,131 @@ export default function Header() {
             </ul>
           </div>
 
-          {/* RIGHT: MINIMAL ACTIONS */}
+          {/* RIGHT: MINIMAL ACTIONS & ENHANCED SEARCH */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* SLEEK SEARCH (Expands cleanly on click or stays compact) */}
-            <div className="relative flex items-center">
+            {/* SLEEK SEARCH WITH INSTANT LIVE RESULTS */}
+            <div className="relative flex items-center" ref={searchContainerRef}>
               {searchOpen ? (
-                <form
-                  onSubmit={handleSearchSubmit}
-                  className="flex items-center bg-zinc-900/90 border border-zinc-700/80 rounded-full pl-3.5 pr-2 py-1 shadow-lg transition-all animate-fadeIn"
-                >
-                  <Search className="w-3.5 h-3.5 text-zinc-400 shrink-0 mr-2" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder="Search movies, narrators..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-transparent border-none outline-none text-white text-xs w-44 sm:w-60 placeholder:text-zinc-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchOpen(false);
-                      setSearchQuery('');
-                    }}
-                    className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors ml-1"
-                    aria-label="Close search"
+                <div className="relative">
+                  <form
+                    onSubmit={handleSearchSubmit}
+                    className="flex items-center bg-zinc-900/95 border border-primary/40 rounded-full pl-3.5 pr-2 py-1.5 shadow-xl transition-all animate-fadeIn"
                   >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </form>
+                    <Search className="w-3.5 h-3.5 text-primary shrink-0 mr-2" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Search movie, narrator, genre..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="bg-transparent border-none outline-none text-white text-xs w-48 sm:w-64 placeholder:text-zinc-500"
+                    />
+                    {isSearching && (
+                      <span className="w-2.5 h-2.5 rounded-full border-2 border-primary border-t-transparent animate-spin mr-1.5" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchOpen(false);
+                        setSearchQuery('');
+                        setSearchResults(null);
+                      }}
+                      className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors ml-1"
+                      aria-label="Close search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </form>
+
+                  {/* INSTANT LIVE SEARCH PREVIEW DROPDOWN */}
+                  {searchResults && (searchResults.movies.length > 0 || searchResults.interpreters.length > 0) && (
+                    <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-zinc-950/95 border border-zinc-800 shadow-2xl p-2.5 z-50 backdrop-blur-2xl animate-scaleUp">
+                      {/* Matching Interpreters */}
+                      {searchResults.interpreters.length > 0 && (
+                        <div className="mb-2 pb-2 border-b border-zinc-800/80">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 mb-1.5">
+                            Interpreters
+                          </p>
+                          <div className="space-y-1">
+                            {searchResults.interpreters.map((int) => (
+                              <Link
+                                key={int.id}
+                                href={`/interpreters/${int.slug}`}
+                                onClick={() => {
+                                  setSearchResults(null);
+                                  setSearchOpen(false);
+                                }}
+                                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/[0.08] transition-colors"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={int.image}
+                                  alt={int.name}
+                                  className="w-7 h-7 rounded-full object-cover border border-zinc-700"
+                                />
+                                <div className="truncate">
+                                  <p className="text-xs font-bold text-white truncate">{int.name}</p>
+                                  <p className="text-[10px] text-primary">{int.followers.toLocaleString()} followers</p>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Matching Movies */}
+                      {searchResults.movies.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 mb-1">
+                            Movies & Series
+                          </p>
+                          {searchResults.movies.map((m) => (
+                            <Link
+                              key={m.id}
+                              href={`/movies/${m.id}`}
+                              onClick={() => {
+                                setSearchResults(null);
+                                setSearchOpen(false);
+                              }}
+                              className="flex items-center justify-between p-1.5 rounded-xl hover:bg-white/[0.08] transition-colors group"
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <Play className="w-3 h-3 text-primary shrink-0 group-hover:scale-110 transition-transform" />
+                                <span className="text-xs font-semibold text-zinc-200 group-hover:text-white truncate">
+                                  {m.title}
+                                </span>
+                              </div>
+                              {m.narrator && (
+                                <span className="text-[10px] text-zinc-400 shrink-0 ml-2 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800">
+                                  {m.narrator}
+                                </span>
+                              )}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* View All CTA */}
+                      <Link
+                        href={`/search?q=${encodeURIComponent(searchQuery)}`}
+                        onClick={() => {
+                          setSearchResults(null);
+                          setSearchOpen(false);
+                        }}
+                        className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between px-2 text-xs font-bold text-primary hover:text-orange-400 transition-colors"
+                      >
+                        <span>See all results for &quot;{searchQuery}&quot;</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button
                   onClick={() => setSearchOpen(true)}
                   className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
                   aria-label="Search"
-                  title="Search movies"
+                  title="Search movies and narrators"
                 >
                   <Search className="w-4 h-4" />
                 </button>
@@ -371,7 +515,7 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* MOBILE SHEET / DRAWER */}
+      {/* MOBILE SHEET / DRAWER WITH ACTIVE PAGE HIGHLIGHT */}
       {isMobileMenuOpen && (
         <div className="md:hidden bg-zinc-950/95 border-b border-zinc-800/80 px-5 py-4 backdrop-blur-2xl animate-fadeIn space-y-4">
           {/* Mobile search bar */}
@@ -394,25 +538,35 @@ export default function Header() {
             <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 px-2 pb-1">
               Explore
             </p>
-            {primaryLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold ${
-                  pathname === item.href
-                    ? 'bg-primary/15 text-primary'
-                    : 'text-zinc-300 hover:bg-zinc-900 hover:text-white'
-                }`}
-              >
-                <span>{item.label}</span>
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px]">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            ))}
+            {primaryLinks.map((item) => {
+              const isActive =
+                item.href === '/'
+                  ? pathname === '/'
+                  : pathname === item.href || pathname.startsWith(item.href + '/');
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                    isActive
+                      ? 'bg-primary/20 text-white font-bold border border-primary/30'
+                      : 'text-zinc-300 hover:bg-zinc-900 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                    <span>{item.label}</span>
+                  </div>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px]">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Secondary links */}

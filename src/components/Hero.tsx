@@ -1,50 +1,91 @@
 import Link from 'next/link';
-import { Play, Mic2, Sparkles, Download } from 'lucide-react';
+import { Play, Mic2, Sparkles, Download, Tv, Film, CheckCircle2 } from 'lucide-react';
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden border-b border-white/[0.06]">
-      {/* Ambient glow */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-primary/15 blur-[120px]" />
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-transparent via-transparent to-background" />
+    <section className="relative overflow-hidden border-b border-white/[0.08] min-h-[580px] sm:min-h-[640px] flex items-center justify-center">
+      {/* High-fidelity Cinematic Background Picture with Ambient Glow */}
+      <div 
+        className="absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat scale-105 transform motion-safe:animate-pulse duration-[10000ms]"
+        style={{
+          backgroundImage: `url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2070&auto=format&fit=crop')`,
+        }}
+      />
 
-      <div className="container-tight pb-14 pt-28 text-center sm:pt-32">
-        <span className="chip mx-auto">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-          The home of Kinyarwanda cinema
-        </span>
+      {/* Layered cinematic dark vignettes and gradient masks */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-background via-black/85 to-black/70" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-background via-transparent to-background/90" />
+      <div className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-[500px] w-[900px] -translate-x-1/2 rounded-full bg-primary/20 blur-[140px]" />
 
-        <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl">
-          Filime. Ijwi. <span className="text-primary">Umuco.</span>
+      <div className="container-tight pb-16 pt-28 sm:pt-36 text-center relative z-10">
+        {/* Top Eyebrow Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-primary/30 backdrop-blur-md shadow-lg shadow-primary/10 mb-6">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-bold text-zinc-200">
+            🇷🇼 #1 Rwandan Cinema Platform • 4K Ultra HD & Cloud Downloads
+          </span>
+        </div>
+
+        {/* Main Headline */}
+        <h1 className="mx-auto max-w-4xl text-3xl font-black leading-[1.08] tracking-tight sm:text-6xl text-white">
+          Best Agasobanuye Movies{' '}
+          <span className="bg-gradient-to-r from-primary via-orange-400 to-amber-300 bg-clip-text text-transparent block sm:inline mt-1 sm:mt-0">
+            Download & Stream
+          </span>{' '}
+          in 4K
         </h1>
 
-        <p className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          Movies, voices, culture. Stream Agasobanuye, follow the interpreters who define it, and
-          discover Rwandan cinema — all in one place.
+        {/* Subtitle */}
+        <p className="mx-auto mt-5 max-w-2xl text-xs sm:text-base leading-relaxed text-zinc-300 font-medium">
+          Experience world blockbusters, Bollywood dramas, and Rwandan original cinema translated into authentic Kinyarwanda by Rwanda&apos;s greatest voice masters — Rocky Kimomo, Junior Giti, Sankara, and rising interpreters.
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/movies" className="btn-primary">
+        {/* Action Buttons */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
+          <Link
+            href="/movies"
+            className="px-6 py-3 rounded-full bg-gradient-to-r from-primary via-orange-500 to-amber-500 hover:from-primary/90 hover:to-amber-600 text-white font-extrabold text-xs sm:text-sm transition-all shadow-xl shadow-primary/30 hover:scale-105 flex items-center gap-2"
+          >
             <Play className="h-4 w-4 fill-current" />
-            Start watching
+            <span>Stream in 4K Now</span>
           </Link>
-          <Link href="/interpreters" className="btn-ghost">
-            <Mic2 className="h-4 w-4" />
-            Explore interpreters
+
+          <Link
+            href="/movies?download=true"
+            className="px-5 py-3 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-white font-bold text-xs sm:text-sm border border-zinc-700/80 transition-all hover:border-zinc-500 flex items-center gap-2 shadow-lg backdrop-blur-md"
+          >
+            <Download className="h-4 w-4 text-emerald-400" />
+            <span>Download Movies Offline</span>
+          </Link>
+
+          <Link
+            href="/interpreters"
+            className="px-4 py-3 rounded-full bg-white/5 hover:bg-white/10 text-zinc-300 hover:text-white font-semibold text-xs sm:text-sm border border-white/10 transition-colors flex items-center gap-1.5"
+          >
+            <Mic2 className="h-4 w-4 text-primary" />
+            <span>Top Interpreters</span>
           </Link>
         </div>
 
+        {/* 4 Core Features Cards */}
         <div className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { icon: Play, label: 'Adaptive quality', note: '360p → 4K' },
-            { icon: Download, label: 'Offline downloads', note: 'Wi-Fi friendly' },
-            { icon: Mic2, label: '70+ interpreters', note: 'Follow your favourites' },
-            { icon: Sparkles, label: 'Fiesta Originals', note: 'Stories only here' },
+            { icon: Tv, label: 'Adaptive 4K UHD', note: '2160p HDR or Data Saver' },
+            { icon: Download, label: 'Direct & Telegram', note: 'Superfast cloud files' },
+            { icon: Mic2, label: '70+ Voice Masters', note: 'Rocky, Giti, Sankara & more' },
+            { icon: Film, label: 'Rwanda Cinema', note: '100% authentic Kinyarwanda' },
           ].map((f) => (
-            <div key={f.label} className="card-surface px-4 py-4 text-left">
-              <f.icon className="h-4 w-4 text-primary" />
-              <p className="mt-2.5 text-xs font-semibold">{f.label}</p>
-              <p className="text-[11px] text-muted">{f.note}</p>
+            <div
+              key={f.label}
+              className="p-3.5 rounded-2xl bg-zinc-950/75 border border-white/[0.08] backdrop-blur-md text-left transition-all hover:border-primary/40 hover:bg-zinc-900/80 group"
+            >
+              <div className="p-2 rounded-xl bg-zinc-900/90 border border-zinc-800 w-fit group-hover:border-primary/30 transition-colors">
+                <f.icon className="h-4 w-4 text-primary" />
+              </div>
+              <p className="mt-2.5 text-xs font-bold text-white group-hover:text-primary transition-colors">
+                {f.label}
+              </p>
+              <p className="text-[11px] text-zinc-400 mt-0.5">{f.note}</p>
             </div>
           ))}
         </div>
