@@ -28,9 +28,11 @@ export async function GET(request: NextRequest) {
   const where: any = { isActive: true, status: { in: ['READY', 'PUBLISHED'] } };
   if (q) {
     where.OR = [
-      { title: { contains: q } },
-      { originalTitle: { contains: q } },
-      { description: { contains: q } },
+      { title: { contains: q, mode: 'insensitive' } },
+      { originalTitle: { contains: q, mode: 'insensitive' } },
+      { description: { contains: q, mode: 'insensitive' } },
+      { narrator: { contains: q, mode: 'insensitive' } },
+      { genre: { contains: q, mode: 'insensitive' } },
     ];
   }
   if (year) where.releaseYear = year;

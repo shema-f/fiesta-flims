@@ -81,6 +81,8 @@ async function importMovies() {
               downloads,
               isFeatured,
               isActive,
+              status: 'PUBLISHED',
+              publishedAt: new Date(),
               uploaderId: uploader.id,
             },
           });

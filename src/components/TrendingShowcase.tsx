@@ -18,16 +18,17 @@ import {
   Pause,
   PlayCircle
 } from 'lucide-react';
-import { movieData, type Movie } from '@/lib/movieData';
+import type { Movie } from '@/lib/movieData';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface TrendingShowcaseProps {
+  movies: Movie[];
   onSelectMovie?: (movie: Movie) => void;
 }
 
-export default function TrendingShowcase({ onSelectMovie }: TrendingShowcaseProps) {
-  const trendingMovies = movieData.filter((m) => m.trending);
+export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShowcaseProps) {
+  const trendingMovies = movies;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
