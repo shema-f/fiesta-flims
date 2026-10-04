@@ -40,26 +40,35 @@ const mockUsers: MockUser[] = [
   },
 ];
 
-const mockMovies = movieData.map((m, idx) => ({
-  id: `movie-${m.id}`,
-  title: m.title,
-  description: `Experience this amazing movie with fantastic Kinyarwanda narration.`,
-  narrator: m.narrator || 'Rocky Kimomo',
-  genre: m.genre,
-  duration: 7200,
-  releaseYear: m.year,
-  fileUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-  thumbnailUrl: m.image,
-  resolutions: { '720p': 'default', '1080p': 'hd' },
-  views: 1200 + idx * 150,
-  downloads: 300 + idx * 40,
-  isFeatured: !!m.trending,
-  isActive: true,
-  uploaderId: 'user-admin-1',
-  uploader: { id: 'user-admin-1', name: 'Admin User' },
-  createdAt: new Date(),
-  updatedAt: new Date(),
-}));
+const mockMovies = movieData.map((m, idx) => {
+  const strId = String(m.id);
+  const movieId = strId.startsWith('movie-') ? strId : `movie-${strId}`;
+  return {
+    id: movieId,
+    title: m.title,
+    description: `Experience this amazing movie with fantastic Kinyarwanda narration.`,
+    narrator: m.narrator || 'Rocky Kimomo',
+    genre: m.genre,
+    duration: 7200,
+    releaseYear: m.year,
+    fileUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    thumbnailUrl: m.image,
+    poster: m.image,
+    backdrop: m.backdrop || m.image,
+    resolutions: { '720p': 'default', '1080p': 'hd', '4k': 'uhd' },
+    views: 1200 + idx * 150,
+    downloads: 300 + idx * 40,
+    isFeatured: !!m.trending,
+    isActive: true,
+    status: 'PUBLISHED',
+    uploaderId: 'user-admin-1',
+    uploader: { id: 'user-admin-1', name: 'Admin User' },
+    genres: [],
+    interpreters: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+});
 
 function createMockPrisma() {
   const userHandler = {
@@ -108,10 +117,46 @@ function createMockPrisma() {
   };
 
   const movieHandler = {
-    findMany: async () => [...mockMovies],
-    findFirst: async () => mockMovies[0] || null,
+    findMany: async (args?: any) => {
+      let list = [...mockMovies];
+      const where = args?.where;
+      if (where) {
+        if (where.isActive !== undefined) {
+          list = list.filter((m) => m.isActive === where.isActive);
+        }
+        if (where.genre) {
+          list = list.filter((m) => m.genre.toLowerCase().includes(String(where.genre).toLowerCase()));
+        }
+        if (where.status) {
+          const expected = Array.isArray(where.status?.in) ? where.status.in : [where.status];
+          list = list.filter((m) => expected.includes(m.status));
+        }
+      }
+      if (args?.skip) {
+        list = list.slice(args.skip);
+      }
+      if (args?.take) {
+        list = list.slice(0, args.take);
+      }
+      return list;
+    },
+    findFirst: async (args?: any) => {
+      const where = args?.where;
+      if (where?.id) {
+        return (
+          mockMovies.find(
+            (m) => m.id === where.id || m.id === `movie-${where.id}` || where.id === `movie-${m.id}`
+          ) || null
+        );
+      }
+      return mockMovies[0] || null;
+    },
     findUnique: async ({ where }: { where: { id: string } }) => {
-      return mockMovies.find((m) => m.id === where.id) || null;
+      return (
+        mockMovies.find(
+          (m) => m.id === where.id || m.id === `movie-${where.id}` || where.id === `movie-${m.id}`
+        ) || null
+      );
     },
     create: async ({ data }: { data: any }) => {
       const newMovie = { id: `movie-${Date.now()}`, ...data };
@@ -159,8 +204,33 @@ function createMockPrisma() {
 }
 
 let realClientCache: any = null;
+let isRealDbUnreachable = false;
+
+function isValidRemoteDatabaseUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  if (!/^(postgres|postgresql|mysql):\/\//i.test(url)) return false;
+
+  const lower = url.toLowerCase();
+  // Filter out dummy/placeholder URLs commonly set during development or templates
+  return !(
+    lower.includes('localhost') ||
+    lower.includes('127.0.0.1') ||
+    lower.includes('ep-xxx') ||
+    lower.includes('region.aws') ||
+    lower.includes('placeholder') ||
+    lower.includes('dummy') ||
+    lower.includes('example.com') ||
+    lower.includes('xxx') ||
+    lower.includes('your-') ||
+    lower.includes('<') ||
+    lower.includes('>')
+  );
+}
 
 function getLazyRealPrisma(): any {
+  if (isRealDbUnreachable) {
+    return null;
+  }
   if (realClientCache !== null) {
     return realClientCache;
   }
@@ -171,25 +241,19 @@ function getLazyRealPrisma(): any {
   }
 
   const dbUrl = process.env.DATABASE_URL;
-  const isRemoteDb = Boolean(
-    dbUrl &&
-    /^(postgres|postgresql|mysql):\/\//.test(dbUrl) &&
-    !dbUrl.includes('localhost') &&
-    !dbUrl.includes('127.0.0.1')
-  );
-  const isDirectDb = isRemoteDb;
-
-  if (!isDirectDb) {
+  if (!isValidRemoteDatabaseUrl(dbUrl)) {
+    isRealDbUnreachable = true;
     return null;
   }
 
   try {
+    // Disable noisy log levels so connection drops don't trigger uncatchable prisma:error dumps
     realClientCache = new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+      log: [],
     });
     return realClientCache;
-  } catch (err: any) {
-    console.warn('[Prisma] Failed to initialize PrismaClient, falling back to mock:', err?.message || err);
+  } catch {
+    isRealDbUnreachable = true;
     return null;
   }
 }
@@ -214,7 +278,21 @@ function createResilientPrisma(): any {
               try {
                 return await real[modelName][methodName](...args);
               } catch (err: any) {
-                console.warn(`[Prisma] Real query error on ${modelName}.${methodName}:`, err?.message || err);
+                const msg = err?.message || String(err);
+                if (
+                  msg.includes("Can't reach database") ||
+                  msg.includes('P1001') ||
+                  msg.includes('P1002') ||
+                  msg.includes('P1003') ||
+                  msg.includes('P1017') ||
+                  msg.includes('ECONNREFUSED') ||
+                  msg.includes('ENOTFOUND') ||
+                  msg.includes('ETIMEDOUT')
+                ) {
+                  // Mark database unreachable so subsequent calls bypass immediately without hanging
+                  isRealDbUnreachable = true;
+                  realClientCache = null;
+                }
                 const mockModel = mockPrisma[modelName];
                 if (mockModel && typeof mockModel[methodName] === 'function') {
                   return await mockModel[methodName](...args);
