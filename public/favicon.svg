@@ -1,0 +1,87 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background subtle gradient -->
+    <radialGradient id="bgGlow" cx="50%" cy="45%" r="65%">
+      <stop offset="0%" stopColor="#1a0e05" />
+      <stop offset="60%" stopColor="#08080a" />
+      <stop offset="100%" stopColor="#000000" />
+    </radialGradient>
+
+    <!-- Front ribbon gradient -->
+    <linearGradient id="frontGrad" x1="120" y1="80" x2="380" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FFA63D" />
+      <stop offset="35%" stopColor="#FF7A00" />
+      <stop offset="100%" stopColor="#EA580C" />
+    </linearGradient>
+
+    <!-- Top curved loop gradient -->
+    <linearGradient id="topLoop" x1="100" y1="220" x2="280" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FF6B00" />
+      <stop offset="60%" stopColor="#FFAA42" />
+      <stop offset="100%" stopColor="#FF7A00" />
+    </linearGradient>
+
+    <!-- 3D Under-fold shadow facet -->
+    <linearGradient id="foldShadow" x1="130" y1="130" x2="220" y2="220" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#B43800" />
+      <stop offset="50%" stopColor="#7E2400" />
+      <stop offset="100%" stopColor="#C2410C" />
+    </linearGradient>
+
+    <!-- Middle arm fold shadow -->
+    <linearGradient id="midFold" x1="150" y1="210" x2="240" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#8C2500" />
+      <stop offset="100%" stopColor="#EA580C" />
+    </linearGradient>
+
+    <!-- Vertical stem gradient -->
+    <linearGradient id="stemGrad" x1="120" y1="270" x2="190" y2="440" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#FF7A00" />
+      <stop offset="100%" stopColor="#D94800" />
+    </linearGradient>
+  </defs>
+
+  <!-- App icon rounded dark container -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGlow)" />
+  <rect width="508" height="508" x="2" y="2" rx="110" stroke="#FF7A00" stroke-opacity="0.18" stroke-width="3" />
+
+  <!-- The 3D Folded Ribbon F Logo -->
+  <g transform="translate(18, 10) scale(2.4)">
+    <!-- 1. Underside / Inner twist shadow facet behind the fold -->
+    <path
+      d="M 50 82 C 50 64 64 50 82 50 L 98 50 L 72 82 Z"
+      fill="url(#foldShadow)"
+    />
+
+    <!-- 2. Top Folded Ribbon Bar (Extends horizontally to the right) -->
+    <path
+      d="M 80 34 L 152 34 L 152 64 L 88 64 C 80 64 74 58 74 50 C 74 41 80 34 88 34 Z"
+      fill="url(#frontGrad)"
+    />
+
+    <!-- 3. The Outer Curving Loop Ribbon (Sweeps up from the left stem over to top bar) -->
+    <path
+      d="M 50 114 L 50 78 C 50 48 70 34 94 34 L 86 44 C 70 44 60 54 60 70 L 60 114 Z"
+      fill="url(#topLoop)"
+    />
+
+    <!-- 4. Middle Horizontal Arm (Folds out from stem to the right) -->
+    <path
+      d="M 60 94 L 134 94 L 124 122 L 60 122 Z"
+      fill="url(#frontGrad)"
+    />
+
+    <!-- 5. Middle arm 3D depth crease facet -->
+    <path
+      d="M 60 94 L 86 94 L 60 122 Z"
+      fill="url(#midFold)"
+      opacity="0.85"
+    />
+
+    <!-- 6. Lower Vertical Stem with dynamic angled cut at the base -->
+    <path
+      d="M 50 114 L 74 114 L 74 162 L 50 172 Z"
+      fill="url(#stemGrad)"
+    />
+  </g>
+</svg>

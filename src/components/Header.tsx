@@ -7,6 +7,7 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import { Search, Send, Menu, X, User as UserIcon, LogOut, Shield, Sparkles } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import NotificationToast from '@/components/NotificationToast';
+import AppLogo from '@/components/AppLogo';
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -58,7 +59,8 @@ export default function Header() {
       <nav className="py-3.5">
         <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <AppLogo size={34} glow className="group-hover:scale-105 transition-transform" />
             <span className="text-2xl font-black bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent tracking-tight">
               Fiesta<span className="text-white">Flix</span>
             </span>

@@ -23,6 +23,10 @@ export const metadata: Metadata = {
     description:
       'The home of Kinyarwanda cinema and Agasobanuye. Stream, download and follow the voices behind the movies.',
   },
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+  },
 };
 
 export default function RootLayout({

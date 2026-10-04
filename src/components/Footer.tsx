@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { MessageCircle, Send, Sparkles, Clock, ShieldCheck, HeartHandshake } from 'lucide-react';
+import AppLogo from '@/components/AppLogo';
 
 export default function Footer() {
   const [isPulsing, setIsPulsing] = useState(false);
@@ -82,9 +83,12 @@ export default function Footer() {
           {/* Brand & Talk to Us Showcase */}
           <div className="lg:col-span-2 space-y-6">
             <div>
-              <h3 className="text-2xl font-black mb-2 bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
-                Fiesta<span className="text-white">Flix</span>
-              </h3>
+              <div className="flex items-center gap-2.5 mb-2">
+                <AppLogo size={32} glow />
+                <h3 className="text-2xl font-black bg-gradient-to-r from-primary to-orange-400 bg-clip-text text-transparent">
+                  Fiesta<span className="text-white">Flix</span>
+                </h3>
+              </div>
               <p className="text-zinc-400 text-sm max-w-sm">
                 Your premier destination for streaming and downloading movies with authentic Kinyarwanda narration (*Agasobanuye*).
               </p>
