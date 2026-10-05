@@ -6,6 +6,7 @@ import Hero from '@/components/Hero';
 import CTA from '@/components/CTA';
 import HomeFaqSection from '@/components/HomeFaqSection';
 import HomeNewsSection from '@/components/HomeNewsSection';
+import AdBanner from '@/components/AdBanner';
 import MovieRail from '@/components/MovieRail';
 import TrendingShowcase from '@/components/TrendingShowcase';
 import type { Movie } from '@/lib/movieData';
@@ -23,6 +24,9 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground pb-20 md:pb-0">
       <Header />
+      <div className="pt-16">
+        <AdBanner placement="HEADER_BANNER" dismissible />
+      </div>
 
       <main className="flex-1">
         <Hero />
@@ -106,6 +110,11 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
               Explore Rwanda Cinema
             </span>
           </Link>
+        </section>
+
+        {/* Sponsored Interstitial Ad Banner */}
+        <section className="container-tight py-4">
+          <AdBanner placement="HOME_INTERSTITIAL" dismissible />
         </section>
 
         <MovieRail title="📺 Series" subtitle="Binge the full season" movies={tvShows} href="/movies" />

@@ -7,6 +7,8 @@ import { movieData } from '@/lib/movieData';
 import { narratorsData } from '@/lib/narratorData';
 import StoragePanel from '@/components/admin/StoragePanel';
 import MediaJobsPanel from '@/components/admin/MediaJobsPanel';
+import AdminNewsPanel from '@/components/admin/AdminNewsPanel';
+import AdminAdsPanel from '@/components/admin/AdminAdsPanel';
 
 const movieRequests = [
   {
@@ -220,6 +222,8 @@ export default function AdminPage() {
                 <nav className="space-y-2">
                   {[
                     { id: 'dashboard', label: '📊 Dashboard' },
+                    { id: 'news', label: '📰 FiestaFlix News' },
+                    { id: 'ads', label: '📢 Ads & Banners' },
                     { id: 'movies', label: '🎬 Movies' },
                     { id: 'rwandan-movies', label: '🇷🇼 Rwandan Movies' },
                     { id: 'interpreters', label: '🎤 Interpreters' },
@@ -660,6 +664,9 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+
+              {activeTab === 'news' && <AdminNewsPanel />}
+              {activeTab === 'ads' && <AdminAdsPanel />}
             </div>
           </div>
         </div>

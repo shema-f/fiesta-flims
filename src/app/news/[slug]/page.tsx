@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AdBanner from '@/components/AdBanner';
 import { 
   Calendar, 
   Clock, 
@@ -395,6 +396,9 @@ export default function FiestaFlixNewsDetailPage() {
           <div className="p-6 rounded-2xl bg-zinc-950/80 border-l-4 border-primary border-zinc-800 text-base sm:text-lg font-medium text-zinc-200 italic leading-relaxed mb-8">
             {article.excerpt}
           </div>
+
+          {/* SPONSORED MID-ARTICLE BANNER */}
+          <AdBanner placement="ARTICLE_IN_BODY" dismissible />
 
           {/* Main Body - Highly Legible & Readable */}
           <div className="prose prose-invert max-w-none text-zinc-300 border-b border-zinc-800/80 pb-10">

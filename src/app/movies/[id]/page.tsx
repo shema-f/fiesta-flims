@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AdBanner from '@/components/AdBanner';
 import CatalogMovieCard from '@/components/CatalogMovieCard';
 import RatingStars from '@/components/RatingStars';
 import TelegramDownloadHub from '@/components/TelegramDownloadHub';
@@ -575,6 +576,11 @@ export default function MovieDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* SPONSORED VIDEO PLAYER BANNER */}
+        <div className="container mx-auto px-4 sm:px-6">
+          <AdBanner placement="VIDEO_PLAYER_BANNER" dismissible />
         </div>
 
         {/* PROMINENT TELEGRAM DOWNLOAD HUB */}

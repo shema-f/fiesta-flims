@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AdBanner from '@/components/AdBanner';
 import { 
   Newspaper, 
   Flame, 
@@ -278,6 +279,9 @@ export default function FiestaFlixNewsPage() {
               </div>
             </div>
           )}
+
+          {/* SPONSORED NEWS IN-FEED BANNER */}
+          <AdBanner placement="NEWS_IN_FEED" dismissible />
 
           {/* SEARCH & FILTERS BAR */}
           <div className="space-y-4 mb-8">
