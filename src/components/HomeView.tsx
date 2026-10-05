@@ -5,6 +5,7 @@ import Footer from '@/components/Footer';
 import Hero from '@/components/Hero';
 import CTA from '@/components/CTA';
 import HomeFaqSection from '@/components/HomeFaqSection';
+import HomeNewsSection from '@/components/HomeNewsSection';
 import MovieRail from '@/components/MovieRail';
 import TrendingShowcase from '@/components/TrendingShowcase';
 import type { Movie } from '@/lib/movieData';
@@ -133,6 +134,9 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
             </div>
           </div>
         </section>
+
+        {/* Global Cinema News & Blogs Section */}
+        <HomeNewsSection />
 
         {/* Frequently Asked Questions Section */}
         <HomeFaqSection />

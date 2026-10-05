@@ -26,6 +26,7 @@ import {
   Flame,
   Speech,
   Rocket,
+  Newspaper,
 } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import NotificationToast from '@/components/NotificationToast';
@@ -152,6 +153,12 @@ export default function Header() {
       label: 'Interpreters',
       icon: Speech,
       iconBg: 'bg-emerald-500/25 text-emerald-400 border-emerald-400/40',
+    },
+    {
+      href: '/news',
+      label: 'Cinema News',
+      icon: Newspaper,
+      iconBg: 'bg-rose-500/25 text-rose-400 border-rose-400/40',
     },
     {
       href: '/favorites',
