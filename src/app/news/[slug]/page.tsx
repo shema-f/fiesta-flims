@@ -13,39 +13,40 @@ import {
   Share2, 
   ArrowLeft, 
   Flame, 
-  Sparkles, 
   Send, 
   MessageCircle, 
-  Bookmark, 
   Check, 
   MessageSquare,
   Globe,
-  Film
+  Film,
+  Newspaper,
+  Type
 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { CinemaNewsArticle, getCinemaNewsBySlug, getAllCinemaNews } from '@/lib/cinemaNewsData';
+import { CinemaNewsArticle, getCinemaNewsBySlug } from '@/lib/cinemaNewsData';
 
 /**
  * Format markdown text with subheadings (###), quotes (>), and bullet points
  */
-function renderArticleBody(content: string) {
+function renderArticleBody(content: string, fontSizeClass: string) {
   const paragraphs = content.split('\n\n');
 
   return paragraphs.map((block, idx) => {
     const trimmed = block.trim();
     if (!trimmed) return null;
 
-    // Subheading
+    // Subheading H3
     if (trimmed.startsWith('### ')) {
       return (
-        <h3 key={idx} className="text-xl sm:text-2xl font-black text-white mt-8 mb-4 tracking-tight">
+        <h3 key={idx} className="text-xl sm:text-2xl font-black text-white mt-10 mb-4 tracking-tight border-b border-zinc-900 pb-2">
           {trimmed.replace('### ', '')}
         </h3>
       );
     }
+
+    // Subheading H4
     if (trimmed.startsWith('#### ')) {
       return (
-        <h4 key={idx} className="text-lg sm:text-xl font-extrabold text-primary mt-6 mb-3">
+        <h4 key={idx} className="text-lg sm:text-xl font-extrabold text-primary mt-8 mb-3">
           {trimmed.replace('#### ', '')}
         </h4>
       );
@@ -56,7 +57,7 @@ function renderArticleBody(content: string) {
       return (
         <blockquote
           key={idx}
-          className="my-6 p-4 sm:p-5 rounded-2xl bg-zinc-900/90 border-l-4 border-primary text-zinc-200 italic text-base sm:text-lg leading-relaxed shadow-lg shadow-black/40"
+          className="my-8 p-5 sm:p-6 rounded-2xl bg-zinc-900/90 border-l-4 border-primary text-zinc-100 italic text-base sm:text-lg leading-relaxed shadow-lg shadow-black/40"
         >
           {trimmed.replace(/^> \s*/gm, '')}
         </blockquote>
@@ -67,10 +68,10 @@ function renderArticleBody(content: string) {
     if (trimmed.startsWith('• ') || trimmed.startsWith('- ')) {
       const items = trimmed.split('\n').filter((l) => l.trim().length > 0);
       return (
-        <ul key={idx} className="my-4 space-y-2 list-none">
+        <ul key={idx} className="my-6 space-y-3 list-none pl-1">
           {items.map((item, itemIdx) => (
-            <li key={itemIdx} className="flex items-start gap-2.5 text-zinc-300 text-sm sm:text-base leading-relaxed">
-              <span className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
+            <li key={itemIdx} className={`flex items-start gap-3 text-zinc-200 ${fontSizeClass} leading-relaxed`}>
+              <span className="w-2 h-2 rounded-full bg-primary mt-2.5 shrink-0" />
               <span>{item.replace(/^[•-]\s*/, '')}</span>
             </li>
           ))}
@@ -81,7 +82,7 @@ function renderArticleBody(content: string) {
     // Normal paragraph with basic bold parsing
     const parts = trimmed.split(/(\*\*[^*]+\*\*)/g);
     return (
-      <p key={idx} className="my-4 text-zinc-300 text-sm sm:text-base leading-relaxed">
+      <p key={idx} className={`my-5 text-zinc-300 ${fontSizeClass} leading-relaxed font-normal`}>
         {parts.map((part, pIdx) => {
           if (part.startsWith('**') && part.endsWith('**')) {
             return (
@@ -104,7 +105,7 @@ function renderArticleBody(content: string) {
   });
 }
 
-export default function CinemaNewsDetailPage() {
+export default function FiestaFlixNewsDetailPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
@@ -114,6 +115,9 @@ export default function CinemaNewsDetailPage() {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
+
   const [comments, setComments] = useState<Array<{ id: string; name: string; text: string; time: string }>>([
     {
       id: 'c1',
@@ -124,12 +128,26 @@ export default function CinemaNewsDetailPage() {
     {
       id: 'c2',
       name: 'Sandrine K.',
-      text: 'Rocky Kimomo and Junior Giti deserve all the global recognition. Great coverage Fiesta Flix!',
+      text: 'Rocky Kimomo and Junior Giti deserve all the global recognition. Great coverage FiestaFlix!',
       time: '4 hours ago',
     },
   ]);
   const [newComment, setNewComment] = useState('');
   const [commenterName, setCommenterName] = useState('');
+
+  // Scroll Progress Listener
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollTop;
+      const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      if (windowHeight > 0) {
+        const currentProgress = (totalScroll / windowHeight) * 100;
+        setScrollProgress(Number(currentProgress.toFixed(1)));
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     if (!slug) return;
@@ -181,13 +199,13 @@ export default function CinemaNewsDetailPage() {
 
   const handleShareWhatsApp = () => {
     if (!article || typeof window === 'undefined') return;
-    const text = `Check out this cinema story on Fiesta Flix: "${article.title}" ${window.location.href}`;
+    const text = `Read this story on FiestaFlix News: "${article.title}" ${window.location.href}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleShareTelegram = () => {
     if (!article || typeof window === 'undefined') return;
-    const text = `${article.title}\n\nRead more on Fiesta Flix:`;
+    const text = `${article.title}\n\nRead more on FiestaFlix News:`;
     window.open(
       `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`,
       '_blank'
@@ -210,14 +228,21 @@ export default function CinemaNewsDetailPage() {
     setNewComment('');
   };
 
+  const fontSizeClass =
+    fontSize === 'xlarge'
+      ? 'text-lg sm:text-xl'
+      : fontSize === 'large'
+      ? 'text-base sm:text-lg'
+      : 'text-sm sm:text-base';
+
   if (!article) {
     return (
       <div className="min-h-screen bg-[#070709] text-white flex flex-col justify-between">
         <Header />
         <div className="container mx-auto px-4 py-32 text-center">
           <Film className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
-          <h2 className="text-xl font-bold">Loading Cinema News Story...</h2>
-          <p className="text-sm text-zinc-500 mt-2">Fetching article details and scoops.</p>
+          <h2 className="text-xl font-bold">Loading FiestaFlix News Story...</h2>
+          <p className="text-sm text-zinc-500 mt-2">Fetching clean readable story.</p>
         </div>
         <Footer />
       </div>
@@ -226,6 +251,12 @@ export default function CinemaNewsDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#070709] text-white flex flex-col selection:bg-primary selection:text-white">
+      {/* READING PROGRESS BAR AT VERY TOP */}
+      <div
+        className="fixed top-0 left-0 h-1 bg-gradient-to-r from-primary via-orange-400 to-amber-300 z-50 transition-all duration-150"
+        style={{ width: `${scrollProgress}%` }}
+      />
+
       <Header />
 
       <main className="flex-1 pt-20 pb-24">
@@ -237,7 +268,7 @@ export default function CinemaNewsDetailPage() {
             </Link>
             <span>/</span>
             <Link href="/news" className="hover:text-primary transition-colors flex items-center gap-1 font-bold">
-              Cinema News
+              FiestaFlix News
             </Link>
             <span>/</span>
             <span className="text-zinc-300 truncate max-w-xs sm:max-w-md">{article.title}</span>
@@ -245,14 +276,14 @@ export default function CinemaNewsDetailPage() {
         </div>
 
         {/* ARTICLE HERO SECTION */}
-        <article className="container mx-auto px-4 sm:px-6 max-w-4xl">
+        <article className="container mx-auto px-4 sm:px-6 max-w-3xl">
           {/* Back button */}
           <Link
             href="/news"
             className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white mb-6 group transition-colors"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span>Back to All Cinema News</span>
+            <span>Back to FiestaFlix News</span>
           </Link>
 
           {/* Badges & Meta */}
@@ -277,23 +308,25 @@ export default function CinemaNewsDetailPage() {
             {article.title}
           </h1>
 
-          {/* Author, Date & Stats Bar */}
+          {/* Official FiestaFlix News Source, Date & Reader Tools Bar */}
           <div className="p-4 rounded-2xl bg-zinc-950 border border-zinc-800/80 flex flex-wrap items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-3">
-              <img
-                src={article.author.avatar}
-                alt={article.author.name}
-                className="w-12 h-12 rounded-full object-cover border-2 border-primary/40"
-              />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-orange-500 flex items-center justify-center text-white shadow-md shadow-primary/20 shrink-0">
+                <Newspaper className="w-5 h-5" />
+              </div>
               <div>
-                <div className="text-sm font-extrabold text-white">{article.author.name}</div>
-                <div className="text-xs text-zinc-400">{article.author.role}</div>
+                <div className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
+                  <span>FiestaFlix News</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                </div>
+                <div className="text-[11px] text-zinc-400">Official Cinema Desk</div>
               </div>
             </div>
 
+            {/* Reading Details & Text Size Adjuster */}
             <div className="flex items-center gap-4 text-xs text-zinc-400">
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-zinc-500" />
+                <Calendar className="w-3.5 h-3.5 text-primary" />
                 <span>
                   {new Date(article.publishedAt).toLocaleDateString('en-US', {
                     month: 'long',
@@ -306,15 +339,46 @@ export default function CinemaNewsDetailPage() {
                 <Clock className="w-3.5 h-3.5 text-zinc-500" />
                 <span>{article.readTime}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Eye className="w-3.5 h-3.5 text-zinc-500" />
-                <span>{article.views.toLocaleString()} reads</span>
+
+              {/* Text Size Control */}
+              <div className="hidden sm:flex items-center gap-1 pl-2 border-l border-zinc-800">
+                <Type className="w-3.5 h-3.5 text-zinc-400 mr-1" />
+                <button
+                  type="button"
+                  onClick={() => setFontSize('normal')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors ${
+                    fontSize === 'normal' ? 'bg-primary text-white' : 'text-zinc-400 hover:text-white'
+                  }`}
+                  title="Normal Text Size"
+                >
+                  A
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFontSize('large')}
+                  className={`px-2 py-0.5 rounded text-xs font-bold transition-colors ${
+                    fontSize === 'large' ? 'bg-primary text-white' : 'text-zinc-400 hover:text-white'
+                  }`}
+                  title="Large Text Size"
+                >
+                  A+
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFontSize('xlarge')}
+                  className={`px-2 py-0.5 rounded text-sm font-bold transition-colors ${
+                    fontSize === 'xlarge' ? 'bg-primary text-white' : 'text-zinc-400 hover:text-white'
+                  }`}
+                  title="Extra Large Text Size"
+                >
+                  A++
+                </button>
               </div>
             </div>
           </div>
 
           {/* Featured Visual */}
-          <div className="relative w-full h-72 sm:h-96 md:h-[480px] rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl mb-8">
+          <div className="relative w-full h-72 sm:h-96 md:h-[460px] rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl mb-8">
             <img
               src={article.backdrop || article.image}
               alt={article.title}
@@ -322,7 +386,7 @@ export default function CinemaNewsDetailPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
             <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between text-xs text-zinc-300">
-              <span className="font-semibold text-white drop-shadow">Photo credit: Global Film Archives</span>
+              <span className="font-semibold text-white drop-shadow">FiestaFlix Cinema Coverage</span>
               <span className="bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg">4K Cinema Feed</span>
             </div>
           </div>
@@ -332,14 +396,14 @@ export default function CinemaNewsDetailPage() {
             {article.excerpt}
           </div>
 
-          {/* Main Body */}
+          {/* Main Body - Highly Legible & Readable */}
           <div className="prose prose-invert max-w-none text-zinc-300 border-b border-zinc-800/80 pb-10">
-            {renderArticleBody(article.content)}
+            {renderArticleBody(article.content, fontSizeClass)}
           </div>
 
           {/* Tags */}
           <div className="pt-6 pb-6 flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider mr-2">Tags:</span>
+            <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider mr-2">Topics:</span>
             {article.tags.map((tag) => (
               <Link
                 key={tag}
@@ -405,14 +469,14 @@ export default function CinemaNewsDetailPage() {
             </div>
           </div>
 
-          {/* COMMENTS & DISCUSSION SECTION */}
+          {/* READER REACTIONS & COMMENTS */}
           <section className="mt-12 p-6 sm:p-8 rounded-3xl bg-zinc-950 border border-zinc-800">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-black text-white flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-primary" />
-                Fan Discussion ({comments.length})
+                Reader Reactions ({comments.length})
               </h3>
-              <span className="text-xs text-zinc-500">Live Community Reactions</span>
+              <span className="text-xs text-zinc-500">Live Feedback</span>
             </div>
 
             {/* Add Comment Form */}
@@ -431,7 +495,7 @@ export default function CinemaNewsDetailPage() {
                 <input
                   type="text"
                   required
-                  placeholder="Share your thoughts on this movie news or Agasobanuye scoop..."
+                  placeholder="Share your thoughts on this cinema news..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   className="flex-1 bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder:text-zinc-500 focus:outline-none"
@@ -440,7 +504,7 @@ export default function CinemaNewsDetailPage() {
                   type="submit"
                   className="px-5 py-2.5 rounded-xl bg-primary hover:bg-orange-500 text-white text-xs font-black transition-colors shrink-0"
                 >
-                  Comment
+                  Post Reaction
                 </button>
               </div>
             </form>
@@ -459,11 +523,11 @@ export default function CinemaNewsDetailPage() {
             </div>
           </section>
 
-          {/* RELATED CINEMA STORIES */}
+          {/* RELATED FIESTAFLIX NEWS */}
           {related.length > 0 && (
             <section className="mt-16">
               <h2 className="text-xl sm:text-2xl font-black text-white mb-6">
-                Related Cinema Stories
+                More FiestaFlix News
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

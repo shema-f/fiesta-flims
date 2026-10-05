@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import AddNewsModal from '@/components/AddNewsModal';
 import { 
   Newspaper, 
   Flame, 
@@ -16,20 +14,19 @@ import {
   Eye, 
   Heart, 
   Share2, 
-  Plus, 
-  Filter, 
   ArrowRight, 
   Send, 
   TrendingUp, 
   Globe,
   Film,
-  Bookmark
+  Bookmark,
+  Check
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { INITIAL_CINEMA_NEWS, CinemaNewsArticle } from '@/lib/cinemaNewsData';
 
 const CATEGORIES = [
-  { id: 'all', label: 'All Stories', icon: Globe },
+  { id: 'all', label: 'All News', icon: Globe },
   { id: 'breaking', label: '⚡ Breaking', icon: Flame },
   { id: 'Hollywood', label: 'Hollywood', icon: Film },
   { id: 'Rwanda Cinema', label: '🇷🇼 Rwanda Cinema', icon: Sparkles },
@@ -40,12 +37,11 @@ const CATEGORIES = [
   { id: 'Festivals & Awards', label: '🏆 Festivals & Awards', icon: Bookmark },
 ];
 
-export default function CinemaNewsPage() {
+export default function FiestaFlixNewsPage() {
   const [news, setNews] = useState<CinemaNewsArticle[]>(INITIAL_CINEMA_NEWS);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('all');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [likedArticles, setLikedArticles] = useState<Record<string, boolean>>({});
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
@@ -90,8 +86,7 @@ export default function CinemaNewsPage() {
         const matchesTitle = item.title.toLowerCase().includes(q);
         const matchesExcerpt = item.excerpt.toLowerCase().includes(q);
         const matchesTags = item.tags.some((t) => t.toLowerCase().includes(q));
-        const matchesAuthor = item.author.name.toLowerCase().includes(q);
-        if (!matchesTitle && !matchesExcerpt && !matchesTags && !matchesAuthor) {
+        if (!matchesTitle && !matchesExcerpt && !matchesTags) {
           return false;
         }
       }
@@ -128,7 +123,7 @@ export default function CinemaNewsPage() {
   };
 
   // Handle Share Link
-  const handleShare = (e: React.MouseEvent, slug: string, title: string) => {
+  const handleShare = (e: React.MouseEvent, slug: string) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -153,7 +148,7 @@ export default function CinemaNewsPage() {
               Breaking
             </span>
             <div className="overflow-x-auto whitespace-nowrap scrollbar-none flex items-center gap-8 text-xs font-semibold text-zinc-300">
-              {news.slice(0, 5).map((item) => (
+              {news.slice(0, 6).map((item) => (
                 <Link
                   key={item.id}
                   href={`/news/${item.slug}`}
@@ -173,40 +168,31 @@ export default function CinemaNewsPage() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs font-extrabold uppercase tracking-wider mb-3">
                 <Newspaper className="w-3.5 h-3.5" />
-                Global Cinema Journalism & Blogs
+                FiestaFlix Official Cinema Journal
               </div>
               <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-                Cinema <span className="bg-gradient-to-r from-primary via-orange-400 to-amber-300 bg-clip-text text-transparent">News & Blogs</span>
+                FiestaFlix <span className="bg-gradient-to-r from-primary via-orange-400 to-amber-300 bg-clip-text text-transparent">News</span>
               </h1>
-              <p className="text-sm sm:text-base text-zinc-400 mt-2 max-w-2xl">
-                Stay updated with 20+ latest scoops, Hollywood production updates, Rwandan Agasobanuye voice milestones, anime box office records, and digital cloud releases.
+              <p className="text-sm sm:text-base text-zinc-400 mt-2 max-w-2xl leading-relaxed">
+                Clear, readable cinema scoops, Hollywood production updates, Rwandan Agasobanuye voice milestones, anime box office records, and digital cloud releases.
               </p>
             </div>
 
-            {/* ACTION: POST CINEMA NEWS BUTTON */}
+            {/* ACTION: JOIN TELEGRAM ALERTS */}
             <div className="flex items-center gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsAddModalOpen(true)}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-primary via-orange-500 to-amber-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Cinema News Blog</span>
-              </button>
-
               <a
                 href="https://t.me/fiestaflix_movies"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-3 rounded-2xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 text-xs sm:text-sm font-bold transition-all flex items-center gap-2"
+                className="px-5 py-3 rounded-2xl bg-[#229ED9] hover:bg-[#1e8ec3] text-white font-black text-xs sm:text-sm shadow-xl shadow-[#229ED9]/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
               >
-                <Send className="w-4 h-4 text-sky-400" />
-                <span className="hidden sm:inline">Join News Telegram</span>
+                <Send className="w-4 h-4" />
+                <span>Join News Telegram</span>
               </a>
             </div>
           </div>
 
-          {/* FEATURED SPOTLIGHT STORY */}
+          {/* FEATURED SPOTLIGHT STORY - CLEAN READABLE LAYOUT */}
           {featuredStory && (
             <div className="relative rounded-3xl overflow-hidden border border-zinc-800/80 bg-zinc-950 group shadow-2xl shadow-black/80 mb-12">
               <div className="grid grid-cols-1 lg:grid-cols-12">
@@ -244,17 +230,17 @@ export default function CinemaNewsPage() {
                       <span>•</span>
                       <span className="flex items-center gap-1">
                         <Eye className="w-3.5 h-3.5" />
-                        {featuredStory.views.toLocaleString()} views
+                        {featuredStory.views.toLocaleString()} reads
                       </span>
                     </div>
 
                     <Link href={`/news/${featuredStory.slug}`}>
-                      <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-primary transition-colors leading-tight mb-4">
+                      <h2 className="text-2xl sm:text-3xl font-black text-white group-hover:text-primary transition-colors leading-snug mb-4">
                         {featuredStory.title}
                       </h2>
                     </Link>
 
-                    <p className="text-zinc-300 text-sm leading-relaxed mb-6">
+                    <p className="text-zinc-300 text-sm sm:text-base leading-relaxed mb-6 font-normal">
                       {featuredStory.excerpt}
                     </p>
 
@@ -271,30 +257,21 @@ export default function CinemaNewsPage() {
                     </div>
                   </div>
 
-                  {/* Author & Read More */}
+                  {/* Clean Reading Action Bar */}
                   <div className="pt-4 border-t border-zinc-900 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={featuredStory.author.avatar}
-                        alt={featuredStory.author.name}
-                        className="w-10 h-10 rounded-full object-cover border border-zinc-700"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">
-                          {featuredStory.author.name}
-                        </div>
-                        <div className="text-[11px] text-zinc-500">
-                          {featuredStory.author.role}
-                        </div>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-bold text-zinc-300">
+                        FiestaFlix News
+                      </span>
                     </div>
 
                     <Link
                       href={`/news/${featuredStory.slug}`}
-                      className="px-4 py-2 rounded-xl bg-zinc-900 hover:bg-primary text-zinc-200 hover:text-white text-xs font-extrabold transition-all flex items-center gap-1.5"
+                      className="px-5 py-2.5 rounded-xl bg-primary hover:bg-orange-500 text-white text-xs sm:text-sm font-extrabold transition-all flex items-center gap-1.5 shadow-md shadow-primary/20"
                     >
-                      <span>Read Story</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>Read Full Story</span>
+                      <ArrowRight className="w-4 h-4" />
                     </Link>
                   </div>
                 </div>
@@ -310,7 +287,7 @@ export default function CinemaNewsPage() {
                 <Search className="w-4 h-4 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search cinema news by title, narrator, actor, studio, or tag..."
+                  placeholder="Search cinema news by title, narrator, actor, studio, or topic..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-zinc-900/90 border border-zinc-800 focus:border-primary rounded-2xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:outline-none transition-colors"
@@ -370,7 +347,7 @@ export default function CinemaNewsPage() {
           {/* RESULTS COUNT */}
           <div className="flex items-center justify-between text-xs text-zinc-400 mb-6">
             <div>
-              Showing <span className="text-white font-bold">{filteredNews.length}</span> latest cinema stories
+              Showing <span className="text-white font-bold">{filteredNews.length}</span> cinema articles
             </div>
             {selectedCategory !== 'all' && (
               <button
@@ -386,7 +363,7 @@ export default function CinemaNewsPage() {
             )}
           </div>
 
-          {/* NEWS ARTICLES GRID */}
+          {/* NEWS ARTICLES GRID - CLEAN, READABLE, NO WRITER NOISE */}
           {filteredNews.length === 0 ? (
             <div className="p-12 text-center rounded-3xl bg-zinc-950 border border-zinc-800">
               <Film className="w-12 h-12 text-zinc-600 mx-auto mb-3" />
@@ -431,7 +408,7 @@ export default function CinemaNewsPage() {
 
                       {/* Badges */}
                       <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-                        <span className="px-2.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase">
+                        <span className="px-2.5 py-0.5 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-white text-[10px] font-black uppercase">
                           {article.category}
                         </span>
                         {article.isBreaking && (
@@ -445,17 +422,17 @@ export default function CinemaNewsPage() {
                         {/* Share Button */}
                         <button
                           type="button"
-                          onClick={(e) => handleShare(e, article.slug, article.title)}
+                          onClick={(e) => handleShare(e, article.slug)}
                           title="Copy share link"
-                          className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors"
+                          className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-md border border-white/20 text-zinc-300 hover:text-white flex items-center justify-center transition-colors"
                         >
-                          <Share2 className="w-3.5 h-3.5" />
+                          {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
                         </button>
                       </div>
 
                       <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px] text-zinc-300">
                         <span className="font-bold text-white drop-shadow-md">{article.region}</span>
-                        <span className="bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md drop-shadow-md">
+                        <span className="bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-md drop-shadow-md">
                           {article.readTime}
                         </span>
                       </div>
@@ -466,7 +443,7 @@ export default function CinemaNewsPage() {
                       <div>
                         {/* Publication Date */}
                         <div className="flex items-center gap-2 text-[11px] text-zinc-400 mb-2">
-                          <Calendar className="w-3 h-3" />
+                          <Calendar className="w-3 h-3 text-primary" />
                           <span>
                             {new Date(article.publishedAt).toLocaleDateString('en-US', {
                               month: 'short',
@@ -484,12 +461,12 @@ export default function CinemaNewsPage() {
                         </Link>
 
                         {/* Excerpt */}
-                        <p className="text-xs text-zinc-400 leading-relaxed line-clamp-3 mb-4">
+                        <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed line-clamp-3 mb-4 font-normal">
                           {article.excerpt}
                         </p>
                       </div>
 
-                      {/* Footer Info */}
+                      {/* Footer Info - Clean Reading Focused */}
                       <div>
                         {/* Tags */}
                         <div className="flex flex-wrap gap-1 mb-4">
@@ -503,18 +480,15 @@ export default function CinemaNewsPage() {
                           ))}
                         </div>
 
-                        {/* Author & Interactions */}
+                        {/* Clean Reading Bar */}
                         <div className="pt-3 border-t border-zinc-900 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <img
-                              src={article.author.avatar}
-                              alt={article.author.name}
-                              className="w-7 h-7 rounded-full object-cover border border-zinc-800"
-                            />
-                            <span className="text-xs font-bold text-zinc-300 truncate max-w-[100px]">
-                              {article.author.name}
-                            </span>
-                          </div>
+                          <Link
+                            href={`/news/${article.slug}`}
+                            className="text-xs font-bold text-primary hover:text-orange-400 transition-colors flex items-center gap-1"
+                          >
+                            <span>Read Story</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
 
                           <div className="flex items-center gap-3">
                             <button
@@ -548,18 +522,18 @@ export default function CinemaNewsPage() {
             </div>
           )}
 
-          {/* TELEGRAM CLOUD & NEWSLETTER CALLOUT */}
+          {/* TELEGRAM CLOUD ALERTS */}
           <div className="mt-16 p-8 rounded-3xl bg-gradient-to-r from-zinc-900 via-primary/10 to-zinc-900 border border-primary/30 relative overflow-hidden">
             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="space-y-2 text-center md:text-left">
                 <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-400 text-xs font-black uppercase tracking-wider">
-                  Instant Telegram Cinema Alerts
+                  FiestaFlix Telegram Channel
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-black text-white">
-                  Never Miss a Movie Premiere or Agasobanuye Drop
+                  Get Instant Movie Releases & News Drops
                 </h3>
                 <p className="text-xs sm:text-sm text-zinc-400 max-w-xl">
-                  Get breaking cinema blogs, 4K download links, and narrator commentary direct to your phone with zero ads and instant cloud storage.
+                  Receive breaking cinema scoops, 4K download links, and Agasobanuye audio commentaries direct to your phone with zero ads.
                 </p>
               </div>
 
@@ -571,29 +545,13 @@ export default function CinemaNewsPage() {
                   className="px-6 py-3.5 rounded-2xl bg-[#229ED9] hover:bg-[#1e8ec3] text-white font-extrabold text-sm shadow-xl shadow-[#229ED9]/30 transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Join Fiesta Flix Telegram</span>
+                  <span>Join FiestaFlix Telegram</span>
                 </a>
-
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="px-5 py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-sm border border-zinc-700 transition-all flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4 text-primary" />
-                  <span>Submit News Blog</span>
-                </button>
               </div>
             </div>
           </div>
         </section>
       </main>
-
-      {/* ADD NEWS MODAL */}
-      <AddNewsModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSuccess={fetchNews}
-      />
 
       <Footer />
     </div>

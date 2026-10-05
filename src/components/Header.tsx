@@ -156,7 +156,7 @@ export default function Header() {
     },
     {
       href: '/news',
-      label: 'Cinema News',
+      label: 'FiestaFlix News',
       icon: Newspaper,
       iconBg: 'bg-rose-500/25 text-rose-400 border-rose-400/40',
     },

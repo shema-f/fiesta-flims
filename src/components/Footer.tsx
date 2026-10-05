@@ -167,7 +167,7 @@ export default function Footer() {
           <div>
             <h4 className="text-base font-bold text-white mb-4">Quick Links</h4>
             <ul className="space-y-2.5">
-              <li><Link href="/news" className="text-zinc-400 text-sm hover:text-primary transition-colors flex items-center gap-1.5 font-bold text-primary">📰 Cinema News & Blogs</Link></li>
+              <li><Link href="/news" className="text-zinc-400 text-sm hover:text-primary transition-colors flex items-center gap-1.5 font-bold text-primary">📰 FiestaFlix News</Link></li>
               <li><Link href="/" className="text-zinc-400 text-sm hover:text-primary transition-colors">Home</Link></li>
               <li><Link href="/movies" className="text-zinc-400 text-sm hover:text-primary transition-colors">Movies Catalog</Link></li>
               <li><Link href="/favorites" className="text-zinc-400 text-sm hover:text-primary transition-colors">❤️ My Favorites</Link></li>

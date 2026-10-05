@@ -13,10 +13,10 @@ export default function HomeNewsSection() {
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-black text-primary uppercase tracking-wider mb-1">
             <Newspaper className="w-3.5 h-3.5" />
-            Global Cinema Blogs & Scoops
+            Official News & Scoops
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Latest Cinema News
+            FiestaFlix <span className="text-primary">News</span>
           </h2>
         </div>
 
@@ -24,7 +24,7 @@ export default function HomeNewsSection() {
           href="/news"
           className="text-xs sm:text-sm font-bold text-primary hover:text-orange-400 transition-colors flex items-center gap-1.5"
         >
-          <span>View All 20 Stories</span>
+          <span>Read All FiestaFlix News</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
