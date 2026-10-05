@@ -12,7 +12,7 @@ import RatingStars from '@/components/RatingStars';
 import TelegramDownloadHub from '@/components/TelegramDownloadHub';
 import ModernRatingSystem from '@/components/ModernRatingSystem';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { movieData, type Movie } from '@/lib/movieData';
+import { movieData, findMovieOrSeries, type Movie, type Episode } from '@/lib/movieData';
 import type { ApiMovie } from '@/lib/apiTypes';
 import { 
   Play, 
@@ -27,7 +27,8 @@ import {
   HardDrive, 
   X, 
   Film, 
-  Eye
+  Eye,
+  Tv
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import FiestaVideoPlayer from '@/components/video/FiestaVideoPlayer';
@@ -59,6 +60,10 @@ interface MovieView {
   telegramBotLink?: string;
   fileSize?: string;
   quality?: string;
+  contentType?: 'movie' | 'series';
+  seasonsCount?: number;
+  episodesCount?: number;
+  episodes?: Episode[];
 }
 
 function formatDuration(seconds: number) {
@@ -92,14 +97,14 @@ function parseSources(fileUrl: string, resolutions: unknown): VideoSource[] {
 }
 
 const DEFAULT_DESCRIPTION =
-  'Experience this amazing movie with authentic Kinyarwanda narration. Stream in crystal clear HD quality or download for offline viewing via our high-speed Telegram storage.';
+  'Experience this amazing title with authentic Kinyarwanda narration. Stream in crystal clear HD quality or download for offline viewing via our high-speed Telegram storage.';
 
 export default function MovieDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const staticId = parseInt(id, 10);
   const staticMovie = useMemo(
-    () => (Number.isNaN(staticId) ? undefined : movieData.find((m) => m.id === staticId)),
+    () => (Number.isNaN(staticId) ? undefined : findMovieOrSeries(staticId)),
     [staticId]
   );
 
@@ -118,6 +123,8 @@ export default function MovieDetailPage() {
   const [resumeSeconds, setResumeSeconds] = useState(0);
   const [subtitleTracks, setSubtitleTracks] = useState<SubtitleTrack[]>([]);
   const [preparingPlayback, setPreparingPlayback] = useState(false);
+  const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
+  const [activeSeason, setActiveSeason] = useState(1);
 
   const loadMovie = useCallback(async () => {
     if (staticMovie) {
@@ -194,10 +201,16 @@ export default function MovieDetailPage() {
         telegramBotLink: staticMovie.telegramBotLink || `https://t.me/FiestaFlixBot?start=movie_${staticMovie.id}`,
         fileSize: staticMovie.fileSize || '1.45 GB',
         quality: staticMovie.quality || '1080p FHD',
+        contentType: staticMovie.contentType || (staticMovie.duration?.includes('Eps') ? 'series' : 'movie'),
+        seasonsCount: staticMovie.seasonsCount || (staticMovie.duration?.includes('Eps') ? 1 : undefined),
+        episodesCount: staticMovie.episodesCount || (staticMovie.episodes ? staticMovie.episodes.length : (staticMovie.duration?.includes('Eps') ? 8 : undefined)),
+        episodes: staticMovie.episodes || [],
       };
     }
 
     if (apiMovie) {
+      const anyApi = apiMovie as any;
+      const isApiSeries = anyApi.contentType === 'series' || anyApi.type === 'Series' || anyApi.durationString?.includes('Eps');
       const parsed = parseSources(apiMovie.fileUrl ?? '', apiMovie.resolutions);
       return {
         id: apiMovie.id,
@@ -208,7 +221,7 @@ export default function MovieDetailPage() {
         genre: apiMovie.genre,
         rating: 8.8,
         durationSeconds: apiMovie.duration,
-        durationString: formatDuration(apiMovie.duration),
+        durationString: anyApi.durationString || formatDuration(apiMovie.duration),
         narrator: apiMovie.narrator,
         description: apiMovie.description || DEFAULT_DESCRIPTION,
         views: apiMovie.views,
@@ -219,6 +232,10 @@ export default function MovieDetailPage() {
         telegramBotLink: `https://t.me/FiestaFlixBot?start=movie_${apiMovie.id}`,
         fileSize: '1.2 GB',
         quality: '1080p FHD',
+        contentType: isApiSeries ? 'series' : 'movie',
+        seasonsCount: anyApi.seasonsCount || (isApiSeries ? 1 : undefined),
+        episodesCount: anyApi.episodesCount || (anyApi.episodes ? anyApi.episodes.length : (isApiSeries ? 8 : undefined)),
+        episodes: anyApi.episodes || [],
       };
     }
 
@@ -326,6 +343,18 @@ export default function MovieDetailPage() {
     },
     [id]
   );
+
+  const handlePlayEpisode = (ep: Episode) => {
+    setSelectedEpisode(ep);
+    const src =
+      ep.directStreamUrl ||
+      (ep.youtubeId ? `https://www.youtube.com/watch?v=${ep.youtubeId}` : view.sources[0]?.url);
+    const epSource: VideoSource = { label: ep.quality || '1080p FHD', url: src };
+    setWatchSource(epSource);
+    setPlaybackSrc(src);
+    setResumeSeconds(0);
+    setIsPlayerOpen(true);
+  };
 
   const handleDownload = () => {
     if (view.sources.length === 1) {
@@ -452,6 +481,17 @@ export default function MovieDetailPage() {
               {/* Title & Metadata */}
               <div className="flex-1 text-center md:text-left space-y-4">
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 text-xs text-zinc-400">
+                  {view.contentType === 'series' ? (
+                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-purple-600/30 to-indigo-600/30 border border-purple-500/50 text-purple-300 text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-purple-950/40">
+                      <Tv className="w-3.5 h-3.5 text-purple-400" />
+                      TV Series • Season {view.seasonsCount || 1} ({view.episodesCount || view.episodes?.length || 8} Episodes)
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary text-xs font-black uppercase tracking-wider flex items-center gap-1">
+                      <Film className="w-3.5 h-3.5" />
+                      Feature Film
+                    </span>
+                  )}
                   <span className="font-semibold text-zinc-200">{view.year}</span>
                   <span>•</span>
                   <span className="text-primary font-bold uppercase tracking-wider">{view.genre}</span>
@@ -578,6 +618,110 @@ export default function MovieDetailPage() {
           </div>
         </div>
 
+        {/* SERIES SEASONS & EPISODES EXPLORER */}
+        {view.contentType === 'series' && view.episodes && view.episodes.length > 0 && (
+          <section className="container mx-auto px-4 sm:px-6 my-8">
+            <div className="p-6 sm:p-8 rounded-3xl bg-zinc-950/90 border border-purple-500/30 shadow-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-zinc-800">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-purple-400 uppercase tracking-wider mb-1">
+                    <Tv className="w-4 h-4" />
+                    Episodic Releases
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-black text-white">
+                    Seasons & Episodes ({view.episodes.length} Available)
+                  </h3>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-zinc-400 font-semibold mr-1">Season:</span>
+                  {[1, 2, 3].slice(0, view.seasonsCount || 1).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setActiveSeason(s)}
+                      className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        activeSeason === s
+                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30'
+                          : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      Season {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Episodes Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {view.episodes
+                  .filter((ep) => ep.seasonNumber === activeSeason || (view.seasonsCount || 1) <= 1)
+                  .map((ep) => {
+                    const isPlayingThis = selectedEpisode?.id === ep.id;
+                    return (
+                      <div
+                        key={ep.id}
+                        onClick={() => handlePlayEpisode(ep)}
+                        className={`group p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                          isPlayingThis
+                            ? 'bg-purple-950/40 border-purple-500 shadow-xl shadow-purple-500/20'
+                            : 'bg-zinc-900/60 border-zinc-800 hover:border-purple-500/40 hover:bg-zinc-900'
+                        }`}
+                      >
+                        <div>
+                          <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-zinc-950">
+                            <img
+                              src={ep.thumbnail || view.image || ''}
+                              alt={ep.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur text-[10px] font-black uppercase text-purple-300 border border-purple-500/30">
+                              EP {ep.episodeNumber < 10 ? `0${ep.episodeNumber}` : ep.episodeNumber}
+                            </div>
+                            <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur text-[10px] font-semibold text-zinc-300">
+                              {ep.duration || '45m'}
+                            </div>
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-lg">
+                                <Play className="w-4 h-4 fill-white translate-x-0.5" />
+                              </span>
+                            </div>
+                          </div>
+
+                          <h4 className="font-bold text-sm text-white group-hover:text-primary transition-colors line-clamp-1 mb-1">
+                            {ep.title}
+                          </h4>
+                          <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed mb-3">
+                            {ep.description}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-xs">
+                          <span className="text-emerald-400 font-semibold flex items-center gap-1 text-[11px]">
+                            <Volume2 className="w-3 h-3" />
+                            {ep.narrator || view.narrator}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePlayEpisode(ep);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-primary hover:bg-orange-500 text-white text-[11px] font-black transition-colors flex items-center gap-1 shadow"
+                          >
+                            <Play className="w-3 h-3 fill-current" />
+                            <span>Play</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* SPONSORED VIDEO PLAYER BANNER */}
         <div className="container mx-auto px-4 sm:px-6">
           <AdBanner placement="VIDEO_PLAYER_BANNER" dismissible />
@@ -655,7 +799,14 @@ export default function MovieDetailPage() {
                 <div className="flex items-center gap-2 sm:gap-3 truncate">
                   <Play className="w-5 h-5 text-primary shrink-0" />
                   <h3 className="text-sm sm:text-lg font-bold text-white truncate">
-                    {view.title} <span className="text-xs font-normal text-zinc-400">({watchSource.label})</span>
+                    {selectedEpisode ? (
+                      <>
+                        <span className="text-primary">{selectedEpisode.title}</span> — {view.title}
+                      </>
+                    ) : (
+                      view.title
+                    )}{' '}
+                    <span className="text-xs font-normal text-zinc-400">({watchSource.label})</span>
                   </h3>
                 </div>
                 <div className="flex items-center gap-2">

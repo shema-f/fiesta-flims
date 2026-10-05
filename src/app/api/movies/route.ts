@@ -2,14 +2,17 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { jsonOk, jsonError, intParam } from '@/lib/api/helpers';
-import { movieData, type Movie as SeedMovie } from '@/lib/movieData';
+import { movieData, getAllCatalogContent, type Movie as SeedMovie } from '@/lib/movieData';
 import { notifyNewMovieUploaded } from '@/lib/notificationService';
 import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 function seedToApiMovie(seed: SeedMovie, index: number) {
-  const durationSeconds = seed.duration
+  const isSeries = seed.contentType === 'series' || (seed.duration && seed.duration.includes('Eps'));
+  const durationSeconds = isSeries
+    ? 45 * 60
+    : seed.duration
     ? (parseInt(seed.duration.split('h')[0] || '1', 10) * 3600) +
       (parseInt((seed.duration.split('h')[1] || '').replace('m', '') || '30', 10) * 60)
     : 7200;
@@ -27,6 +30,7 @@ function seedToApiMovie(seed: SeedMovie, index: number) {
     synopsis: seed.description || null,
     releaseYear: seed.year,
     duration: durationSeconds,
+    durationString: seed.duration,
     ageRating: 'PG-13',
     status: 'PUBLISHED',
     tier: 'COLD',
@@ -51,6 +55,11 @@ function seedToApiMovie(seed: SeedMovie, index: number) {
     downloads: Math.round(views / 4),
     isFeatured: Boolean(seed.trending),
     isActive: true,
+    contentType: isSeries ? 'series' : 'movie',
+    type: isSeries ? 'Series' : 'Movie',
+    seasonsCount: seed.seasonsCount || (isSeries ? 1 : undefined),
+    episodesCount: seed.episodesCount || (seed.episodes ? seed.episodes.length : (isSeries ? 8 : undefined)),
+    episodes: seed.episodes || null,
     uploaderId: 'system-admin',
     createdAt: new Date(Date.now() - index * 86400000 * 2),
     updatedAt: new Date(Date.now() - index * 86400000 * 2),
@@ -158,13 +167,34 @@ export async function GET(request: NextRequest) {
     ]);
 
     if (total > 0) {
-      return jsonOk(dbMovies, {
-        headers: {
-          'X-Total-Count': String(total),
-          'X-Page': String(page),
-          'X-Limit': String(limit),
-        },
+      let filteredDbMovies = dbMovies.map((m: any) => {
+        const isSeries = m.description?.toLowerCase().includes('season') || m.title?.toLowerCase().includes('season');
+        return {
+          ...m,
+          contentType: isSeries ? 'series' : 'movie',
+          type: isSeries ? 'Series' : 'Movie',
+        };
       });
+
+      const typeReq = sp.get('type')?.toLowerCase();
+      if (typeReq === 'series') {
+        filteredDbMovies = filteredDbMovies.filter((m: any) => m.contentType === 'series');
+      } else if (typeReq === 'movie') {
+        filteredDbMovies = filteredDbMovies.filter((m: any) => m.contentType === 'movie');
+      }
+
+      // If series requested and none in DB, fall through to rich catalog of series
+      if (typeReq === 'series' && filteredDbMovies.length === 0) {
+        // fall through to catalog fallback
+      } else {
+        return jsonOk(filteredDbMovies, {
+          headers: {
+            'X-Total-Count': String(filteredDbMovies.length),
+            'X-Page': String(page),
+            'X-Limit': String(limit),
+          },
+        });
+      }
     }
   } catch (err) {
     console.warn('[api/movies] DB query failed or unavailable, falling back to rich catalog:', err);
@@ -172,7 +202,15 @@ export async function GET(request: NextRequest) {
 
   // 2. Resilient Seed Catalog Fallback
   // Ensure the app functions completely and seamlessly in all environments
-  let catalog = movieData.map((m, idx) => seedToApiMovie(m, idx));
+  let catalog = getAllCatalogContent().map((m, idx) => seedToApiMovie(m, idx));
+
+  // Filter by content type: 'movie' | 'series'
+  const typeFilter = sp.get('type')?.toLowerCase();
+  if (typeFilter === 'series') {
+    catalog = catalog.filter((m) => m.contentType === 'series');
+  } else if (typeFilter === 'movie') {
+    catalog = catalog.filter((m) => m.contentType === 'movie');
+  }
 
   // Filter query
   if (q) {
@@ -258,6 +296,10 @@ const createMovieSchema = z.object({
   fileUrl: z.string().optional(),
   thumbnailUrl: z.string().optional(),
   youtubeId: z.string().optional(),
+  type: z.enum(['Movie', 'Series', 'movie', 'series']).optional(),
+  seasonsCount: z.number().optional(),
+  episodesCount: z.number().optional(),
+  episodes: z.array(z.any()).optional(),
   contentRightsStatus: z
     .enum(['UNKNOWN', 'LICENSED', 'PUBLIC_DOMAIN', 'UNAUTHORIZED'])
     .optional(),
@@ -272,6 +314,7 @@ export async function POST(request: Request) {
 
     const body = await request.json();
     const data = createMovieSchema.parse(body);
+    const isSeries = data.type === 'Series' || data.type === 'series';
     const slug =
       data.slug ||
       data.title
@@ -289,7 +332,7 @@ export async function POST(request: Request) {
           description: data.description || `Experience ${data.title} with high-definition audio and narration by ${data.narrator || 'FiestaFlix'}.`,
           synopsis: data.synopsis || data.description,
           releaseYear: data.releaseYear || new Date().getFullYear(),
-          duration: data.duration || 7200,
+          duration: data.duration || (isSeries ? 45 * 60 : 7200),
           narrator: data.narrator || 'Rocky Kimomo',
           genre: data.genre || 'Action',
           rating: data.rating || 8.6,
@@ -304,7 +347,7 @@ export async function POST(request: Request) {
     } catch (dbErr) {
       console.warn('[POST /api/movies] DB create failed, creating virtual movie:', dbErr);
       createdMovie = {
-        id: `movie-${Date.now()}`,
+        id: isSeries ? `series-${Date.now()}` : `movie-${Date.now()}`,
         title: data.title,
         slug,
         releaseYear: data.releaseYear || new Date().getFullYear(),
@@ -313,13 +356,31 @@ export async function POST(request: Request) {
         rating: data.rating || 8.6,
         thumbnailUrl: data.thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
         createdAt: new Date(),
+        contentType: isSeries ? 'series' : 'movie',
+        type: isSeries ? 'Series' : 'Movie',
+        seasonsCount: data.seasonsCount || (isSeries ? 1 : undefined),
+        episodesCount: data.episodesCount || (data.episodes ? data.episodes.length : (isSeries ? 1 : undefined)),
+        episodes: data.episodes || [],
       };
     }
 
-    // BROADCAST NOTIFICATION TO ALL USERS FOR NEW MOVIE UPLOAD
+    // Attach series metadata to object
+    if (isSeries) {
+      createdMovie.contentType = 'series';
+      createdMovie.type = 'Series';
+      createdMovie.seasonsCount = data.seasonsCount || 1;
+      createdMovie.episodesCount = data.episodesCount || (data.episodes ? data.episodes.length : 1);
+      createdMovie.episodes = data.episodes || [];
+    }
+
+    // BROADCAST NOTIFICATION TO ALL USERS FOR NEW MOVIE / SERIES UPLOAD
+    const notifTitle = isSeries 
+      ? `📺 Series: ${createdMovie.title} (Season ${createdMovie.seasonsCount || 1})`
+      : createdMovie.title;
+
     const notif = await notifyNewMovieUploaded({
       id: createdMovie.id,
-      title: createdMovie.title,
+      title: notifTitle,
       releaseYear: createdMovie.releaseYear || undefined,
       narrator: createdMovie.narrator || undefined,
       genre: createdMovie.genre || undefined,
@@ -331,7 +392,7 @@ export async function POST(request: Request) {
       {
         movie: createdMovie,
         notification: notif,
-        message: 'Movie uploaded and notification sent successfully',
+        message: `${isSeries ? 'Series' : 'Movie'} uploaded and notification sent successfully`,
       },
       { status: 201 }
     );

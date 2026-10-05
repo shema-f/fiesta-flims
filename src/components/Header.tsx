@@ -27,6 +27,7 @@ import {
   Speech,
   Rocket,
   Newspaper,
+  Tv,
 } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import NotificationToast from '@/components/NotificationToast';
@@ -141,6 +142,12 @@ export default function Header() {
       label: 'Movies',
       icon: Clapperboard,
       iconBg: 'bg-violet-500/25 text-violet-400 border-violet-400/40',
+    },
+    {
+      href: '/movies?type=series',
+      label: 'Series',
+      icon: Tv,
+      iconBg: 'bg-purple-500/25 text-purple-400 border-purple-400/40',
     },
     {
       href: '/rwandan-movies',

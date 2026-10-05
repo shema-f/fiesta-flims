@@ -1,3 +1,20 @@
+export interface Episode {
+  id: string | number;
+  episodeNumber: number;
+  seasonNumber: number;
+  title: string;
+  duration?: string;
+  description?: string;
+  thumbnail?: string;
+  videoUrl?: string;
+  youtubeId?: string;
+  directStreamUrl?: string;
+  downloadUrl?: string;
+  quality?: string;
+  fileSize?: string;
+  narrator?: string;
+}
+
 export interface Movie {
   id: number | string;
   title: string;
@@ -16,6 +33,10 @@ export interface Movie {
   telegramBotLink?: string;     // e.g. https://t.me/FiestaFlixBot?start=watch_101
   telegramStreamUrl?: string;   // Streaming proxy link
   directStreamUrl?: string;     // HTML5 playable video url
+  contentType?: 'movie' | 'series';
+  seasonsCount?: number;
+  episodesCount?: number;
+  episodes?: Episode[];
 }
 
 export const movieData: Movie[] = [
@@ -239,11 +260,81 @@ export const tvShowsData: Movie[] = [
     duration: "Season 1 (8 Eps)",
     quality: "1080p FHD",
     fileSize: "4.8 GB",
+    contentType: 'series',
+    seasonsCount: 1,
+    episodesCount: 8,
     description: "Seven warlords contend for the Obsidian Throne while an ancient darkness creeps across the border mountains.",
     image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900&auto=format&fit=crop",
     backdrop: "https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=1920&auto=format&fit=crop",
     telegramChannelPost: "https://t.me/fiestaflix_series/201",
-    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_101"
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_101",
+    episodes: [
+      {
+        id: "101-e1",
+        seasonNumber: 1,
+        episodeNumber: 1,
+        title: "S1:E1 - The Bloodstone Ritual",
+        duration: "52m",
+        narrator: "Rocky Kimomo",
+        description: "The ancient Obsidian portal begins glowing with violet fire as the first warlord gathers his knights.",
+        thumbnail: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        quality: "1080p FHD",
+        fileSize: "620 MB",
+      },
+      {
+        id: "101-e2",
+        seasonNumber: 1,
+        episodeNumber: 2,
+        title: "S1:E2 - Whisperers in the Dark",
+        duration: "48m",
+        narrator: "Rocky Kimomo",
+        description: "A traitor inside the high council steals the sacred cipher. Rocky brings heart-stopping suspense to the chase.",
+        thumbnail: "https://images.unsplash.com/photo-1511497584788-87676104235f?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        quality: "1080p FHD",
+        fileSize: "580 MB",
+      },
+      {
+        id: "101-e3",
+        seasonNumber: 1,
+        episodeNumber: 3,
+        title: "S1:E3 - The Siege of Karisimbi",
+        duration: "55m",
+        narrator: "Rocky Kimomo",
+        description: "Northern mountain strongholds come under fire from mechanical flying drakes.",
+        thumbnail: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        quality: "1080p FHD",
+        fileSize: "650 MB",
+      },
+      {
+        id: "101-e4",
+        seasonNumber: 1,
+        episodeNumber: 4,
+        title: "S1:E4 - The Obsidian Blade",
+        duration: "50m",
+        narrator: "Rocky Kimomo",
+        description: "The hero forges a mystical weapon capable of cleaving shadows.",
+        thumbnail: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        quality: "1080p FHD",
+        fileSize: "610 MB",
+      },
+      {
+        id: "101-e5",
+        seasonNumber: 1,
+        episodeNumber: 5,
+        title: "S1:E5 - Crown of Ash (Season Finale)",
+        duration: "61m",
+        narrator: "Rocky Kimomo",
+        description: "The climactic battle atop the Obsidian mountain alters the fate of the seven realms forever.",
+        thumbnail: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        quality: "1080p FHD",
+        fileSize: "740 MB",
+      },
+    ],
   },
   {
     id: 102,
@@ -255,11 +346,55 @@ export const tvShowsData: Movie[] = [
     duration: "Season 2 (10 Eps)",
     quality: "1080p FHD",
     fileSize: "5.2 GB",
+    contentType: 'series',
+    seasonsCount: 2,
+    episodesCount: 10,
     description: "Ambitious tech entrepreneurs and venture tycoons battle for supremacy in East Africa's fastest-growing silicon valley.",
     image: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=900&auto=format&fit=crop",
     backdrop: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1920&auto=format&fit=crop",
     telegramChannelPost: "https://t.me/fiestaflix_series/202",
-    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_102"
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_102",
+    episodes: [
+      {
+        id: "102-e1",
+        seasonNumber: 2,
+        episodeNumber: 1,
+        title: "S2:E1 - High Stakes Pitch",
+        duration: "44m",
+        narrator: "Junior Giti",
+        description: "A startup founder risks everything on a revolutionary satellite mesh protocol during a private Kigali gala.",
+        thumbnail: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        quality: "1080p FHD",
+        fileSize: "520 MB",
+      },
+      {
+        id: "102-e2",
+        seasonNumber: 2,
+        episodeNumber: 2,
+        title: "S2:E2 - The Hostile Takeover",
+        duration: "46m",
+        narrator: "Junior Giti",
+        description: "Boardroom betrayal leaves the founding team locked out of their own cloud servers.",
+        thumbnail: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        quality: "1080p FHD",
+        fileSize: "540 MB",
+      },
+      {
+        id: "102-e3",
+        seasonNumber: 2,
+        episodeNumber: 3,
+        title: "S2:E3 - Midnight Code",
+        duration: "42m",
+        narrator: "Junior Giti",
+        description: "Working from a hidden cafe in Kimihurura, an elite hacker launches a counter-intrusion.",
+        thumbnail: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        quality: "1080p FHD",
+        fileSize: "510 MB",
+      },
+    ],
   },
   {
     id: 103,
@@ -271,11 +406,42 @@ export const tvShowsData: Movie[] = [
     duration: "Season 1 (6 Eps)",
     quality: "4K UHD",
     fileSize: "6.5 GB",
+    contentType: 'series',
+    seasonsCount: 1,
+    episodesCount: 6,
     description: "A cybernetically enhanced officer and an AI hologram navigate moral corruption in a lawless mega-district.",
     image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop",
     backdrop: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=1920&auto=format&fit=crop",
     telegramChannelPost: "https://t.me/fiestaflix_series/203",
-    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_103"
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_103",
+    episodes: [
+      {
+        id: "103-e1",
+        seasonNumber: 1,
+        episodeNumber: 1,
+        title: "S1:E1 - Protocol Zero",
+        duration: "50m",
+        narrator: "Savimbi",
+        description: "First patrol into the quarantined Neon Grid reveals synthetic weapons traded on the black market.",
+        thumbnail: "https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        quality: "4K UHD",
+        fileSize: "890 MB",
+      },
+      {
+        id: "103-e2",
+        seasonNumber: 1,
+        episodeNumber: 2,
+        title: "S1:E2 - Ghost Signal",
+        duration: "53m",
+        narrator: "Savimbi",
+        description: "An encrypted telemetry feed leads to a rogue android sanctuary beneath the city monorail.",
+        thumbnail: "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        quality: "4K UHD",
+        fileSize: "910 MB",
+      },
+    ],
   },
   {
     id: 104,
@@ -287,11 +453,29 @@ export const tvShowsData: Movie[] = [
     duration: "Season 1 (12 Eps)",
     quality: "720p HD",
     fileSize: "3.2 GB",
+    contentType: 'series',
+    seasonsCount: 1,
+    episodesCount: 12,
     description: "A boisterous extended family opens an eccentric fusion restaurant in downtown Kigali with laugh-out-loud mishaps.",
     image: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop",
     backdrop: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1920&auto=format&fit=crop",
     telegramChannelPost: "https://t.me/fiestaflix_series/204",
-    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_104"
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_104",
+    episodes: [
+      {
+        id: "104-e1",
+        seasonNumber: 1,
+        episodeNumber: 1,
+        title: "S1:E1 - Grand Opening Chaos",
+        duration: "30m",
+        narrator: "Dylan",
+        description: "Uncle Gaspard accidentally orders 500 crates of hot chili instead of plantains.",
+        thumbnail: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        quality: "720p HD",
+        fileSize: "320 MB",
+      },
+    ],
   },
   {
     id: 105,
@@ -303,11 +487,29 @@ export const tvShowsData: Movie[] = [
     duration: "Season 1 (8 Eps)",
     quality: "1080p FHD",
     fileSize: "4.9 GB",
+    contentType: 'series',
+    seasonsCount: 1,
+    episodesCount: 8,
     description: "Counter-intelligence operatives play a deadly game of cat and mouse across five international capitals.",
     image: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop",
     backdrop: "https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1920&auto=format&fit=crop",
     telegramChannelPost: "https://t.me/fiestaflix_series/205",
-    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_105"
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_105",
+    episodes: [
+      {
+        id: "105-e1",
+        seasonNumber: 1,
+        episodeNumber: 1,
+        title: "S1:E1 - The Courier in Nairobi",
+        duration: "49m",
+        narrator: "PK",
+        description: "A mysterious hard drive must be transported past border security without triggering facial surveillance.",
+        thumbnail: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        quality: "1080p FHD",
+        fileSize: "590 MB",
+      },
+    ],
   },
   {
     id: 106,
@@ -319,10 +521,41 @@ export const tvShowsData: Movie[] = [
     duration: "Season 1 (5 Eps)",
     quality: "4K UHD",
     fileSize: "7.1 GB",
+    contentType: 'series',
+    seasonsCount: 1,
+    episodesCount: 5,
     description: "Breathtaking cinematography tracing the endangered mountain gorillas of the Virunga volcanoes and savannah wildlife.",
     image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=900&auto=format&fit=crop",
     backdrop: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1920&auto=format&fit=crop",
     telegramChannelPost: "https://t.me/fiestaflix_series/206",
-    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_106"
-  }
+    telegramBotLink: "https://t.me/FiestaFlixBot?start=series_106",
+    episodes: [
+      {
+        id: "106-e1",
+        seasonNumber: 1,
+        episodeNumber: 1,
+        title: "S1:E1 - Keepers of the Mist",
+        duration: "52m",
+        narrator: "Gaheza",
+        description: "The silverback alpha leads his family through ancient bamboo forests as dawn breaks over the volcanic slopes.",
+        thumbnail: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=600&auto=format&fit=crop",
+        directStreamUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        quality: "4K UHD",
+        fileSize: "920 MB",
+      },
+    ],
+  },
 ];
+
+export function getAllCatalogContent(): Movie[] {
+  const moviesWithContentType: Movie[] = movieData.map((m) => ({
+    ...m,
+    contentType: 'movie' as const,
+  }));
+  return [...moviesWithContentType, ...tvShowsData];
+}
+
+export function findMovieOrSeries(id: string | number): Movie | undefined {
+  const all = getAllCatalogContent();
+  return all.find((item) => String(item.id) === String(id));
+}

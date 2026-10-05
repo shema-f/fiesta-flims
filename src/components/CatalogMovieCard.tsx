@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Play, Volume2, Eye, Film, Star } from 'lucide-react';
+import { Play, Volume2, Eye, Film, Star, Tv } from 'lucide-react';
 import type { ApiMovie } from '@/lib/apiTypes';
 
 interface CatalogMovieCardProps {
@@ -25,6 +25,18 @@ function formatViews(views: number | undefined) {
 export default function CatalogMovieCard({ movie }: CatalogMovieCardProps) {
   const ratingVal = movie.rating ? movie.rating.toFixed(1) : '8.5';
   const viewsVal = movie.views || movie.viewCount || 15400;
+
+  const anyMovie = movie as any;
+  const isSeries =
+    anyMovie.contentType === 'series' ||
+    anyMovie.type === 'Series' ||
+    anyMovie.type === 'series' ||
+    (typeof anyMovie.durationString === 'string' && (anyMovie.durationString.includes('Eps') || anyMovie.durationString.includes('Season'))) ||
+    (movie.id && Number(movie.id) >= 101 && Number(movie.id) <= 106);
+
+  const durationLabel = isSeries
+    ? anyMovie.durationString || (anyMovie.episodesCount ? `Season ${anyMovie.seasonsCount || 1} (${anyMovie.episodesCount} Eps)` : 'Series')
+    : formatDuration(movie.duration);
 
   return (
     <Link href={`/movies/${movie.id}`} className="block group">
@@ -51,26 +63,48 @@ export default function CatalogMovieCard({ movie }: CatalogMovieCardProps) {
             <span>{ratingVal}</span>
           </div>
 
-          {movie.isFeatured && (
-            <div className="absolute top-2.5 right-2.5 bg-gradient-to-r from-primary to-orange-400 text-white px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase shadow-md">
-              Featured
-            </div>
-          )}
+          {/* Content Type Badge Top Right: Movie vs Series */}
+          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end">
+            {isSeries ? (
+              <span className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md shadow-purple-900/50">
+                <Tv className="w-3 h-3" />
+                Series
+              </span>
+            ) : (
+              <span className="bg-black/70 backdrop-blur border border-white/20 text-zinc-200 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase">
+                Movie
+              </span>
+            )}
 
-          <div className="absolute bottom-2.5 right-2.5 bg-black/75 backdrop-blur text-zinc-300 px-2 py-1 rounded-md text-[11px] font-semibold border border-zinc-700/60">
-            {formatDuration(movie.duration)}
+            {movie.isFeatured && (
+              <span className="bg-gradient-to-r from-primary to-orange-400 text-white px-2 py-0.5 rounded-full text-[9px] font-black uppercase shadow-md">
+                Featured
+              </span>
+            )}
           </div>
 
+          {/* Duration or Seasons/Episodes Pill Bottom Right */}
+          <div className="absolute bottom-2.5 right-2.5 bg-black/80 backdrop-blur text-zinc-300 px-2 py-1 rounded-md text-[11px] font-semibold border border-zinc-700/60 flex items-center gap-1">
+            {isSeries && <Tv className="w-3 h-3 text-purple-400" />}
+            <span>{durationLabel}</span>
+          </div>
+
+          {/* Hover Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-orange-500 text-white text-xs font-bold shadow-lg shadow-primary/40">
               <Play className="w-4 h-4 fill-current" />
-              Watch Now
+              {isSeries ? 'Watch Episodes' : 'Watch Movie'}
             </span>
           </div>
         </div>
 
         <div className="p-4 flex flex-col flex-1 justify-between">
           <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className={`text-[10px] font-black uppercase tracking-wider ${isSeries ? 'text-purple-400' : 'text-primary'}`}>
+                {isSeries ? 'TV Series' : 'Feature Film'}
+              </span>
+            </div>
             <h3 className="text-sm sm:text-base font-bold text-white mb-1 truncate group-hover:text-primary transition-colors">
               {movie.title}
             </h3>

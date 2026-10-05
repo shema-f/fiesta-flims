@@ -103,10 +103,49 @@ export default function AdminPage() {
     narrator: '',
     type: 'Movie',
     youtubeId: '',
+    duration: '2h 15m',
     sendNotification: true,
   });
+  const [seriesSeason, setSeriesSeason] = useState(1);
+  const [seriesEpisodes, setSeriesEpisodes] = useState<Array<{
+    episodeNumber: number;
+    seasonNumber: number;
+    title: string;
+    duration: string;
+    youtubeId: string;
+    narrator: string;
+  }>>([
+    { episodeNumber: 1, seasonNumber: 1, title: 'Episode 1: Pilot & Arrival', duration: '45m', youtubeId: '', narrator: '' },
+    { episodeNumber: 2, seasonNumber: 1, title: 'Episode 2: Shadows of Kigali', duration: '48m', youtubeId: '', narrator: '' },
+  ]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadFeedback, setUploadFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handleAddEpisode = () => {
+    const nextNum = seriesEpisodes.length + 1;
+    setSeriesEpisodes((prev) => [
+      ...prev,
+      {
+        episodeNumber: nextNum,
+        seasonNumber: seriesSeason,
+        title: `Episode ${nextNum}: Title`,
+        duration: '45m',
+        youtubeId: '',
+        narrator: uploadForm.narrator || '',
+      },
+    ]);
+  };
+
+  const handleRemoveEpisode = (index: number) => {
+    if (seriesEpisodes.length <= 1) return;
+    setSeriesEpisodes((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEpisodeChange = (index: number, field: string, val: string | number) => {
+    setSeriesEpisodes((prev) =>
+      prev.map((ep, i) => (i === index ? { ...ep, [field]: val } : ep))
+    );
+  };
 
   const stats = {
     totalMovies: movieData.length,
@@ -138,6 +177,8 @@ export default function AdminPage() {
     e.preventDefault();
     setIsUploading(true);
 
+    const isSeries = uploadForm.type === 'Series';
+
     try {
       const res = await fetch('/api/movies', {
         method: 'POST',
@@ -149,7 +190,21 @@ export default function AdminPage() {
           narrator: uploadForm.narrator,
           rating: 8.8,
           youtubeId: uploadForm.youtubeId,
-          thumbnailUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+          type: uploadForm.type,
+          seasonsCount: isSeries ? seriesSeason : undefined,
+          episodesCount: isSeries ? seriesEpisodes.length : undefined,
+          episodes: isSeries
+            ? seriesEpisodes.map((ep) => ({
+                ...ep,
+                narrator: ep.narrator || uploadForm.narrator || 'Rocky Kimomo',
+                directStreamUrl: ep.youtubeId
+                  ? `https://www.youtube.com/watch?v=${ep.youtubeId}`
+                  : 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+              }))
+            : undefined,
+          thumbnailUrl: isSeries
+            ? 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900&auto=format&fit=crop'
+            : 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
         }),
       });
 
@@ -162,7 +217,9 @@ export default function AdminPage() {
         }
         setUploadFeedback({
           type: 'success',
-          message: `🎬 "${uploadForm.title}" uploaded! Notification sent to all users.`,
+          message: isSeries
+            ? `📺 Series "${uploadForm.title}" (Season ${seriesSeason}, ${seriesEpisodes.length} Episodes) uploaded! Notification sent to all users.`
+            : `🎬 "${uploadForm.title}" uploaded! Notification sent to all users.`,
         });
         setShowUploadModal(false);
         setUploadForm({
@@ -172,18 +229,19 @@ export default function AdminPage() {
           narrator: '',
           type: 'Movie',
           youtubeId: '',
+          duration: '2h 15m',
           sendNotification: true,
         });
       } else {
         setUploadFeedback({
           type: 'error',
-          message: json.error || 'Failed to upload movie',
+          message: json.error || 'Failed to upload movie/series',
         });
       }
     } catch {
       setUploadFeedback({
         type: 'error',
-        message: 'Network error uploading movie.',
+        message: 'Network error uploading movie/series.',
       });
     } finally {
       setIsUploading(false);
@@ -677,7 +735,16 @@ export default function AdminPage() {
           <div className="bg-card rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">Upload Rwandan Movie</h2>
+                <div>
+                  <h2 className="text-2xl font-bold">
+                    {uploadForm.type === 'Series' ? '📺 Upload Series & Episodes' : '🎬 Upload Movie'}
+                  </h2>
+                  <p className="text-xs text-muted mt-0.5">
+                    {uploadForm.type === 'Series'
+                      ? 'Add a complete episodic show with multiple seasons and episodes.'
+                      : 'Add a full feature-length cinema title.'}
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowUploadModal(false)}
                   className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all"
@@ -691,12 +758,14 @@ export default function AdminPage() {
 
               <form onSubmit={handleUploadMovie} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Movie Title *</label>
+                  <label className="block text-sm font-medium mb-2">
+                    {uploadForm.type === 'Series' ? 'Series Title *' : 'Movie Title *'}
+                  </label>
                   <input
                     type="text"
                     value={uploadForm.title}
                     onChange={(e) => setUploadForm({ ...uploadForm, title: e.target.value })}
-                    placeholder="e.g., Karahanyuze: The Beginning"
+                    placeholder={uploadForm.type === 'Series' ? 'e.g., City of Dreams: Kigali' : 'e.g., Karahanyuze: The Beginning'}
                     className="w-full px-4 py-3 bg-background rounded-lg border border-white/10 focus:border-primary focus:outline-none"
                     required
                   />
@@ -704,25 +773,25 @@ export default function AdminPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Year *</label>
+                    <label className="block text-sm font-medium mb-2">Release Year *</label>
                     <input
                       type="number"
                       value={uploadForm.year}
                       onChange={(e) => setUploadForm({ ...uploadForm, year: e.target.value })}
-                      placeholder="2024"
+                      placeholder="2025"
                       className="w-full px-4 py-3 bg-background rounded-lg border border-white/10 focus:border-primary focus:outline-none"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Type *</label>
+                    <label className="block text-sm font-medium mb-2">Content Type *</label>
                     <select
                       value={uploadForm.type}
                       onChange={(e) => setUploadForm({ ...uploadForm, type: e.target.value })}
-                      className="w-full px-4 py-3 bg-background rounded-lg border border-white/10 focus:border-primary focus:outline-none"
+                      className="w-full px-4 py-3 bg-background rounded-lg border border-white/10 focus:border-primary focus:outline-none font-bold text-primary"
                     >
-                      <option value="Movie">Movie</option>
-                      <option value="Series">Series</option>
+                      <option value="Movie">🎬 Movie (Feature Film)</option>
+                      <option value="Series">📺 Series (Episodic Show)</option>
                     </select>
                   </div>
                 </div>
@@ -734,13 +803,13 @@ export default function AdminPage() {
                       type="text"
                       value={uploadForm.genre}
                       onChange={(e) => setUploadForm({ ...uploadForm, genre: e.target.value })}
-                      placeholder="Drama, Rwandan"
+                      placeholder="Drama, Action, Sci-Fi"
                       className="w-full px-4 py-3 bg-background rounded-lg border border-white/10 focus:border-primary focus:outline-none"
                       required
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Narrator *</label>
+                    <label className="block text-sm font-medium mb-2">Primary Narrator *</label>
                     <select
                       value={uploadForm.narrator}
                       onChange={(e) => setUploadForm({ ...uploadForm, narrator: e.target.value })}
@@ -748,23 +817,111 @@ export default function AdminPage() {
                       required
                     >
                       <option value="">Select narrator</option>
-                      {narratorsData.slice(0, 10).map(n => (
+                      {narratorsData.slice(0, 10).map((n) => (
                         <option key={n.id} value={n.name}>{n.name}</option>
                       ))}
                     </select>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">YouTube Video ID</label>
-                  <input
-                    type="text"
-                    value={uploadForm.youtubeId}
-                    onChange={(e) => setUploadForm({ ...uploadForm, youtubeId: e.target.value })}
-                    placeholder="dQw4w9WgXcQ"
-                    className="w-full px-4 py-3 bg-background rounded-lg border border-white/10 focus:border-primary focus:outline-none"
-                  />
-                </div>
+                {/* CONDITIONAL: MOVIE FIELDS VS SERIES EPISODES BUILDER */}
+                {uploadForm.type === 'Movie' ? (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">YouTube Video ID / Stream Key</label>
+                    <input
+                      type="text"
+                      value={uploadForm.youtubeId}
+                      onChange={(e) => setUploadForm({ ...uploadForm, youtubeId: e.target.value })}
+                      placeholder="dQw4w9WgXcQ or video source URL"
+                      className="w-full px-4 py-3 bg-background rounded-lg border border-white/10 focus:border-primary focus:outline-none"
+                    />
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-zinc-900/80 border border-purple-500/30 space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-zinc-800">
+                      <div>
+                        <h4 className="font-bold text-sm text-purple-300 flex items-center gap-1.5">
+                          <span>📺 Series Episodes Manager</span>
+                        </h4>
+                        <p className="text-[11px] text-zinc-400">
+                          {seriesEpisodes.length} episodes configured for Season {seriesSeason}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-semibold text-zinc-400">Season:</label>
+                        <select
+                          value={seriesSeason}
+                          onChange={(e) => setSeriesSeason(Number(e.target.value))}
+                          className="bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-white"
+                        >
+                          <option value={1}>Season 1</option>
+                          <option value={2}>Season 2</option>
+                          <option value={3}>Season 3</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Episodes List */}
+                    <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
+                      {seriesEpisodes.map((ep, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="px-2 py-0.5 rounded bg-purple-600/30 text-purple-300 font-mono text-[10px] font-bold">
+                              EP {ep.episodeNumber}
+                            </span>
+                            <input
+                              type="text"
+                              value={ep.title}
+                              onChange={(e) => handleEpisodeChange(idx, 'title', e.target.value)}
+                              placeholder={`Episode ${ep.episodeNumber} Title`}
+                              className="flex-1 bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-white focus:outline-none focus:border-primary"
+                              required
+                            />
+                            {seriesEpisodes.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveEpisode(idx)}
+                                className="text-rose-400 hover:text-rose-300 text-xs px-1.5 py-1 rounded bg-rose-500/10"
+                                title="Remove episode"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              value={ep.youtubeId}
+                              onChange={(e) => handleEpisodeChange(idx, 'youtubeId', e.target.value)}
+                              placeholder="YouTube ID / Stream Link"
+                              className="bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-[11px] text-white focus:outline-none"
+                            />
+                            <input
+                              type="text"
+                              value={ep.duration}
+                              onChange={(e) => handleEpisodeChange(idx, 'duration', e.target.value)}
+                              placeholder="Runtime (e.g. 45m)"
+                              className="bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-[11px] text-white focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAddEpisode}
+                      className="w-full py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <span>+ Add Another Episode</span>
+                    </button>
+                  </div>
+                )}
 
                 <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-3">
                   <input
