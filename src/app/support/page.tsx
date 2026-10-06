@@ -115,8 +115,10 @@ export default function SupportPage() {
     }
   };
 
-  const openSupportWithAmount = (amount: number) => {
-    setSelectedDefaultAmount(amount);
+  const openSupportWithAmount = (amount?: number) => {
+    if (typeof amount === 'number') {
+      setSelectedDefaultAmount(amount);
+    }
     setModalOpen(true);
   };
 
