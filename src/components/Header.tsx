@@ -32,6 +32,7 @@ import {
 import NotificationBell from '@/components/NotificationBell';
 import NotificationToast from '@/components/NotificationToast';
 import AppLogo from '@/components/AppLogo';
+import SupportModal from '@/components/SupportModal';
 
 interface SearchResultPreview {
   movies: Array<{ id: string; title: string; releaseYear: number; narrator?: string; poster?: string }>;
@@ -48,6 +49,7 @@ export default function Header() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
@@ -150,6 +152,13 @@ export default function Header() {
       iconBg: 'bg-purple-500/25 text-purple-400 border-purple-400/40',
     },
     {
+      href: '/support',
+      label: 'Support',
+      icon: Heart,
+      iconBg: 'bg-rose-500/25 text-rose-400 border-rose-400/40',
+      badgeText: 'Free',
+    },
+    {
       href: '/rwandan-movies',
       label: 'Rwanda Cinema',
       icon: Flame,
@@ -186,6 +195,13 @@ export default function Header() {
       desc: 'How to stream in 4K, download, & tips',
     },
     {
+      href: '/support',
+      label: 'Support FiestaFlix (Optional)',
+      icon: Heart,
+      iconBg: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
+      desc: '100% Free cinema • Voluntary server support',
+    },
+    {
       href: '/awards',
       label: 'Awards & Honors',
       icon: Trophy,
@@ -198,13 +214,6 @@ export default function Header() {
       icon: Users,
       iconBg: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
       desc: 'Discussions & movie requests',
-    },
-    {
-      href: '/plus',
-      label: 'Fiesta Plus',
-      icon: Rocket,
-      iconBg: 'bg-fuchsia-500/20 text-fuchsia-400 border-fuchsia-500/30',
-      desc: 'Ad-free 4K streaming & fast downloads',
     },
     {
       href: 'https://t.me/fiestaflix_movies',
@@ -280,6 +289,12 @@ export default function Header() {
                       {item.badge !== undefined && item.badge > 0 && (
                         <span className="w-4 h-4 rounded-full bg-primary/25 text-primary border border-primary/40 text-[9px] font-black flex items-center justify-center leading-none">
                           {item.badge}
+                        </span>
+                      )}
+
+                      {(item as any).badgeText && (
+                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider">
+                          {(item as any).badgeText}
                         </span>
                       )}
                     </Link>
@@ -523,6 +538,16 @@ export default function Header() {
             {/* NOTIFICATION BELL */}
             <NotificationBell />
 
+            {/* OPTIONAL VOLUNTARY SUPPORT BUTTON */}
+            <button
+              onClick={() => setIsSupportModalOpen(true)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-rose-500/20 via-primary/20 to-amber-500/20 border border-rose-500/40 hover:border-rose-400 text-rose-300 hover:text-white text-xs font-bold transition-all shadow-sm hover:scale-105"
+              title="Support FiestaFlix Optionally"
+            >
+              <Heart className="w-3.5 h-3.5 text-rose-500 fill-current animate-pulse" />
+              <span>Support Us</span>
+            </button>
+
             {/* USER PROFILE OR AUTH */}
             {user ? (
               <div className="relative" ref={userMenuRef}>
@@ -556,6 +581,15 @@ export default function Header() {
                       >
                         <Heart className="w-3.5 h-3.5 text-rose-400" />
                         <span>My List</span>
+                      </Link>
+
+                      <Link
+                        href="/support"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-rose-400 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors font-medium"
+                      >
+                        <Heart className="w-3.5 h-3.5 fill-current" />
+                        <span>Support (Optional)</span>
                       </Link>
 
                       {user.role === 'ADMIN' && (
@@ -692,6 +726,12 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      {/* GLOBAL OPTIONAL SUPPORT MODAL */}
+      <SupportModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+      />
     </header>
   );
 }

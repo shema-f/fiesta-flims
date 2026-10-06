@@ -28,12 +28,14 @@ import {
   X, 
   Film, 
   Eye,
-  Tv
+  Tv,
+  ShieldCheck,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import FiestaVideoPlayer from '@/components/video/FiestaVideoPlayer';
 import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
 import { estimateSizeLabel, DATA_SAVER_TIP } from '@/lib/dataSizes';
+import SupportModal from '@/components/SupportModal';
 
 type LoadStatus = 'loading' | 'ready' | 'error' | 'notfound';
 
@@ -64,6 +66,7 @@ interface MovieView {
   seasonsCount?: number;
   episodesCount?: number;
   episodes?: Episode[];
+  trailer?: string | null;
 }
 
 function formatDuration(seconds: number) {
@@ -81,13 +84,14 @@ function parseSources(fileUrl: string, resolutions: unknown): VideoSource[] {
   const sources: VideoSource[] = [];
   if (resolutions && typeof resolutions === 'object' && !Array.isArray(resolutions)) {
     for (const [label, url] of Object.entries(resolutions as Record<string, unknown>)) {
+      if (['episodes', 'seasonsCount', 'episodesCount'].includes(label)) continue;
       if (typeof url === 'string' && url.length > 0) {
         sources.push({ label, url });
       }
     }
   }
   if (sources.length === 0 && fileUrl) {
-    sources.push({ label: 'Default', url: fileUrl });
+    sources.push({ label: '1080p FHD', url: fileUrl });
   }
   const rank = (label: string) => {
     const n = parseInt(label, 10);
@@ -125,6 +129,9 @@ export default function MovieDetailPage() {
   const [preparingPlayback, setPreparingPlayback] = useState(false);
   const [selectedEpisode, setSelectedEpisode] = useState<Episode | null>(null);
   const [activeSeason, setActiveSeason] = useState(1);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isSeriesDownloadModalOpen, setIsSeriesDownloadModalOpen] = useState(false);
+  const [allCopied, setAllCopied] = useState(false);
 
   const loadMovie = useCallback(async () => {
     if (staticMovie) {
@@ -216,8 +223,9 @@ export default function MovieDetailPage() {
         id: apiMovie.id,
         title: apiMovie.title,
         year: apiMovie.releaseYear,
-        image: apiMovie.thumbnailUrl,
-        backdrop: apiMovie.thumbnailUrl,
+        image: anyApi.image || anyApi.poster || apiMovie.thumbnailUrl,
+        backdrop: anyApi.backdrop || anyApi.image || apiMovie.thumbnailUrl,
+        trailer: anyApi.trailer || anyApi.trailerUrl || null,
         genre: apiMovie.genre,
         rating: 8.8,
         durationSeconds: apiMovie.duration,
@@ -264,11 +272,19 @@ export default function MovieDetailPage() {
   };
 
   const triggerDownload = (source: VideoSource) => {
+    if (!source || !source.url) return;
+    const url = source.url;
+
+    // Route MediaFire URLs through /api/download to bypass MediaFire landing page and trigger direct binary download
+    const downloadEndpoint = url.includes('mediafire.com')
+      ? `/api/download?url=${encodeURIComponent(url)}`
+      : url;
+
     const anchor = document.createElement('a');
-    anchor.href = source.url;
+    anchor.href = downloadEndpoint;
     anchor.download = downloadFileName(source);
     anchor.target = '_blank';
-    anchor.rel = 'noopener';
+    anchor.rel = 'noopener noreferrer';
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -357,12 +373,22 @@ export default function MovieDetailPage() {
   };
 
   const handleDownload = () => {
+    // If it's a series with episodes, open the dedicated episodes download list modal
+    if (view.episodes && view.episodes.length > 0) {
+      setIsSeriesDownloadModalOpen(true);
+      return;
+    }
+
     if (view.sources.length === 1) {
       triggerDownload(view.sources[0]);
       return;
     }
     if (view.sources.length > 1) {
       setIsDownloadOpen((open) => !open);
+      return;
+    }
+    if (apiMovie?.fileUrl) {
+      triggerDownload({ label: '1080p FHD', url: apiMovie.fileUrl });
     }
   };
 
@@ -558,10 +584,14 @@ export default function MovieDetailPage() {
                   <div className="relative inline-flex">
                     <button
                       onClick={handleDownload}
-                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-base border border-zinc-700 transition-all hover:scale-105 touch-manipulation"
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-bold text-base border border-zinc-700 transition-all hover:scale-105 touch-manipulation shadow-lg"
                     >
-                      <Download className="w-5 h-5" />
-                      <span>Download</span>
+                      <Download className="w-5 h-5 text-primary" />
+                      <span>
+                        {view.episodes && view.episodes.length > 0
+                          ? `Download Episodes (${view.episodes.length})`
+                          : 'Download'}
+                      </span>
                     </button>
 
                     {isDownloadOpen && view.sources.length > 1 && (
@@ -591,6 +621,24 @@ export default function MovieDetailPage() {
                     )}
                   </div>
 
+                  {view.trailer && (
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        const trUrl = view.trailer!;
+                        setPlaybackSrc(trUrl);
+                        setWatchSource({ label: 'Trailer', url: trUrl });
+                        setResumeSeconds(0);
+                        setIsPlayerOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 hover:text-amber-300 font-bold text-sm border border-amber-500/30 transition-all hover:scale-105 touch-manipulation shadow-lg shadow-amber-950/20"
+                    >
+                      <Film className="w-4 h-4 text-amber-400" />
+                      <span>Watch Trailer</span>
+                    </motion.button>
+                  )}
+
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -612,8 +660,56 @@ export default function MovieDetailPage() {
                     {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
                     <span className="text-xs font-semibold">{copied ? 'Copied' : 'Share'}</span>
                   </button>
+
+                  {/* OPTIONAL SUPPORT BUTTON */}
+                  <button
+                    onClick={() => setIsSupportModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500/20 via-primary/20 to-amber-500/20 hover:from-rose-500/30 hover:to-amber-500/30 text-rose-300 hover:text-white font-bold text-sm border border-rose-500/40 transition-all hover:scale-105 touch-manipulation shadow-md"
+                    title="FiestaFlix is 100% Free! Support server costs optionally"
+                  >
+                    <Heart className="w-4 h-4 text-rose-500 fill-current animate-pulse" />
+                    <span>Support (Optional)</span>
+                  </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 100% FREE & OPTIONAL SUPPORT BANNER */}
+        <div className="container mx-auto px-4 sm:px-6 my-6">
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-zinc-950 via-zinc-900 to-zinc-950 border border-zinc-800/90 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+            <div className="flex items-center gap-3.5 text-center sm:text-left">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-bold text-white flex items-center gap-2 justify-center sm:justify-start">
+                  <span>100% Free Cinema (Ku Buntu)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase">
+                    No Subscription
+                  </span>
+                </p>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  Enjoying &ldquo;{view.title}&rdquo;? All 4K streams and downloads are free forever. If you want to help keep our cloud servers fast, you can optionally support us via MTN MoMo.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setIsSupportModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs shadow-md shadow-primary/20 transition-all flex items-center gap-1.5"
+              >
+                <Heart className="w-3.5 h-3.5 fill-current" />
+                <span>Support Optionally</span>
+              </button>
+              <Link
+                href="/support"
+                className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs border border-zinc-700 transition-colors"
+              >
+                Learn More
+              </Link>
             </div>
           </div>
         </div>
@@ -633,31 +729,34 @@ export default function MovieDetailPage() {
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-zinc-400 font-semibold mr-1">Season:</span>
-                  {[1, 2, 3].slice(0, view.seasonsCount || 1).map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => setActiveSeason(s)}
-                      className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                        activeSeason === s
-                          ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30'
-                          : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
-                      }`}
-                    >
-                      Season {s}
-                    </button>
-                  ))}
-                </div>
+                {view.seasonsCount && view.seasonsCount > 1 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-zinc-400 font-semibold mr-1">Season:</span>
+                    {Array.from({ length: view.seasonsCount }, (_, i) => i + 1).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setActiveSeason(s)}
+                        className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          activeSeason === s
+                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-600/30'
+                            : 'bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white'
+                        }`}
+                      >
+                        Season {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Episodes Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {view.episodes
-                  .filter((ep) => ep.seasonNumber === activeSeason || (view.seasonsCount || 1) <= 1)
+                  .filter((ep) => !view.seasonsCount || view.seasonsCount <= 1 || ep.seasonNumber === activeSeason)
                   .map((ep) => {
                     const isPlayingThis = selectedEpisode?.id === ep.id;
+                    const mediaLink = ep.directStreamUrl || ep.videoUrl || ep.downloadUrl;
                     return (
                       <div
                         key={ep.id}
@@ -702,17 +801,32 @@ export default function MovieDetailPage() {
                             {ep.narrator || view.narrator}
                           </span>
 
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePlayEpisode(ep);
-                            }}
-                            className="px-2.5 py-1 rounded-lg bg-primary hover:bg-orange-500 text-white text-[11px] font-black transition-colors flex items-center gap-1 shadow"
-                          >
-                            <Play className="w-3 h-3 fill-current" />
-                            <span>Play</span>
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            {mediaLink && (
+                              <a
+                                href={mediaLink.includes('mediafire.com') ? `/api/download?url=${encodeURIComponent(mediaLink)}` : mediaLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white text-[11px] font-bold transition-colors flex items-center gap-1 border border-zinc-700"
+                                title="Direct download video file"
+                              >
+                                <Download className="w-3 h-3 text-primary" />
+                                <span>Download</span>
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePlayEpisode(ep);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-primary hover:bg-orange-500 text-white text-[11px] font-black transition-colors flex items-center gap-1 shadow"
+                            >
+                              <Play className="w-3 h-3 fill-current" />
+                              <span>Play</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     );
@@ -891,6 +1005,155 @@ export default function MovieDetailPage() {
           </div>
         )}
       </main>
+
+      {/* SERIES EPISODES DOWNLOAD MODAL */}
+      {isSeriesDownloadModalOpen && view.episodes && view.episodes.length > 0 && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setIsSeriesDownloadModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-3xl max-h-[88vh] bg-zinc-950 border border-zinc-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="p-4 sm:p-6 border-b border-zinc-800 flex items-start justify-between gap-4 bg-zinc-900/60">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-primary/20 border border-primary/40 flex items-center justify-center text-primary shrink-0">
+                  <Download className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-2xl font-black text-white">
+                    Download {view.title} Episodes
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Select an episode to download directly ({view.episodes.length} episodes available)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSeriesDownloadModalOpen(false)}
+                className="w-9 h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Controls Bar */}
+            <div className="p-3 sm:px-6 bg-zinc-900/40 border-b border-zinc-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              {view.seasonsCount && view.seasonsCount > 1 ? (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+                  <span className="text-xs font-bold text-zinc-400 mr-1">Season:</span>
+                  {Array.from({ length: view.seasonsCount }, (_, i) => i + 1).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setActiveSeason(s)}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                        activeSeason === s
+                          ? 'bg-primary text-white shadow-md shadow-primary/30'
+                          : 'bg-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      Season {s}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+                  <span>✓</span> High-Speed MediaFire Direct Links
+                </span>
+              )}
+
+              {/* Copy all links button */}
+              <button
+                type="button"
+                onClick={() => {
+                  const links = view.episodes!
+                    .map((ep) => `${ep.title}: ${ep.downloadUrl || ep.videoUrl || ep.directStreamUrl}`)
+                    .join('\n');
+                  if (navigator.clipboard) {
+                    navigator.clipboard.writeText(links);
+                    setAllCopied(true);
+                    setTimeout(() => setAllCopied(false), 2500);
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 border border-zinc-700 shrink-0"
+              >
+                {allCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-primary" />}
+                <span>{allCopied ? 'All Links Copied!' : 'Copy All Links'}</span>
+              </button>
+            </div>
+
+            {/* Scrollable Episodes List */}
+            <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-2.5 divide-y divide-zinc-800/50">
+              {view.episodes
+                .filter((ep) => !view.seasonsCount || view.seasonsCount <= 1 || ep.seasonNumber === activeSeason)
+                .map((ep) => {
+                  const mediaLink = ep.downloadUrl || ep.videoUrl || ep.directStreamUrl;
+                  return (
+                    <div
+                      key={ep.id}
+                      className="pt-2.5 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl hover:bg-zinc-900/60 transition-colors border border-transparent hover:border-zinc-800"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-300 font-black text-xs flex items-center justify-center shrink-0">
+                          {ep.episodeNumber < 10 ? `E0${ep.episodeNumber}` : `E${ep.episodeNumber}`}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white leading-snug">
+                            {ep.title}
+                          </h4>
+                          <p className="text-[11px] text-zinc-400 flex items-center gap-2 mt-0.5">
+                            <span>Season {ep.seasonNumber}</span>
+                            <span>•</span>
+                            <span>{ep.duration || '45m'}</span>
+                            <span>•</span>
+                            <span className="text-emerald-400 font-medium">Agasobanuye: {ep.narrator || view.narrator}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSeriesDownloadModalOpen(false);
+                            handlePlayEpisode(ep);
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold transition-colors flex items-center gap-1.5 border border-zinc-700"
+                        >
+                          <Play className="w-3.5 h-3.5 text-primary" />
+                          <span>Stream</span>
+                        </button>
+
+                        {mediaLink && (
+                          <a
+                            href={mediaLink.includes('mediafire.com') ? `/api/download?url=${encodeURIComponent(mediaLink)}` : mediaLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-primary/20 hover:scale-105"
+                            title="Direct download file immediately"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Direct Download</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OPTIONAL SUPPORT MODAL */}
+      <SupportModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+      />
 
       <Footer />
     </div>

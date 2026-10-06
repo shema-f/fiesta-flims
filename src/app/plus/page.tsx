@@ -1,104 +1,98 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
-import { Check, Sparkles, Crown, Zap } from 'lucide-react';
+import { Check, Sparkles, Heart, Zap, ShieldCheck, Play, ArrowRight } from 'lucide-react';
 
-const FREE = ['Unlimited streaming', 'Full search & discovery', 'Interpreter profiles', 'Reviews & community'];
-const PLUS = [
-  '1080p & 4K streaming',
-  'Offline downloads',
-  'Ad-free experience',
-  'Early access to new releases',
-  'Multiple audio & subtitle tracks',
-  'Exclusive Rwandan content',
-];
-
-const PASSES = [
-  { name: '1-Day Pass', price: '500', note: 'Great for a weekend binge' },
-  { name: '7-Day Pass', price: '2,000', note: 'For the week-long marathon' },
-  { name: 'Monthly', price: '5,000', note: 'Best value, cancel anytime' },
+const ALL_FEATURES_FREE = [
+  '100% Free 4K & 1080p Ultra HD streaming',
+  'Unlimited offline Telegram cloud downloads',
+  'Authentic Agasobanuye voice tracks (Rocky Kimomo, Junior Giti, Sankara)',
+  'Exclusive Rwandan cinema & TV series',
+  'Full search, narrator profiles, & recommendations',
+  'Zero mandatory subscription fees — ever',
 ];
 
 export default function PlusPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-black text-foreground">
       <Header />
 
       <main className="pt-24 pb-24">
-        <section className="container-tight pb-12 pt-10 text-center">
-          <span className="eyebrow">Membership</span>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            Fiesta Flix <span className="text-primary">Plus</span>
+        <section className="container mx-auto px-4 sm:px-6 max-w-4xl pb-12 pt-10 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-extrabold shadow-sm">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>100% Free Forever • Ku Buntu • No Subscriptions</span>
+          </div>
+
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
+            FiestaFlix is <span className="bg-gradient-to-r from-emerald-400 via-primary to-amber-300 bg-clip-text text-transparent">100% Free</span> For Everyone!
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-            Watching is free, forever. Plus is for people who want the best quality, offline
-            downloads and no interruptions.
+
+          <p className="mx-auto max-w-2xl text-sm sm:text-base text-zinc-300 leading-relaxed font-medium">
+            We believe Agasobanuye cinema belongs to everyone. There are no VIP tiers, no paid memberships, and no paywalls. All movies, 4K streams, and offline downloads are completely free at <strong>0 RWF</strong>.
           </p>
-        </section>
 
-        <section className="container-tight grid gap-6 lg:grid-cols-2">
-          <div className="card-surface p-8">
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-muted" />
-              <h2 className="text-xl font-bold">Free</h2>
-            </div>
-            <p className="mt-1 text-xs text-muted">Everything you need to start watching.</p>
-            <p className="mt-6 text-3xl font-bold">
-              RWF 0 <span className="text-sm font-normal text-muted">/ forever</span>
-            </p>
-            <ul className="mt-6 space-y-3">
-              {FREE.map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm text-muted">
-                  <Check className="h-4 w-4 text-emerald-400" /> {f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/movies" className="btn-ghost mt-8 w-full">
-              Start watching
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <Link
+              href="/movies"
+              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-primary via-orange-500 to-amber-500 hover:from-primary/90 hover:to-amber-600 text-white font-black text-sm shadow-xl shadow-primary/30 transition-all hover:scale-105 flex items-center gap-2"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              <span>Start Watching Free</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
 
-          <div className="relative overflow-hidden rounded-2xl border border-primary/40 bg-gradient-to-b from-primary/10 to-transparent p-8 shadow-glow">
-            <span className="absolute right-6 top-6 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-              Most popular
-            </span>
-            <div className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-bold">Plus</h2>
-            </div>
-            <p className="mt-1 text-xs text-muted">For the true Agasobanuye fan.</p>
-            <p className="mt-6 text-3xl font-bold">
-              RWF 5,000 <span className="text-sm font-normal text-muted">/ month</span>
-            </p>
-            <ul className="mt-6 space-y-3">
-              {PLUS.map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm text-foreground/90">
-                  <Sparkles className="h-4 w-4 text-primary" /> {f}
-                </li>
-              ))}
-            </ul>
-            <Link href="/signup" className="btn-primary mt-8 w-full">
-              Get Plus
+            <Link
+              href="/support"
+              className="px-6 py-3.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-zinc-200 hover:text-white font-bold text-sm border border-zinc-800 transition-all flex items-center gap-2"
+            >
+              <Heart className="w-4 h-4 text-rose-500 fill-current" />
+              <span>Optional Community Support</span>
             </Link>
           </div>
         </section>
 
-        <section className="container-tight mt-12">
-          <h2 className="mb-5 text-lg font-bold">Or grab a pass</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {PASSES.map((p) => (
-              <div key={p.name} className="card-surface p-6">
-                <h3 className="text-sm font-bold">{p.name}</h3>
-                <p className="mt-3 text-2xl font-bold">
-                  RWF {p.price}
-                </p>
-                <p className="mt-1 text-xs text-muted">{p.note}</p>
+        {/* Feature Unlocked Card */}
+        <section className="container mx-auto px-4 sm:px-6 max-w-3xl">
+          <div className="rounded-3xl bg-zinc-950 border border-zinc-800 p-8 sm:p-10 space-y-6 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-5">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-400">Everything Unlocked</span>
+                <h2 className="text-2xl font-black text-white mt-1">Free Access For All Fans</h2>
               </div>
-            ))}
+              <div className="text-right">
+                <span className="text-3xl font-black text-emerald-400">0 RWF</span>
+                <p className="text-xs text-zinc-500">Forever</p>
+              </div>
+            </div>
+
+            <ul className="grid sm:grid-cols-2 gap-3.5 pt-2">
+              {ALL_FEATURES_FREE.map((f) => (
+                <li key={f} className="flex items-start gap-2.5 text-xs sm:text-sm text-zinc-300">
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 space-y-3 mt-6">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-sm">
+                <Heart className="w-4 h-4 fill-current text-rose-500" />
+                <span>Want to help keep our servers running?</span>
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Hosting 4K video files and cloud bandwidth costs money every month. 
+                Supporting us is <strong>100% voluntary</strong>. If you love FiestaFlix, you can optionally contribute via MTN MoMo or Airtel Money.
+              </p>
+              <Link
+                href="/support"
+                className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline pt-1"
+              >
+                <span>Go to Support Page</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
-          <p className="mt-6 text-center text-xs text-muted">
-            Pay with MTN Mobile Money or Airtel Money. No card required.
-          </p>
         </section>
       </main>
 

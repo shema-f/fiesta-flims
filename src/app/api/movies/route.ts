@@ -168,11 +168,30 @@ export async function GET(request: NextRequest) {
 
     if (total > 0) {
       let filteredDbMovies = dbMovies.map((m: any) => {
-        const isSeries = m.description?.toLowerCase().includes('season') || m.title?.toLowerCase().includes('season');
+        const resObj = m.resolutions && typeof m.resolutions === 'object' ? m.resolutions : null;
+        const episodes = Array.isArray(resObj?.episodes) ? resObj.episodes : null;
+        const isSeries = Boolean(
+          (episodes && episodes.length > 1) ||
+          m.description?.toLowerCase().includes('season') ||
+          m.title?.toLowerCase().includes('season') ||
+          m.title?.toLowerCase().includes('series')
+        );
+        const posterImg = m.poster || m.thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200&auto=format&fit=crop';
         return {
           ...m,
+          image: posterImg,
+          thumbnailUrl: m.thumbnailUrl || posterImg,
+          backdrop: m.backdrop || posterImg,
+          trailer: m.trailer || null,
+          trailerUrl: m.trailer || null,
+          year: m.releaseYear || (m.createdAt ? new Date(m.createdAt).getFullYear() : 2024),
+          rating: m.rating || 8.5,
           contentType: isSeries ? 'series' : 'movie',
           type: isSeries ? 'Series' : 'Movie',
+          seasonsCount: resObj?.seasonsCount || (isSeries ? 1 : undefined),
+          episodesCount: episodes ? episodes.length : undefined,
+          episodes: episodes || undefined,
+          durationString: isSeries && episodes ? `${episodes.length} Eps` : undefined,
         };
       });
 

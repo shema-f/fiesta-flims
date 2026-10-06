@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate",
+    "postinstall": "prisma generate || true",
     "import:movies": "npx ts-node scripts/import-movies.ts",
     "worker": "ts-node scripts/media-worker.ts",
     "db:migrate": "prisma migrate deploy",
@@ -34,7 +34,6 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -42,7 +41,6 @@
     "autoprefixer": "^10.5.0",
     "eslint": "^8",
     "eslint-config-next": "^15.3.3",
-    "playwright": "^1.48.0",
     "postcss": "^8",
     "prisma": "^5.19.0",
     "tailwindcss": "^3.4.1",

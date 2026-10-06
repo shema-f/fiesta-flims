@@ -8,12 +8,14 @@ Create an Excel or CSV file with these columns:
 |-------------|------|-----------|-------------|---------|
 | title | String | Yes | Movie title | "The Great Adventure" |
 | description | String | No | Movie description | "An epic journey..." |
-| narrator | String | Yes | Narrator/interpreter name | "John Doe" |
-| genre | String | Yes | Movie genre | "Drama" |
+| narrator | String | Yes | Narrator/interpreter name | "Rocky Kimomo" |
+| genre | String | Yes | Movie genre | "Action" |
 | duration | Number | Yes | Duration in seconds | 7200 (for 2 hours) |
 | releaseYear | Number | No | Release year | 2024 |
-| fileUrl | String | Yes | URL to video file | "https://..." |
-| thumbnailUrl | String | No | URL to thumbnail image | "https://..." |
+| fileUrl | String | Yes | URL to full movie video (Telegram, R2, B2) | "https://cdn.example.com/movie.mp4" |
+| thumbnailUrl | String | No | Poster image URL (2:3 aspect ratio) | "https://images.unsplash.com/..." |
+| backdrop | String | No | Widescreen backdrop URL (16:9 banner) | "https://images.unsplash.com/..." |
+| trailer | String | No | YouTube trailer URL or MP4 clip | "https://www.youtube.com/watch?v=dQw4w9WgXcQ" |
 | views | Number | No (default 0) | Number of views | 100 |
 | downloads | Number | No (default 0) | Number of downloads | 50 |
 | isFeatured | Boolean | No (default false) | Is featured? | TRUE/FALSE |

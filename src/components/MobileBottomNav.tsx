@@ -25,6 +25,13 @@ export default function MobileBottomNav() {
       iconBg: 'bg-violet-500/20 text-violet-400 border-violet-400/30',
     },
     {
+      href: '/support',
+      label: 'Support',
+      icon: Heart,
+      iconBg: 'bg-rose-500/20 text-rose-400 border-rose-400/30',
+      badgeText: 'Free',
+    },
+    {
       href: '/favorites',
       label: 'My List',
       icon: Heart,
@@ -38,12 +45,6 @@ export default function MobileBottomNav() {
       iconBg: 'bg-[#229ED9]/20 text-[#229ED9] border-[#229ED9]/30',
       external: true,
       color: 'text-[#229ED9]',
-    },
-    {
-      href: '/request-movie',
-      label: 'Request',
-      icon: Rocket,
-      iconBg: 'bg-orange-500/20 text-orange-400 border-orange-400/30',
     },
   ];
 

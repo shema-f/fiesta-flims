@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AdBanner from '@/components/AdBanner';
+import CommentSortDropdown, { CommentSortOption } from '@/components/CommentSortDropdown';
 import { 
   Calendar, 
   Clock, 
@@ -119,20 +120,46 @@ export default function FiestaFlixNewsDetailPage() {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [fontSize, setFontSize] = useState<'normal' | 'large' | 'xlarge'>('normal');
 
-  const [comments, setComments] = useState<Array<{ id: string; name: string; text: string; time: string }>>([
+  const [comments, setComments] = useState<
+    Array<{
+      id: string;
+      name: string;
+      text: string;
+      time: string;
+      createdAt: number;
+      likes: number;
+      isLiked?: boolean;
+    }>
+  >([
     {
       id: 'c1',
       name: 'Eric Mugisha',
       text: 'Agasobanuye is truly reaching world-class standards! Can not wait for the upcoming releases.',
       time: '2 hours ago',
+      createdAt: Date.now() - 2 * 60 * 60 * 1000,
+      likes: 14,
+      isLiked: false,
     },
     {
       id: 'c2',
       name: 'Sandrine K.',
       text: 'Rocky Kimomo and Junior Giti deserve all the global recognition. Great coverage FiestaFlix!',
       time: '4 hours ago',
+      createdAt: Date.now() - 4 * 60 * 60 * 1000,
+      likes: 27,
+      isLiked: false,
+    },
+    {
+      id: 'c3',
+      name: 'Fabrice N.',
+      text: 'The sound design and voice acting quality in Rwandan translated cinema is top tier now.',
+      time: '6 hours ago',
+      createdAt: Date.now() - 6 * 60 * 60 * 1000,
+      likes: 9,
+      isLiked: false,
     },
   ]);
+  const [sortOption, setSortOption] = useState<CommentSortOption>('Newest');
   const [newComment, setNewComment] = useState('');
   const [commenterName, setCommenterName] = useState('');
 
@@ -217,17 +244,56 @@ export default function FiestaFlixNewsDetailPage() {
     e.preventDefault();
     if (!newComment.trim()) return;
 
+    const createdTime = Date.now();
     setComments((prev) => [
       {
-        id: `c-${Date.now()}`,
-        name: commenterName.trim() || 'Movie Fan',
+        id: `c-${createdTime}`,
+        name: commenterName.trim() || 'Cinema Fan',
         text: newComment.trim(),
         time: 'Just now',
+        createdAt: createdTime,
+        likes: 0,
+        isLiked: false,
       },
       ...prev,
     ]);
     setNewComment('');
   };
+
+  const handleToggleCommentLike = (commentId: string) => {
+    setComments((prev) =>
+      prev.map((c) => {
+        if (c.id === commentId) {
+          const nextLiked = !c.isLiked;
+          return {
+            ...c,
+            isLiked: nextLiked,
+            likes: nextLiked ? c.likes + 1 : Math.max(0, c.likes - 1),
+          };
+        }
+        return c;
+      })
+    );
+  };
+
+  const sortedComments = useMemo(() => {
+    const list = [...comments];
+    if (sortOption === 'Newest') {
+      return list.sort((a, b) => b.createdAt - a.createdAt);
+    }
+    if (sortOption === 'Oldest') {
+      return list.sort((a, b) => a.createdAt - b.createdAt);
+    }
+    if (sortOption === 'Most Liked') {
+      return list.sort((a, b) => {
+        if (b.likes !== a.likes) {
+          return b.likes - a.likes;
+        }
+        return b.createdAt - a.createdAt;
+      });
+    }
+    return list;
+  }, [comments, sortOption]);
 
   const fontSizeClass =
     fontSize === 'xlarge'
@@ -475,12 +541,23 @@ export default function FiestaFlixNewsDetailPage() {
 
           {/* READER REACTIONS & COMMENTS */}
           <section className="mt-12 p-6 sm:p-8 rounded-3xl bg-zinc-950 border border-zinc-800">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-primary" />
-                Reader Reactions ({comments.length})
-              </h3>
-              <span className="text-xs text-zinc-500">Live Feedback</span>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-zinc-900">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    Reader Reactions ({comments.length})
+                  </h3>
+                  <span className="text-[11px] text-zinc-500">Live community discussion & reviews</span>
+                </div>
+              </div>
+
+              {/* DROPDOWN TO SORT READER COMMENTS */}
+              <div className="flex items-center gap-2">
+                <CommentSortDropdown value={sortOption} onChange={setSortOption} />
+              </div>
             </div>
 
             {/* Add Comment Form */}
@@ -506,25 +583,69 @@ export default function FiestaFlixNewsDetailPage() {
                 />
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-orange-500 text-white text-xs font-black transition-colors shrink-0"
+                  className="px-5 py-2.5 rounded-xl bg-primary hover:bg-orange-500 text-white text-xs font-black transition-colors shrink-0 shadow-sm"
                 >
                   Post Reaction
                 </button>
               </div>
             </form>
 
-            {/* Comment List */}
-            <div className="space-y-4">
-              {comments.map((c) => (
-                <div key={c.id} className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-bold text-white">{c.name}</span>
-                    <span className="text-[11px] text-zinc-500">{c.time}</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">{c.text}</p>
-                </div>
-              ))}
+            {/* Current Sort Status Bar */}
+            <div className="flex items-center justify-between text-xs text-zinc-500 mb-4 px-1">
+              <span>
+                Showing <strong className="text-zinc-300">{sortedComments.length}</strong> reactions
+              </span>
+              <span className="text-[11px] text-zinc-400">
+                Sorted by <span className="font-bold text-primary">{sortOption}</span>
+              </span>
             </div>
+
+            {/* Comment List */}
+            {sortedComments.length === 0 ? (
+              <div className="text-center py-8 rounded-2xl bg-zinc-900/30 border border-dashed border-zinc-800 text-zinc-500 text-xs">
+                No reactions yet. Be the first to share your reaction to this story!
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                {sortedComments.map((c) => (
+                  <div
+                    key={c.id}
+                    className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700/80 transition-all flex flex-col justify-between gap-3"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary/30 to-orange-500/20 text-primary border border-primary/30 flex items-center justify-center text-xs font-black">
+                            {c.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-white block leading-tight">{c.name}</span>
+                            <span className="text-[10px] text-zinc-500">{c.time}</span>
+                          </div>
+                        </div>
+
+                        {/* Comment Like / Upvote Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCommentLike(c.id)}
+                          aria-label={`Like comment by ${c.name}, currently ${c.likes} likes`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                            c.isLiked
+                              ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-sm'
+                              : 'bg-zinc-800/70 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/50'
+                          }`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${c.isLiked ? 'fill-rose-400 text-rose-400' : ''}`} />
+                          <span className="text-[11px] font-bold">{c.likes}</span>
+                        </button>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed pl-9">{c.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* RELATED FIESTAFLIX NEWS */}

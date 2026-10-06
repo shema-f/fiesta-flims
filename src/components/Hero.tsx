@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Play, Mic2, Sparkles, Download, Tv, Film, CheckCircle2 } from 'lucide-react';
+import { Play, Mic2, Sparkles, Download, Tv, Film, CheckCircle2, Heart } from 'lucide-react';
 
 export default function Hero() {
   return (
@@ -20,10 +20,10 @@ export default function Hero() {
 
       <div className="container-tight pb-16 pt-28 sm:pt-36 text-center relative z-10">
         {/* Top Eyebrow Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-primary/30 backdrop-blur-md shadow-lg shadow-primary/10 mb-6">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-emerald-500/40 backdrop-blur-md shadow-lg shadow-emerald-500/10 mb-6">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs font-bold text-zinc-200">
-            🇷🇼 #1 Rwandan Cinema Platform • 4K Ultra HD & Cloud Downloads
+            🇷🇼 100% Free Cinema (Ku Buntu) • 4K Ultra HD & Downloads • Optional Community Support
           </span>
         </div>
 
@@ -65,6 +65,14 @@ export default function Hero() {
           >
             <Mic2 className="h-4 w-4 text-primary" />
             <span>Top Interpreters</span>
+          </Link>
+
+          <Link
+            href="/support"
+            className="px-4 py-3 rounded-full bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-white font-semibold text-xs sm:text-sm border border-rose-500/30 transition-all flex items-center gap-1.5 shadow-sm hover:scale-105"
+          >
+            <Heart className="h-4 w-4 text-rose-500 fill-current animate-pulse" />
+            <span>Support (Optional)</span>
           </Link>
         </div>
 

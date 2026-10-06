@@ -14,6 +14,10 @@ interface MovieCSV {
   releaseYear?: string;
   fileUrl: string;
   thumbnailUrl?: string;
+  poster?: string;
+  backdrop?: string;
+  trailer?: string;
+  trailerUrl?: string;
   views?: string;
   downloads?: string;
   isFeatured?: string;
@@ -75,7 +79,10 @@ async function importMovies() {
               duration,
               releaseYear,
               fileUrl: movieData.fileUrl,
-              thumbnailUrl: movieData.thumbnailUrl || null,
+              thumbnailUrl: movieData.thumbnailUrl || movieData.poster || null,
+              poster: movieData.poster || movieData.thumbnailUrl || null,
+              backdrop: movieData.backdrop || movieData.thumbnailUrl || null,
+              trailer: movieData.trailer || movieData.trailerUrl || null,
               resolutions: {},
               views,
               downloads,

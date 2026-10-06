@@ -18,11 +18,31 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
+        hostname: "m.media-amazon.com",
+      },
+      {
+        protocol: "https",
         hostname: "images.unsplash.com",
       },
       {
         protocol: "https",
+        hostname: "image.tmdb.org",
+      },
+      {
+        protocol: "https",
+        hostname: "encrypted-tbn0.gstatic.com",
+      },
+      {
+        protocol: "https",
         hostname: "coresg-normal.trae.ai",
+      },
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
       },
     ],
   },

@@ -12,12 +12,41 @@ export async function GET(
 
   try {
     const movie = await prisma.movie.findFirst({
-      where: { id, isActive: true },
+      where: {
+        OR: [{ id }, { slug: id }],
+        isActive: true,
+      },
       include: { uploader: { select: { id: true, name: true } } },
     });
 
     if (movie) {
-      return NextResponse.json({ success: true, data: movie });
+      const resObj = movie.resolutions && typeof movie.resolutions === 'object' ? (movie.resolutions as any) : null;
+      const episodes = Array.isArray(resObj?.episodes) ? resObj.episodes : null;
+      const isSeries = Boolean(
+        (episodes && episodes.length > 1) ||
+        movie.description?.toLowerCase().includes('season') ||
+        movie.title?.toLowerCase().includes('season') ||
+        movie.title?.toLowerCase().includes('series')
+      );
+      const posterImg = movie.poster || movie.thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200&auto=format&fit=crop';
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...movie,
+          image: posterImg,
+          thumbnailUrl: movie.thumbnailUrl || posterImg,
+          backdrop: movie.backdrop || posterImg,
+          trailer: movie.trailer || null,
+          trailerUrl: movie.trailer || null,
+          year: movie.releaseYear || (movie.createdAt ? new Date(movie.createdAt).getFullYear() : 2024),
+          contentType: isSeries ? 'series' : 'movie',
+          type: isSeries ? 'Series' : 'Movie',
+          seasonsCount: resObj?.seasonsCount || (isSeries ? 1 : undefined),
+          episodesCount: episodes ? episodes.length : undefined,
+          episodes: episodes || undefined,
+          durationString: isSeries && episodes ? `${episodes.length} Eps` : undefined,
+        },
+      });
     }
   } catch {
     // database not reachable, fall through to seed lookup

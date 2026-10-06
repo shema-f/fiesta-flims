@@ -167,6 +167,7 @@ export default function Footer() {
           <div>
             <h4 className="text-base font-bold text-white mb-4">Quick Links</h4>
             <ul className="space-y-2.5">
+              <li><Link href="/support" className="text-rose-400 text-sm hover:text-rose-300 transition-colors flex items-center gap-1.5 font-bold">❤️ Support Us (Optional)</Link></li>
               <li><Link href="/news" className="text-zinc-400 text-sm hover:text-primary transition-colors flex items-center gap-1.5 font-bold text-primary">📰 FiestaFlix News</Link></li>
               <li><Link href="/" className="text-zinc-400 text-sm hover:text-primary transition-colors">Home</Link></li>
               <li><Link href="/movies" className="text-zinc-400 text-sm hover:text-primary transition-colors">Movies Catalog</Link></li>
@@ -227,7 +228,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-2 text-zinc-400">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Fast CDN Streaming • 100% Ad-Free Telegram Downloads</span>
+            <span>100% Free Forever (Ku Buntu) • Fast CDN Streaming • Supported Optionally by the Community</span>
           </div>
         </div>
       </div>

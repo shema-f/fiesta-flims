@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Play, Download, Sparkles, Zap, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Play, Download, Sparkles, Zap, ShieldCheck, ArrowRight, Heart } from 'lucide-react';
 
 export default function CTA() {
   return (
@@ -67,6 +67,14 @@ export default function CTA() {
                   className="px-6 py-3.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-zinc-200 hover:text-white font-bold text-sm border border-zinc-700 transition-all flex items-center gap-2 shadow-lg"
                 >
                   <span>Explore Interpreters</span>
+                </Link>
+
+                <Link
+                  href="/support"
+                  className="px-6 py-3.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 text-rose-300 hover:text-white font-bold text-sm border border-rose-500/40 transition-all flex items-center gap-2 shadow-lg hover:scale-105"
+                >
+                  <Heart className="w-4 h-4 fill-current text-rose-500" />
+                  <span>Support (Optional)</span>
                 </Link>
               </div>
             </div>
