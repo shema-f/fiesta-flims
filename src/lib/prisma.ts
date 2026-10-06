@@ -11,6 +11,7 @@ const isDummy =
   rawUrl.includes('localhost');
 
 const activeDatabaseUrl = isDummy ? NEON_DEFAULT_URL : rawUrl;
+process.env.DATABASE_URL = activeDatabaseUrl;
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

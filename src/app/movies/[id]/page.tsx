@@ -217,7 +217,11 @@ export default function MovieDetailPage() {
 
     if (apiMovie) {
       const anyApi = apiMovie as any;
-      const isApiSeries = anyApi.contentType === 'series' || anyApi.type === 'Series' || anyApi.durationString?.includes('Eps');
+      const isApiSeries =
+        anyApi.contentType === 'series' ||
+        anyApi.type === 'Series' ||
+        anyApi.durationString?.includes('Eps') ||
+        (Array.isArray(anyApi.episodes) && anyApi.episodes.length > 0);
       const parsed = parseSources(apiMovie.fileUrl ?? '', apiMovie.resolutions);
       return {
         id: apiMovie.id,
