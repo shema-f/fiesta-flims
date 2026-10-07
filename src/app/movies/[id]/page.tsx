@@ -223,12 +223,30 @@ export default function MovieDetailPage() {
         anyApi.durationString?.includes('Eps') ||
         (Array.isArray(anyApi.episodes) && anyApi.episodes.length > 0);
       const parsed = parseSources(apiMovie.fileUrl ?? '', apiMovie.resolutions);
+      const rawImg = anyApi.image || anyApi.poster || apiMovie.thumbnailUrl;
+      const rawBdr = anyApi.backdrop || anyApi.image || apiMovie.thumbnailUrl;
+      const isBad = (u?: string | null) =>
+        !u ||
+        u.includes('rebelRidgePoster500') ||
+        u.includes('polygamist2026Poster500') ||
+        u.includes('myCountryNewAgePoster500') ||
+        u.includes('vikingsValhallaS3Poster500') ||
+        u.includes('fcXdJUSDiDiFupuDuNxBYvdEsTX') ||
+        u.includes('MV5BMjA5OTc3NjExNV5BMl5BanBnXkFtZTgwNTcyNDc5MDI') ||
+        u.includes('MV5BMzBhNmZiYmQtNGY1Ny00OWVmLTk3NDgtMWZkZmEzNjFmY2YxXkEyXkFqcGc') ||
+        u.includes('MV5BNDExMjg0MWYtZTdmNy00MmQzLTk0NmEtY2Y0YmExMWI4YTVmXkEyXkFqcGc') ||
+        u.includes('MV5BN2E1ZWI4YzEtMGEwNi00YmY0LThlMjEtMTM3N2NkZTk5Y2FkXkEyXkFqcGc') ||
+        u.includes('MV5BMTQ4NTcyODc5MF5BMl5BanBnXkFtZTcwMjU2NzM2Nw');
+
+      const safeImg = isBad(rawImg) ? 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900&auto=format&fit=crop' : rawImg;
+      const safeBdr = isBad(rawBdr) ? safeImg : rawBdr;
+
       return {
         id: apiMovie.id,
         title: apiMovie.title,
         year: apiMovie.releaseYear,
-        image: anyApi.image || anyApi.poster || apiMovie.thumbnailUrl,
-        backdrop: anyApi.backdrop || anyApi.image || apiMovie.thumbnailUrl,
+        image: safeImg,
+        backdrop: safeBdr,
         trailer: anyApi.trailer || anyApi.trailerUrl || null,
         genre: apiMovie.genre,
         rating: 8.8,
