@@ -42,14 +42,15 @@ export default function InterpretersPage() {
             discover everything they have ever translated.
           </p>
 
-          <div className="mx-auto mt-8 grid max-w-lg grid-cols-3 gap-3">
+          <div className="mx-auto mt-8 grid max-w-2xl grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: 'Interpreters', value: interpretersData.length },
-              { label: 'Featured', value: featured.length },
-              { label: 'Followers', value: formatFollowers(totalFollowers) },
+              { label: 'Total Movies We Have', value: '138 (616 Eps)' },
+              { label: 'Featured Voices', value: featured.length },
+              { label: 'Real Followers', value: formatFollowers(totalFollowers) },
             ].map((stat) => (
-              <div key={stat.label} className="card-surface px-4 py-3">
-                <p className="text-xl font-bold">{stat.value}</p>
+              <div key={stat.label} className="card-surface px-4 py-3 border border-white/10 rounded-2xl">
+                <p className="text-xl font-bold text-white">{stat.value}</p>
                 <p className="text-[11px] uppercase tracking-wide text-muted">{stat.label}</p>
               </div>
             ))}

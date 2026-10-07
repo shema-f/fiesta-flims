@@ -31,7 +31,16 @@ export default function InterpreterCard({ interpreter }: { interpreter: Interpre
             <Star className="h-3 w-3 fill-amber-400" />
             {interpreter.rating.toFixed(1)}
           </span>
-          <span>{formatFollowers(interpreter.followers)} followers</span>
+          <span className="font-semibold text-zinc-300">
+            {formatFollowers(interpreter.followers)} followers
+          </span>
+          {interpreter.catalogMoviesCount > 0 ? (
+            <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+              {interpreter.catalogMoviesCount} in catalog
+            </span>
+          ) : (
+            <span className="text-[10px] text-zinc-500">{interpreter.moviesCount}+ dubs</span>
+          )}
         </div>
       </div>
     </Link>

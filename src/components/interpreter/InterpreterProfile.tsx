@@ -76,7 +76,12 @@ export default function InterpreterProfile({ interpreter, movies }: InterpreterP
                 <span className="inline-flex items-center gap-1">
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {interpreter.rating.toFixed(1)}
                 </span>
-                <span>{interpreter.moviesCount}+ movies</span>
+                <span className="font-semibold text-primary">
+                  {movies.length > 0 ? `${movies.length} movies in catalog` : `${interpreter.moviesCount}+ career dubs`}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] px-2 py-0.5 text-zinc-300">
+                  Total Platform: {interpreter.totalPlatformMovies || 138} Movies ({interpreter.totalPlatformEpisodes || 616} Eps)
+                </span>
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5" /> {interpreter.city}
                 </span>

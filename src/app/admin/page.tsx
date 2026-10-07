@@ -9,6 +9,7 @@ import StoragePanel from '@/components/admin/StoragePanel';
 import MediaJobsPanel from '@/components/admin/MediaJobsPanel';
 import AdminNewsPanel from '@/components/admin/AdminNewsPanel';
 import AdminAdsPanel from '@/components/admin/AdminAdsPanel';
+import AdminCatalogReportPanel from '@/components/admin/AdminCatalogReportPanel';
 
 const movieRequests = [
   {
@@ -280,6 +281,7 @@ export default function AdminPage() {
                 <nav className="space-y-2">
                   {[
                     { id: 'dashboard', label: '📊 Dashboard' },
+                    { id: 'catalog-report', label: '📑 Catalog & Import Report' },
                     { id: 'news', label: '📰 FiestaFlix News' },
                     { id: 'ads', label: '📢 Ads & Banners' },
                     { id: 'movies', label: '🎬 Movies' },
@@ -655,6 +657,8 @@ export default function AdminPage() {
               )}
 
               {activeTab === 'storage' && <StoragePanel />}
+
+              {activeTab === 'catalog-report' && <AdminCatalogReportPanel />}
 
               {activeTab === 'media' && <MediaJobsPanel />}
 

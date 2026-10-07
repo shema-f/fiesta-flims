@@ -188,6 +188,13 @@ export default function Header() {
   // Secondary items in the "More" dropdown with cartoon icons
   const secondaryLinks = [
     {
+      href: '/request-movie',
+      label: 'Movie Updates & Missing Tracker',
+      icon: Popcorn,
+      iconBg: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      desc: 'Check live catalog vs missing requested titles',
+    },
+    {
       href: '/help',
       label: 'Help, FAQ & 4K Guide',
       icon: HelpCircle,

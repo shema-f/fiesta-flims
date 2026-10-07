@@ -1,0 +1,762 @@
+{
+  "generatedAt": "2026-10-07T09:33:33.763Z",
+  "totalDatabaseTitles": 138,
+  "totalPlatformEpisodes": 616,
+  "newlyImportedTitlesCount": 0,
+  "updatedTitlesCount": 136,
+  "newlyAddedTitles": [],
+  "updatedExistingTitles": [
+    {
+      "title": "Teach Lesson",
+      "episodesCount": 4,
+      "narrator": "Rocky Kimomo"
+    },
+    {
+      "title": "No Good Deed",
+      "episodesCount": 1,
+      "narrator": "Sankara"
+    },
+    {
+      "title": "Let It Shine",
+      "episodesCount": 1,
+      "narrator": "Rocky Kimomo"
+    },
+    {
+      "title": "Between Father and Son",
+      "episodesCount": 9,
+      "narrator": "Dylan Kabaka"
+    },
+    {
+      "title": "Knock Knock",
+      "episodesCount": 2,
+      "narrator": "Rocky"
+    },
+    {
+      "title": "A.D. The Bible Continues",
+      "episodesCount": 12,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Doing Life",
+      "episodesCount": 1,
+      "narrator": "Rocky"
+    },
+    {
+      "title": "Step Up Revolution 4",
+      "episodesCount": 2,
+      "narrator": "Didier"
+    },
+    {
+      "title": "Mayday",
+      "episodesCount": 2,
+      "narrator": "Rocky"
+    },
+    {
+      "title": "The Fast and the Furious 1",
+      "episodesCount": 1,
+      "narrator": "Didier"
+    },
+    {
+      "title": "Taken",
+      "episodesCount": 5,
+      "narrator": "Rocky"
+    },
+    {
+      "title": "Escape and Evasion",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Vishwanath and Sons",
+      "episodesCount": 3,
+      "narrator": "Rocky"
+    },
+    {
+      "title": "Beauty in Black",
+      "episodesCount": 8,
+      "narrator": "Rocky Kimomo"
+    },
+    {
+      "title": "Alpha",
+      "episodesCount": 2,
+      "narrator": "Rocky Kimomo"
+    },
+    {
+      "title": "Outer Banks",
+      "episodesCount": 10,
+      "narrator": "Rocky Kimomo"
+    },
+    {
+      "title": "A Frozen Flower",
+      "episodesCount": 1,
+      "narrator": "PK"
+    },
+    {
+      "title": "Law Abiding Citizen",
+      "episodesCount": 1,
+      "narrator": "Rocky Kimomo"
+    },
+    {
+      "title": "Shaque: Trust No One",
+      "episodesCount": 7,
+      "narrator": "Genius"
+    },
+    {
+      "title": "Salakaar",
+      "episodesCount": 6,
+      "narrator": "Skov"
+    },
+    {
+      "title": "Treadstone",
+      "episodesCount": 4,
+      "narrator": "Rocky Kimomo"
+    },
+    {
+      "title": "Jumong",
+      "episodesCount": 79,
+      "narrator": "Master P"
+    },
+    {
+      "title": "Vis a Vis",
+      "episodesCount": 46,
+      "narrator": "Rocky Kimomo"
+    },
+    {
+      "title": "The End of Oak Street",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Knights of the Zodiac",
+      "episodesCount": 3,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Moana (2026)",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Ready or Not 2",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "From Paris with Love",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "In the Grey",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "The Maze Runner",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "xXx: Return of Xander Cage",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Hidden Strike",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Day Shift",
+      "episodesCount": 2,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Deep Water",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Mortal Kombat 2",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Seven Snipers",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Apex",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Beast",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Close",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "War Machine",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Avatar: The Way of Water",
+      "episodesCount": 2,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "The Ice Road 2: Road to the Sky",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "The Ice Road",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Mufasa: The Lion King",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Angels Fallen: Warriors of Peace",
+      "episodesCount": 1,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Ready or Not",
+      "episodesCount": 2,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "World War Z",
+      "episodesCount": 2,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Kal Ho Naa Ho",
+      "episodesCount": 2,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Kuch Kuch Hota Hai",
+      "episodesCount": 2,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Indemnity",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Ip Man 4: The Finale",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Ip Man 3",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Chinese Zodiac (CZ12)",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Iceman: The Time Traveler",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "The Witch:",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Peter Rabbit",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Buffalo Boys",
+      "episodesCount": 1,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Bad Genius",
+      "episodesCount": 2,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Nobody",
+      "episodesCount": 2,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "One Piece",
+      "episodesCount": 18,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "Vikings: Valhalla",
+      "episodesCount": 16,
+      "narrator": "Gaheza Simba"
+    },
+    {
+      "title": "My Country: The New Age",
+      "episodesCount": 16,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Six",
+      "episodesCount": 8,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "The Polygamist",
+      "episodesCount": 22,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Furious Attack",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "One Last Shot",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Kung Fu Jungle",
+      "episodesCount": 3,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "A Quiet Place: Day One",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Step Up: All In",
+      "episodesCount": 2,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "How High",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Mutiny",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Evil Dead",
+      "episodesCount": 3,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Skin Trade",
+      "episodesCount": 2,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Addicted",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Death's Game",
+      "episodesCount": 8,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Rise of the Legend",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "The Girlfriend",
+      "episodesCount": 6,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Daybreakers",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Bad Sister",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Fighter (2026)",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "The Furious",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "The Myth",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Fuze",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "The Vampire Diaries",
+      "episodesCount": 22,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Olympus Has Fallen",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "London Has Fallen",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "The Prisoner",
+      "episodesCount": 6,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "They Will Kill You",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Watching You",
+      "episodesCount": 6,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Ant-Man",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Ice Fall",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Cruel War",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Desperate Lies",
+      "episodesCount": 4,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Maleficent",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Horse War One",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Final Destination: Bloodlines",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Gunpowder Milkshake",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Sixty Minutes",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "War of the Arrows",
+      "episodesCount": 1,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "After Earth",
+      "episodesCount": 2,
+      "narrator": "Sankara da Premier"
+    },
+    {
+      "title": "Umthetho",
+      "episodesCount": 5,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Brotherhood",
+      "episodesCount": 2,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "The Lone Ranger",
+      "episodesCount": 2,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Red Dawn",
+      "episodesCount": 1,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Bilal: A New Breed of Hero",
+      "episodesCount": 2,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Like Stars on Earth (Taare Zameen Par)",
+      "episodesCount": 1,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "PK",
+      "episodesCount": 2,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "The Great Battle",
+      "episodesCount": 1,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "The Boy Who Harnessed the Wind",
+      "episodesCount": 1,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Io Capitano",
+      "episodesCount": 1,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Rebel Ridge",
+      "episodesCount": 2,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Moonfall",
+      "episodesCount": 1,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "The Tourist",
+      "episodesCount": 1,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "The Berlin File",
+      "episodesCount": 1,
+      "narrator": "Savimbi"
+    },
+    {
+      "title": "Who Am I?",
+      "episodesCount": 2,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Wrong Turn 4: Bloody Beginnings",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Wrong Turn 3: Left for Dead",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Wrong Turn 2: Dead End",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Wrong Turn",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Gallowwalkers",
+      "episodesCount": 2,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Ninja Assassin",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Ip Man 2",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Iceman (2014)",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Dragon (Wu Xia)",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "The Tournament",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Police Story 3: Supercop",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "True Legend",
+      "episodesCount": 3,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Lone Survivor",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Kung Fu Dunk",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "5 Days of War",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Wheels on Meals",
+      "episodesCount": 1,
+      "narrator": "Yanga"
+    },
+    {
+      "title": "Desire (Tikuvutu)",
+      "episodesCount": 1,
+      "narrator": "Genius"
+    },
+    {
+      "title": "Firebreak",
+      "episodesCount": 1,
+      "narrator": "Genius"
+    },
+    {
+      "title": "The Secret Woman",
+      "episodesCount": 1,
+      "narrator": "Genius"
+    },
+    {
+      "title": "Prison Break",
+      "episodesCount": 88,
+      "narrator": "Junior Giti"
+    },
+    {
+      "title": "Who Is Erin Carter?",
+      "episodesCount": 7,
+      "narrator": "Junior Giti"
+    }
+  ],
+  "narratorBreakdown": {
+    "Rocky Kimomo": {
+      "moviesCount": 9,
+      "episodesCount": 122
+    },
+    "Sankara": {
+      "moviesCount": 1,
+      "episodesCount": 1
+    },
+    "Dylan Kabaka": {
+      "moviesCount": 1,
+      "episodesCount": 9
+    },
+    "Savimbi": {
+      "moviesCount": 15,
+      "episodesCount": 35
+    },
+    "Rocky": {
+      "moviesCount": 6,
+      "episodesCount": 18
+    },
+    "Didier": {
+      "moviesCount": 2,
+      "episodesCount": 3
+    },
+    "Master P": {
+      "moviesCount": 1,
+      "episodesCount": 79
+    },
+    "Gaheza Simba": {
+      "moviesCount": 26,
+      "episodesCount": 64
+    },
+    "Sankara da Premier": {
+      "moviesCount": 35,
+      "episodesCount": 86
+    },
+    "Genius": {
+      "moviesCount": 4,
+      "episodesCount": 10
+    },
+    "Skov": {
+      "moviesCount": 1,
+      "episodesCount": 6
+    },
+    "Junior Giti": {
+      "moviesCount": 18,
+      "episodesCount": 158
+    },
+    "PK": {
+      "moviesCount": 1,
+      "episodesCount": 1
+    },
+    "Yanga": {
+      "moviesCount": 18,
+      "episodesCount": 24
+    }
+  },
+  "lastMissingMovieReport": {
+    "title": "The Matrix Resurrections",
+    "narratorRequest": "Junior Giti",
+    "reportedAt": "2026-10-07T10:01:57.570Z",
+    "status": "NOT_IN_DATABASE_YET"
+  },
+  "missingTitles": [
+    {
+      "title": "The Matrix Resurrections",
+      "narratorRequest": "Junior Giti",
+      "votes": 1,
+      "reportedAt": "2026-10-07T10:01:57.570Z"
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+[
+  {
+    "id": "req-1791367316609",
+    "title": "The Matrix Resurrections",
+    "genre": "Sci-Fi",
+    "narratorRequest": "Junior Giti",
+    "description": "Need Junior Giti dub",
+    "votesCount": 1,
+    "user": "viewer@kigali.rw",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-07"
+  },
+  {
+    "id": "req-1",
+    "title": "Inception (2010)",
+    "genre": "Sci-Fi, Action",
+    "narratorRequest": "Rocky Kimomo",
+    "description": "Mind-bending dream heist masterpiece — would love Rocky translation and punchlines!",
+    "votesCount": 145,
+    "user": "Movie Fanatic",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-05"
+  },
+  {
+    "id": "req-2",
+    "title": "The Dark Knight (2008)",
+    "genre": "Action, Crime, Thriller",
+    "narratorRequest": "Junior Giti",
+    "description": "Legendary Joker vs Batman battle. Junior Giti emotional and dramatic voice needed.",
+    "votesCount": 123,
+    "user": "Cinema Lover",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-05"
+  },
+  {
+    "id": "req-3",
+    "title": "Interstellar (2014)",
+    "genre": "Sci-Fi, Adventure, Drama",
+    "narratorRequest": "Sankara",
+    "description": "Black hole space odyssey with Hans Zimmer score. High demand across video clubs.",
+    "votesCount": 98,
+    "user": "Sci-Fi Fan",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-06"
+  },
+  {
+    "id": "req-4",
+    "title": "The Shawshank Redemption (1994)",
+    "genre": "Drama, Crime",
+    "narratorRequest": "Gaheza Simba",
+    "description": "Top IMDb classic of all time. Hope of Andy Dufresne with Gaheza calm tone.",
+    "votesCount": 87,
+    "user": "Classic Movie Fan",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-06"
+  },
+  {
+    "id": "req-5",
+    "title": "Squid Game (Season 2)",
+    "genre": "Drama, Mystery, Thriller",
+    "narratorRequest": "Rocky Kimomo",
+    "description": "Upcoming Korean survival games continuation. Urgent request for Kinyarwanda dub.",
+    "votesCount": 76,
+    "user": "Kigali Streamer",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-07"
+  },
+  {
+    "id": "req-6",
+    "title": "Gladiator II (2024)",
+    "genre": "Action, Drama, History",
+    "narratorRequest": "Sankara da Premier",
+    "description": "Colosseum Roman empire battles with Sankara military intensity.",
+    "votesCount": 65,
+    "user": "Action Junkie",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-07"
+  },
+  {
+    "id": "req-7",
+    "title": "Deadpool & Wolverine (2024)",
+    "genre": "Action, Comedy, Sci-Fi",
+    "narratorRequest": "Rocky Kimomo",
+    "description": "Marvel multiverse humor with Ryan Reynolds and Hugh Jackman.",
+    "votesCount": 59,
+    "user": "Marvel Fan",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-07"
+  },
+  {
+    "id": "req-8",
+    "title": "Dune: Part Two (2024)",
+    "genre": "Sci-Fi, Adventure",
+    "narratorRequest": "Savimbi",
+    "description": "Arrakis desert war and sandworms with Savimbi deep baritone voice.",
+    "votesCount": 52,
+    "user": "Desert Wanderer",
+    "status": "NOT_IN_DATABASE_YET",
+    "date": "2026-10-07"
+  }
+]

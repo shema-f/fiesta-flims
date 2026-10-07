@@ -28,11 +28,18 @@ export async function generateMetadata({
 }
 
 function moviesForInterpreter(name: string, movies: Movie[]): Movie[] {
-  const full = name.toLowerCase();
+  const full = name.toLowerCase().trim();
   const first = full.split(/\s+/)[0];
   return movies.filter((m) => {
-    const narrator = (m.narrator || '').toLowerCase();
+    const narrator = (m.narrator || '').toLowerCase().trim();
     if (!narrator) return false;
+    if (full === 'rocky' && narrator.includes('rocky')) return true;
+    if (full === 'sankara' && narrator.includes('sankara')) return true;
+    if (full === 'gaheza' && narrator.includes('gaheza')) return true;
+    if (full === 'dylan' && narrator.includes('dylan')) return true;
+    if ((full === 'skov' || full === 'sikov') && (narrator.includes('skov') || narrator.includes('sikov'))) return true;
+    if ((full === 'pk' || full === 'p.k') && (narrator.includes('pk') || narrator.includes('p.k'))) return true;
+    if (full === 'junior giti' && (narrator.includes('junior') || narrator.includes('giti'))) return true;
     return narrator.includes(full) || narrator.includes(first);
   });
 }

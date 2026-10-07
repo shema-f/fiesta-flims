@@ -22,6 +22,38 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "*.media-amazon.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media-amazon.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images-na.ssl-images-amazon.com",
+      },
+      {
+        protocol: "https",
+        hostname: "ia.media-imdb.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.media-imdb.com",
+      },
+      {
+        protocol: "https",
+        hostname: "m.imdb.com",
+      },
+      {
+        protocol: "https",
+        hostname: "*.imdb.com",
+      },
+      {
+        protocol: "https",
+        hostname: "imdb-api.com",
+      },
+      {
+        protocol: "https",
         hostname: "images.unsplash.com",
       },
       {
@@ -34,7 +66,11 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "coresg-normal.trae.ai",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "upload.wikimedia.org",
       },
       {
         protocol: "https",

@@ -13,6 +13,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
+  referrer: 'no-referrer',
   title: {
     default: 'Fiesta Flix — Filime. Ijwi. Umuco.',
     template: '%s · Fiesta Flix',
