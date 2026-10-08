@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { Play, Send, Star, Volume2, Heart } from 'lucide-react';
 import type { Movie } from '@/lib/movieData';
@@ -15,6 +16,7 @@ export default function MovieCard({ movie, onSelect }: MovieCardProps) {
   const { isFavorite, toggleFavorite, getUserRating } = useFavorites();
   const favorited = isFavorite(movie.id);
   const userRating = getUserRating(movie.id);
+  const [imgSrc, setImgSrc] = useState(movie.image);
 
   const displayRating = userRating !== undefined ? (userRating * 2).toFixed(1) : movie.rating;
 
@@ -29,11 +31,12 @@ export default function MovieCard({ movie, onSelect }: MovieCardProps) {
       {/* Poster Image Container */}
       <div className="relative w-full aspect-[2/3] overflow-hidden bg-zinc-800">
         <Image
-          src={movie.image}
+          src={imgSrc || movie.image}
           alt={movie.title}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           referrerPolicy="no-referrer"
+          onError={() => setImgSrc('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop')}
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
 

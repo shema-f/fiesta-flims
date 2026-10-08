@@ -36,50 +36,27 @@ export interface Interpreter {
 export const TOTAL_PLATFORM_MOVIES = 138;
 export const TOTAL_PLATFORM_EPISODES = 616;
 
-export const VERIFIED_FOLLOWERS: Record<string, number> = {
-  'Rocky': 248500,
-  'Junior Giti': 216400,
-  'Yanga': 194200,
-  'Sankara': 188700,
-  'Gaheza': 145800,
-  'Savimbi': 132600,
-  'Dylan': 91400,
-  'P.K': 78900,
-  'B The Great': 71200,
-  'Saga': 64800,
-  'Siniya': 56300,
-  'Master P': 49100,
-  'Didier': 43500,
-  'Genius': 41200,
-  'Skov': 32800,
-  'Mutibano': 29400,
-  'Kasuku': 27800,
-  'Pacifique': 25400,
-  'Ambassador': 24100,
-  'Mr Fire': 22800,
-  'Dr David': 21500,
-  'Vj Diva': 19800,
-  'Vj Ice': 18400,
-  'Cyber': 17200,
-  'Fasterman': 16900,
-  'Chapa': 15800,
-  'B.Man': 15200,
-  'Caleb': 14600,
-};
+// All interpreters start with real zero followers as requested. Real followers increment as registered users follow.
+export const VERIFIED_FOLLOWERS: Record<string, number> = {};
 
 /** Exact counts of movies translated by each interpreter in our live database */
 export const CATALOG_MOVIES_COUNT: Record<string, number> = {
   'Sankara': 36,
+  'Sankara da Premier': 36,
   'Gaheza': 26,
+  'Gaheza Simba': 26,
   'Junior Giti': 18,
   'Yanga': 18,
   'Rocky': 15,
+  'Rocky Kimomo': 15,
   'Savimbi': 15,
   'Genius': 4,
   'Didier': 2,
   'Dylan': 1,
+  'Dylan Kabaka': 1,
   'Master P': 1,
   'P.K': 1,
+  'PK': 1,
   'Skov': 1,
   'Saga': 0,
   'B The Great': 0,
@@ -189,10 +166,10 @@ function build(name: string, index: number): Interpreter {
   
   // Real catalog count if translated in DB, else career estimate
   const realCatalogCount = CATALOG_MOVIES_COUNT[name] ?? 0;
-  const careerEstimate = realCatalogCount > 0 ? realCatalogCount + (s % 60) : 15 + (s % 40);
+  const careerEstimate = realCatalogCount;
   
-  // Real verified followers
-  const followers = VERIFIED_FOLLOWERS[name] ?? (10000 + (seed(name + 'followers') % 25000));
+  // Real verified followers start at 0
+  const followers = VERIFIED_FOLLOWERS[name] ?? 0;
   const isFeatured = FEATURED.includes(name);
 
   const bio =

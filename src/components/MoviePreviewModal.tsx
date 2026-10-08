@@ -20,6 +20,7 @@ import {
   RotateCw
 } from 'lucide-react';
 import type { Movie } from '@/lib/movieData';
+import { sanitizeImage } from '@/lib/catalogMap';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import RatingStars from '@/components/RatingStars';
 import { motion, AnimatePresence } from 'motion/react';
@@ -128,7 +129,7 @@ export default function MoviePreviewModal({ movie, onClose }: MoviePreviewModalP
             ) : (
               <>
                 <Image
-                  src={movie.backdrop || movie.image}
+                  src={sanitizeImage(movie.backdrop || movie.image, movie.title, movie.genre)}
                   alt={movie.title}
                   fill
                   priority

@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { Play, Star } from 'lucide-react';
 import type { Movie } from '@/lib/movieData';
@@ -8,8 +11,12 @@ interface MovieTileProps {
   className?: string;
 }
 
+const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+
 /** Minimal, modern poster tile used across rails and grids. */
 export default function MovieTile({ movie, badge, className }: MovieTileProps) {
+  const [imgSrc, setImgSrc] = useState(movie.image);
+
   return (
     <Link
       href={`/movies/${movie.id}`}
@@ -19,10 +26,11 @@ export default function MovieTile({ movie, badge, className }: MovieTileProps) {
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl border border-white/[0.06] bg-surface">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={movie.image}
+          src={imgSrc}
           alt={movie.title}
           loading="lazy"
           referrerPolicy="no-referrer"
+          onError={() => setImgSrc(FALLBACK_POSTER)}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
         />
 

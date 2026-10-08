@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import MoviePreviewModal from '@/components/MoviePreviewModal';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { movieData, type Movie } from '@/lib/movieData';
+import { sanitizeImage } from '@/lib/catalogMap';
 import { Heart, Play, Download, Send, Star, Volume2, Trash2, Film, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -142,7 +143,7 @@ export default function FavoritesPage() {
                           className="relative w-full aspect-[2/3] overflow-hidden bg-zinc-800 cursor-pointer"
                         >
                           <Image
-                            src={movie.image}
+                            src={sanitizeImage(movie.image, movie.title, movie.genre)}
                             alt={movie.title}
                             fill
                             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"

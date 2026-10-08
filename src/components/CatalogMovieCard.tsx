@@ -48,6 +48,9 @@ export default function CatalogMovieCard({ movie }: CatalogMovieCardProps) {
               alt={movie.title}
               loading="lazy"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+              }}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (

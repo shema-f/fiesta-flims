@@ -115,8 +115,8 @@ export async function GET() {
     for (const m of allDbMovies) {
       const narrator = m.narrator || 'Unknown';
       if (!narratorMap[narrator]) {
-        // Match base name for followers
-        let followers = 25000;
+        // Match base name for followers (starts at 0)
+        let followers = 0;
         for (const [key, count] of Object.entries(VERIFIED_FOLLOWERS)) {
           if (narrator.toLowerCase().includes(key.toLowerCase())) {
             followers = count;

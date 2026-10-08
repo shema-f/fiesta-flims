@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findMovieOrSeries } from '@/lib/movieData';
+import { sanitizeImage } from '@/lib/catalogMap';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,24 +29,8 @@ export async function GET(
         movie.title?.toLowerCase().includes('season') ||
         movie.title?.toLowerCase().includes('series')
       );
-      const isBroken = (url?: string | null) =>
-        !url ||
-        url.includes('rebelRidgePoster500') ||
-        url.includes('polygamist2026Poster500') ||
-        url.includes('myCountryNewAgePoster500') ||
-        url.includes('vikingsValhallaS3Poster500') ||
-        url.includes('fcXdJUSDiDiFupuDuNxBYvdEsTX') ||
-        url.includes('MV5BMjA5OTc3NjExNV5BMl5BanBnXkFtZTgwNTcyNDc5MDI') ||
-        url.includes('MV5BMzBhNmZiYmQtNGY1Ny00OWVmLTk3NDgtMWZkZmEzNjFmY2YxXkEyXkFqcGc') ||
-        url.includes('MV5BNDExMjg0MWYtZTdmNy00MmQzLTk0NmEtY2Y0YmExMWI4YTVmXkEyXkFqcGc') ||
-        url.includes('MV5BN2E1ZWI4YzEtMGEwNi00YmY0LThlMjEtMTM3N2NkZTk5Y2FkXkEyXkFqcGc') ||
-        url.includes('MV5BMTQ4NTcyODc5MF5BMl5BanBnXkFtZTcwMjU2NzM2Nw');
-
-      const safePoster = isBroken(movie.poster)
-        ? (isBroken(movie.thumbnailUrl) ? 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200&auto=format&fit=crop' : movie.thumbnailUrl!)
-        : movie.poster!;
-
-      const safeBackdrop = isBroken(movie.backdrop) ? safePoster : movie.backdrop!;
+      const safePoster = sanitizeImage(movie.poster || movie.thumbnailUrl, movie.title, movie.genre);
+      const safeBackdrop = sanitizeImage(movie.backdrop || safePoster, movie.title, movie.genre);
 
       return NextResponse.json({
         success: true,

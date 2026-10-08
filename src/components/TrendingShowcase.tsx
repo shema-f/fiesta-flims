@@ -19,6 +19,7 @@ import {
   PlayCircle
 } from 'lucide-react';
 import type { Movie } from '@/lib/movieData';
+import { sanitizeImage } from '@/lib/catalogMap';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -89,7 +90,7 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
               className="absolute inset-0"
             >
               <Image
-                src={activeMovie.backdrop || activeMovie.image}
+                src={sanitizeImage(activeMovie.backdrop || activeMovie.image, activeMovie.title, activeMovie.genre)}
                 alt={activeMovie.title}
                 fill
                 priority
@@ -152,7 +153,7 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
                   className="group relative w-48 sm:w-56 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-primary/30 border-2 border-primary/40 cursor-pointer bg-zinc-900"
                 >
                   <Image
-                    src={activeMovie.image}
+                    src={sanitizeImage(activeMovie.image, activeMovie.title, activeMovie.genre)}
                     alt={activeMovie.title}
                     fill
                     priority
@@ -289,7 +290,7 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
                     title={movie.title}
                   >
                     <Image
-                      src={movie.image}
+                      src={sanitizeImage(movie.image, movie.title, movie.genre)}
                       alt={movie.title}
                       fill
                       referrerPolicy="no-referrer"
