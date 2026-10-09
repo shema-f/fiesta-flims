@@ -5,6 +5,7 @@ import Providers from '@/components/Providers';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import FiestaBot from '@/components/FiestaBot';
 import InstallAppPrompt from '@/components/InstallAppPrompt';
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -72,6 +73,7 @@ export default function RootLayout({
           <MobileBottomNav />
           <FiestaBot />
           <InstallAppPrompt />
+          <ServiceWorkerRegister />
         </Providers>
       </body>
     </html>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Sparkles, Wifi } from 'lucide-react';
+import { Sparkles, Wifi, Flame, ExternalLink, Download, Play, AlertCircle, RefreshCw } from 'lucide-react';
 import BufferIndicator from './BufferIndicator';
 import PlaybackControls from './PlaybackControls';
 import QualitySelector, { type QualityOption } from './QualitySelector';
@@ -89,6 +89,29 @@ export default function FiestaVideoPlayer({
   const [deviceReady4k, setDeviceReady4k] = useState(true);
   const [qualityNotification, setQualityNotification] = useState<string | null>(null);
 
+  // Dynamic source override and MediaFire integration
+  const [activeSrc, setActiveSrc] = useState(src);
+  const [forceStreamAttempt, setForceStreamAttempt] = useState(false);
+  const [directLinkInput, setDirectLinkInput] = useState('');
+  const [showBufferingHelp, setShowBufferingHelp] = useState(false);
+  const bufferingTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setActiveSrc(src);
+    setForceStreamAttempt(false);
+    setShowBufferingHelp(false);
+    setError(null);
+  }, [src]);
+
+  const isMediaFirePage = useMemo(() => {
+    return (
+      typeof activeSrc === 'string' &&
+      activeSrc.includes('mediafire.com') &&
+      !activeSrc.includes('download') &&
+      !forceStreamAttempt
+    );
+  }, [activeSrc, forceStreamAttempt]);
+
   const currentLevelRef = useRef(currentLevel);
   currentLevelRef.current = currentLevel;
 
@@ -145,12 +168,12 @@ export default function FiestaVideoPlayer({
     }
   }, [applyNetworkAdaptiveLevel]);
 
-  const isHls = useMemo(() => src.includes('.m3u8'), [src]);
+  const isHls = useMemo(() => (activeSrc || '').includes('.m3u8'), [activeSrc]);
 
   // --- Setup native / hls.js playback -------------------------------------
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !src) return;
+    if (!video || !activeSrc || isMediaFirePage) return;
     startupMeasured.current = false;
     resumeApplied.current = false;
     srcStartTime.current = Date.now();
@@ -161,13 +184,13 @@ export default function FiestaVideoPlayer({
 
     const setup = async () => {
       if (!isHls) {
-        video.src = src;
+        video.src = activeSrc;
         return;
       }
 
       const nativeHls = video.canPlayType('application/vnd.apple.mpegurl');
       if (nativeHls) {
-        video.src = src;
+        video.src = activeSrc;
         return;
       }
 
@@ -178,7 +201,7 @@ export default function FiestaVideoPlayer({
         hls = new HlsMod({ enableWorker: true, lowLatencyMode: false });
         hlsRef.current = hls;
         hls.attachMedia(video);
-        hls.on(HlsMod.Events.MEDIA_ATTACHED, () => hls.loadSource(src));
+        hls.on(HlsMod.Events.MEDIA_ATTACHED, () => hls.loadSource(activeSrc));
         hls.on(HlsMod.Events.MANIFEST_PARSED, () => {
           const next: QualityOption[] = (hls.levels || []).map((l: any, i: number) => ({
             index: i,
@@ -208,7 +231,7 @@ export default function FiestaVideoPlayer({
           }
         });
       } else {
-        video.src = src;
+        video.src = activeSrc;
       }
     };
 
@@ -219,7 +242,7 @@ export default function FiestaVideoPlayer({
       if (hls) hls.destroy();
       hlsRef.current = null;
     };
-  }, [src, isHls, onError]);
+  }, [activeSrc, isHls, isMediaFirePage, onError]);
 
   // --- Video element event wiring -----------------------------------------
   useEffect(() => {
@@ -252,9 +275,15 @@ export default function FiestaVideoPlayer({
     const onWaiting = () => {
       setBuffering(true);
       onBufferEvent?.();
+      if (bufferingTimerRef.current) clearTimeout(bufferingTimerRef.current);
+      bufferingTimerRef.current = setTimeout(() => {
+        setShowBufferingHelp(true);
+      }, 6000);
     };
     const onPlaying = () => {
       setBuffering(false);
+      setShowBufferingHelp(false);
+      if (bufferingTimerRef.current) clearTimeout(bufferingTimerRef.current);
       if (!startupMeasured.current) {
         startupMeasured.current = true;
         onStartup?.(Date.now() - srcStartTime.current);
@@ -265,6 +294,20 @@ export default function FiestaVideoPlayer({
       setVolume(video.volume);
       setMuted(video.muted);
     };
+    const onVideoError = () => {
+      setBuffering(false);
+      setShowBufferingHelp(false);
+      if (bufferingTimerRef.current) clearTimeout(bufferingTimerRef.current);
+      const mediaErr = video.error;
+      let msg = 'Playback error: Unable to stream video file directly.';
+      if (mediaErr?.code === 4) {
+        msg = 'File format not supported for in-browser streaming or requires direct download.';
+      } else if (mediaErr?.code === 2) {
+        msg = 'Network error while buffering video stream.';
+      }
+      setError(msg);
+      onError?.(msg);
+    };
 
     video.addEventListener('loadedmetadata', onLoaded);
     video.addEventListener('timeupdate', onTime);
@@ -273,10 +316,12 @@ export default function FiestaVideoPlayer({
     video.addEventListener('pause', onPause);
     video.addEventListener('waiting', onWaiting);
     video.addEventListener('playing', onPlaying);
+    video.addEventListener('error', onVideoError);
     video.addEventListener('ratechange', onRate);
     video.addEventListener('volumechange', onVol);
 
     return () => {
+      if (bufferingTimerRef.current) clearTimeout(bufferingTimerRef.current);
       video.removeEventListener('loadedmetadata', onLoaded);
       video.removeEventListener('timeupdate', onTime);
       video.removeEventListener('progress', onTime);
@@ -284,6 +329,7 @@ export default function FiestaVideoPlayer({
       video.removeEventListener('pause', onPause);
       video.removeEventListener('waiting', onWaiting);
       video.removeEventListener('playing', onPlaying);
+      video.removeEventListener('error', onVideoError);
       video.removeEventListener('ratechange', onRate);
       video.removeEventListener('volumechange', onVol);
     };
@@ -436,6 +482,104 @@ export default function FiestaVideoPlayer({
     );
   }
 
+  if (isMediaFirePage) {
+    return (
+      <div
+        ref={containerRef}
+        className={`group relative aspect-video w-full overflow-hidden rounded-xl bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950 border border-orange-500/30 p-6 flex flex-col justify-between ${className ?? ''}`}
+      >
+        {poster && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={poster}
+            alt="Poster"
+            className="absolute inset-0 w-full h-full object-cover opacity-20 filter blur-sm"
+          />
+        )}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 border border-orange-500/40 text-orange-400 text-xs font-black uppercase tracking-wider">
+            <Flame className="w-4 h-4 fill-orange-400" />
+            <span>MediaFire Cloud Video</span>
+          </div>
+          <span className="text-[11px] text-zinc-400 bg-black/60 px-2.5 py-1 rounded-lg border border-zinc-800">
+            Full Speed Download & Stream
+          </span>
+        </div>
+
+        <div className="relative z-10 max-w-lg space-y-2 text-center sm:text-left my-auto">
+          <h3 className="text-xl sm:text-2xl font-black text-white flex items-center justify-center sm:justify-start gap-2">
+            <span>MediaFire Video Stream & Download</span>
+          </h3>
+          <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed">
+            This movie is hosted on MediaFire high-speed servers. You can open and stream it directly at maximum download speed, or enter the direct link below to play directly inside this player.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
+            <a
+              href={activeSrc}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-xs shadow-lg shadow-orange-950/50 transition-all hover:scale-105"
+            >
+              <Download className="w-4 h-4" />
+              <span>⚡ Download / Stream on MediaFire</span>
+              <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+            </a>
+
+            <button
+              type="button"
+              onClick={() => setForceStreamAttempt(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold text-xs border border-zinc-700 transition-colors"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>Try In-Browser Stream</span>
+            </button>
+          </div>
+
+          {/* Quick Direct Link Input */}
+          <div className="pt-2 text-left">
+            <details className="text-xs text-zinc-400 group/details">
+              <summary className="cursor-pointer hover:text-white font-semibold text-[11px] text-orange-400 flex items-center gap-1">
+                <span>Have a Direct MediaFire MP4 link? Paste it to play here</span>
+              </summary>
+              <div className="mt-2 p-3 rounded-xl bg-black/60 border border-zinc-800 space-y-2">
+                <p className="text-[11px] text-zinc-400">
+                  Tip: On your MediaFire page, right-click the blue &quot;Download&quot; button, choose &quot;Copy link address&quot; (starts with <code>https://download...</code>), and paste it here:
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={directLinkInput}
+                    onChange={(e) => setDirectLinkInput(e.target.value)}
+                    placeholder="https://download...mediafire.com/..."
+                    className="flex-1 bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-orange-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (directLinkInput.trim()) {
+                        setActiveSrc(directLinkInput.trim());
+                        setForceStreamAttempt(true);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-xs"
+                  >
+                    Play
+                  </button>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div className="relative z-10 text-[11px] text-zinc-500 text-center sm:text-left flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Compatible with VLC, MX Player, and high-speed mobile browsers</span>
+        </div>
+      </div>
+    );
+  }
+
   const bufferedFraction = duration > 0 ? buffered / duration : 0;
 
   return (
@@ -451,7 +595,7 @@ export default function FiestaVideoPlayer({
         playsInline
         className="h-full w-full bg-black"
         onClick={togglePlay}
-        crossOrigin="anonymous"
+        crossOrigin={subtitles && subtitles.length > 0 ? 'anonymous' : undefined}
       >
         {subtitles.map((s) => (
           <track key={s.id} kind="subtitles" src={s.url} srcLang={s.language} label={s.label} />
@@ -459,6 +603,36 @@ export default function FiestaVideoPlayer({
       </video>
 
       <BufferIndicator buffering={buffering} bufferedFraction={bufferedFraction} />
+
+      {/* Persistent Buffering Helper */}
+      {showBufferingHelp && (
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-40 bg-zinc-950/95 border border-amber-500/50 text-white text-xs px-4 py-2 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-3 animate-fadeIn">
+          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+          <span>Stream buffering slowly?</span>
+          {activeSrc.includes('mediafire.com') ? (
+            <a
+              href={activeSrc}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold text-[11px] flex items-center gap-1 shadow"
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>Open in MediaFire</span>
+            </a>
+          ) : (
+            <a
+              href={activeSrc}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold text-[11px] flex items-center gap-1 shadow"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Download File</span>
+            </a>
+          )}
+        </div>
+      )}
 
       {/* On-screen 4K / Quality Status HUD */}
       {qualityNotification && (

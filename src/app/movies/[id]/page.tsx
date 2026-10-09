@@ -32,12 +32,14 @@ import {
   Tv,
   ShieldCheck,
   Users,
+  Flame,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import FiestaVideoPlayer from '@/components/video/FiestaVideoPlayer';
 import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
 import { estimateSizeLabel, DATA_SAVER_TIP } from '@/lib/dataSizes';
 import SupportModal from '@/components/SupportModal';
+import MediaFireDownloadHub from '@/components/MediaFireDownloadHub';
 
 export interface CastMember {
   id: number;
@@ -77,6 +79,7 @@ interface MovieView {
   episodesCount?: number;
   episodes?: Episode[];
   trailer?: string | null;
+  mediafireUrl?: string | null;
 }
 
 function formatDuration(seconds: number) {
@@ -101,7 +104,8 @@ function parseSources(fileUrl: string, resolutions: unknown): VideoSource[] {
     }
   }
   if (sources.length === 0 && fileUrl) {
-    sources.push({ label: '1080p FHD', url: fileUrl });
+    const isMf = fileUrl.includes('mediafire.com');
+    sources.push({ label: isMf ? 'MediaFire 1080p FHD' : '1080p FHD', url: fileUrl });
   }
   const rank = (label: string) => {
     const n = parseInt(label, 10);
@@ -225,6 +229,7 @@ export default function MovieDetailPage() {
         seasonsCount: staticMovie.seasonsCount || (staticMovie.duration?.includes('Eps') ? 1 : undefined),
         episodesCount: staticMovie.episodesCount || (staticMovie.episodes ? staticMovie.episodes.length : (staticMovie.duration?.includes('Eps') ? 8 : undefined)),
         episodes: staticMovie.episodes || [],
+        mediafireUrl: staticMovie.directStreamUrl?.includes('mediafire.com') ? staticMovie.directStreamUrl : null,
       };
     }
 
@@ -240,6 +245,10 @@ export default function MovieDetailPage() {
       const rawBdr = anyApi.backdrop || anyApi.image || apiMovie.thumbnailUrl;
       const safeImg = sanitizeImage(rawImg, apiMovie.title, anyApi.genre);
       const safeBdr = sanitizeImage(rawBdr || safeImg, apiMovie.title, anyApi.genre);
+      const mfLink =
+        anyApi.mediafireUrl ||
+        (anyApi.fileUrl?.includes('mediafire.com') ? anyApi.fileUrl : null) ||
+        (parsed.find((s) => s.url?.includes('mediafire.com'))?.url ?? null);
 
       return {
         id: apiMovie.id,
@@ -266,6 +275,7 @@ export default function MovieDetailPage() {
         seasonsCount: anyApi.seasonsCount || (isApiSeries ? 1 : undefined),
         episodesCount: anyApi.episodesCount || (anyApi.episodes ? anyApi.episodes.length : (isApiSeries ? 8 : undefined)),
         episodes: anyApi.episodes || [],
+        mediafireUrl: mfLink,
       };
     }
 
@@ -282,6 +292,7 @@ export default function MovieDetailPage() {
       description: DEFAULT_DESCRIPTION,
       views: 0,
       sources: [],
+      mediafireUrl: null,
     };
   }, [staticMovie, apiMovie]);
 
@@ -674,6 +685,21 @@ export default function MovieDetailPage() {
                     )}
                   </div>
 
+                  {view.mediafireUrl && (
+                    <motion.a
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      href={view.mediafireUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-base shadow-lg shadow-orange-950/40 transition-all hover:scale-105 touch-manipulation"
+                      title="Open & Download on MediaFire at full speed"
+                    >
+                      <Flame className="w-5 h-5 fill-white text-orange-200" />
+                      <span>MediaFire</span>
+                    </motion.a>
+                  )}
+
                   {view.trailer && (
                     <motion.button
                       whileHover={{ scale: 1.05 }}
@@ -905,6 +931,24 @@ export default function MovieDetailPage() {
             botLink={view.telegramBotLink}
           />
         </div>
+
+        {/* PROMINENT MEDIAFIRE DOWNLOAD & STREAM HUB */}
+        {view.mediafireUrl && (
+          <div className="container mx-auto px-4 sm:px-6">
+            <MediaFireDownloadHub
+              movieTitle={view.title}
+              mediafireUrl={view.mediafireUrl}
+              quality={view.quality}
+              fileSize={view.fileSize}
+              onPlayDirect={(url) => {
+                setPlaybackSrc(url);
+                setWatchSource({ label: 'Direct MediaFire Stream', url });
+                setResumeSeconds(0);
+                setIsPlayerOpen(true);
+              }}
+            />
+          </div>
+        )}
 
         {/* MODERN AUDIENCE RATING SYSTEM */}
         <div className="container mx-auto px-4 sm:px-6 my-6">

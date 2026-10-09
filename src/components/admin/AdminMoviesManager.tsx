@@ -20,6 +20,7 @@ import {
   Star,
   RefreshCw,
   Sparkles,
+  Flame,
 } from 'lucide-react';
 import type { ApiMovie } from '@/lib/apiTypes';
 
@@ -898,7 +899,15 @@ export default function AdminMoviesManager() {
               {/* Streaming Video URL & Trailer */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-zinc-300 font-bold">Direct Streaming / File URL</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-zinc-300 font-bold">Direct Streaming / File URL</label>
+                    {form.fileUrl.includes('mediafire.com') && (
+                      <span className="text-[10px] text-orange-400 font-bold flex items-center gap-1">
+                        <Flame className="w-3 h-3" />
+                        <span>MediaFire Detected</span>
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={form.fileUrl}
@@ -906,6 +915,20 @@ export default function AdminMoviesManager() {
                     placeholder="https://... direct mp4, hls or MediaFire link"
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
                   />
+                  {form.fileUrl.includes('mediafire.com') && (
+                    <div className="p-2.5 rounded-xl bg-orange-950/40 border border-orange-500/30 text-[11px] text-zinc-300 space-y-1">
+                      <div className="font-bold text-orange-400 flex items-center gap-1">
+                        <Flame className="w-3.5 h-3.5" />
+                        <span>MediaFire Streaming Guide:</span>
+                      </div>
+                      <p className="text-zinc-400 leading-normal">
+                        • <strong>In-Browser Streaming:</strong> On your MediaFire page, right-click the blue <em>&quot;Download&quot;</em> button and choose <em>&quot;Copy link address&quot;</em> (starts with <code>https://download...</code>). Paste that here for direct browser playback!
+                      </p>
+                      <p className="text-zinc-400 leading-normal">
+                        • <strong>1-Click Download:</strong> If you paste the regular share link (<code>mediafire.com/file/...</code>), Fiesta Flix will automatically show a dedicated 1-Click MediaFire download hub for your viewers.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-zinc-300 font-bold">Trailer URL / YouTube ID</label>
