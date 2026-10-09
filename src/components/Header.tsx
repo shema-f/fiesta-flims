@@ -10,24 +10,10 @@ import {
   ChevronDown,
   X,
   Menu,
-  Sparkles,
-  Send,
-  MessageCircle,
-  Trophy,
-  Users,
-  Heart,
   Shield,
   LogOut,
-  Clapperboard,
-  HelpCircle,
-  Play,
-  ArrowRight,
-  Popcorn,
-  Flame,
-  Speech,
-  Rocket,
-  Newspaper,
-  Tv,
+  Heart,
+  ExternalLink,
 } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import NotificationToast from '@/components/NotificationToast';
@@ -62,7 +48,7 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 15);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -102,22 +88,22 @@ export default function Header() {
     }
 
     setIsSearching(true);
-    const timer = setTimeout(() => {
-      fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((json) => {
-          if (json?.data) {
-            setSearchResults({
-              movies: (json.data.movies || []).slice(0, 4),
-              interpreters: (json.data.interpreters || []).slice(0, 3),
-            });
-          }
-          setIsSearching(false);
-        })
-        .catch(() => {
-          setIsSearching(false);
-        });
-    }, 180);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        if (res.ok) {
+          const json = await res.json();
+          setSearchResults({
+            movies: (json.data?.movies || []).slice(0, 5),
+            interpreters: (json.data?.interpreters || []).slice(0, 3),
+          });
+        }
+      } catch {
+        // Search network fallback
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -125,183 +111,79 @@ export default function Header() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      setSearchResults(null);
-      setSearchOpen(false);
       window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
+      setSearchOpen(false);
+      setSearchResults(null);
     }
   };
 
-  // Primary navigation links with cartoon-style badge icons
+  // Minimal primary navigation links
   const primaryLinks = [
-    {
-      href: '/',
-      label: 'Home',
-      icon: Popcorn,
-      iconBg: 'bg-amber-500/25 text-amber-400 border-amber-400/40',
-    },
-    {
-      href: '/movies',
-      label: 'Movies',
-      icon: Clapperboard,
-      iconBg: 'bg-violet-500/25 text-violet-400 border-violet-400/40',
-    },
-    {
-      href: '/movies?type=series',
-      label: 'Series',
-      icon: Tv,
-      iconBg: 'bg-purple-500/25 text-purple-400 border-purple-400/40',
-    },
-    {
-      href: '/support',
-      label: 'Support',
-      icon: Heart,
-      iconBg: 'bg-rose-500/25 text-rose-400 border-rose-400/40',
-      badgeText: 'Free',
-    },
-    {
-      href: '/rwandan-movies',
-      label: 'Rwanda Cinema',
-      icon: Flame,
-      iconBg: 'bg-orange-500/25 text-orange-400 border-orange-400/40',
-    },
-    {
-      href: '/interpreters',
-      label: 'Interpreters',
-      icon: Speech,
-      iconBg: 'bg-emerald-500/25 text-emerald-400 border-emerald-400/40',
-    },
-    {
-      href: '/news',
-      label: 'FiestaFlix News',
-      icon: Newspaper,
-      iconBg: 'bg-rose-500/25 text-rose-400 border-rose-400/40',
-    },
-    {
-      href: '/favorites',
-      label: 'My List',
-      icon: Heart,
-      iconBg: 'bg-rose-500/25 text-rose-400 border-rose-400/40',
-      badge: favCount,
-    },
+    { href: '/', label: 'Home' },
+    { href: '/movies', label: 'Movies' },
+    { href: '/movies?type=series', label: 'Series' },
+    { href: '/interpreters', label: 'Interpreters' },
+    { href: '/favorites', label: 'My List', badge: favCount },
   ];
 
-  // Secondary items in the "More" dropdown with cartoon icons
+  // Secondary items in clean "More" dropdown
   const secondaryLinks = [
-    {
-      href: '/request-movie',
-      label: 'Movie Updates & Missing Tracker',
-      icon: Popcorn,
-      iconBg: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      desc: 'Check live catalog vs missing requested titles',
-    },
-    {
-      href: '/help',
-      label: 'Help, FAQ & 4K Guide',
-      icon: HelpCircle,
-      iconBg: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
-      desc: 'How to stream in 4K, download, & tips',
-    },
-    {
-      href: '/support',
-      label: 'Support FiestaFlix (Optional)',
-      icon: Heart,
-      iconBg: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-      desc: '100% Free cinema • Voluntary server support',
-    },
-    {
-      href: '/awards',
-      label: 'Awards & Honors',
-      icon: Trophy,
-      iconBg: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      desc: 'Top voted voice actors & films',
-    },
-    {
-      href: '/community',
-      label: 'Community',
-      icon: Users,
-      iconBg: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-      desc: 'Discussions & movie requests',
-    },
-    {
-      href: 'https://t.me/fiestaflix_movies',
-      label: 'Telegram Channel',
-      icon: Send,
-      iconBg: 'bg-[#229ED9]/20 text-[#229ED9] border-[#229ED9]/30',
-      desc: 'Instant updates & cloud files',
-      external: true,
-    },
-    {
-      href: 'https://wa.me/250780000000',
-      label: 'WhatsApp Support',
-      icon: MessageCircle,
-      iconBg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      desc: 'Talk with our concierge team',
-      external: true,
-    },
+    { href: '/rwandan-movies', label: 'Rwanda Cinema' },
+    { href: '/news', label: 'FiestaFlix News' },
+    { href: '/support', label: 'Support FiestaFlix (Free)' },
+    { href: '/request-movie', label: 'Request a Movie' },
+    { href: '/help', label: 'Help & 4K Guide' },
+    { href: '/community', label: 'Community' },
+    { href: 'https://t.me/fiestaflix_movies', label: 'Telegram Channel', external: true },
+    { href: 'https://wa.me/250780000000', label: 'WhatsApp Support', external: true },
   ];
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-zinc-950/85 backdrop-blur-xl border-b border-white/[0.08] shadow-xl'
-          : 'bg-gradient-to-b from-black/80 via-black/30 to-transparent border-b border-transparent'
+          ? 'bg-zinc-950/90 backdrop-blur-md border-b border-white/[0.06] shadow-lg'
+          : 'bg-gradient-to-b from-black/80 via-black/40 to-transparent border-b border-transparent'
       }`}
     >
       <NotificationToast />
 
       <div className="container mx-auto px-4 sm:px-6">
         <nav className="h-16 flex items-center justify-between gap-4">
-          {/* LEFT: BRAND LOGO */}
-          <div className="flex items-center gap-5 lg:gap-7">
+          {/* LEFT: BRAND LOGO & MINIMAL NAV */}
+          <div className="flex items-center gap-6 lg:gap-8">
             <Link
               href="/"
-              className="flex items-center gap-2.5 group transition-transform hover:opacity-95"
+              className="flex items-center gap-2 group transition-transform hover:opacity-90"
             >
-              <AppLogo size={30} glow className="transition-transform group-hover:scale-105" />
-              <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
+              <AppLogo size={28} glow className="transition-transform group-hover:scale-105" />
+              <span className="text-lg sm:text-xl font-bold tracking-tight text-white">
                 Fiesta<span className="text-primary">Flix</span>
               </span>
             </Link>
 
-            {/* DESKTOP CORE NAV LINKS WITH CARTOON ICONS & ACTIVE INDICATOR */}
-            <ul className="hidden md:flex items-center gap-1 lg:gap-1.5">
+            {/* MINIMAL DESKTOP NAV LINKS */}
+            <ul className="hidden md:flex items-center gap-1">
               {primaryLinks.map((item) => {
                 const isActive =
                   item.href === '/'
                     ? pathname === '/'
                     : pathname === item.href || pathname.startsWith(item.href + '/');
 
-                const Icon = item.icon;
-
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`px-3 py-1.5 rounded-full text-xs tracking-wide transition-all flex items-center gap-2 group ${
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium tracking-wide transition-colors flex items-center gap-1.5 ${
                         isActive
-                          ? 'bg-primary/20 text-white font-extrabold border border-primary/40 shadow-[0_0_14px_rgba(249,115,22,0.35)] ring-1 ring-primary/20'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.05] font-medium'
+                          ? 'bg-white/10 text-white font-semibold'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                       }`}
                     >
-                      {/* Playful Cartoon Icon Bubble */}
-                      <div
-                        className={`w-5 h-5 rounded-md flex items-center justify-center border shadow-xs transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-6 ${item.iconBg}`}
-                      >
-                        <Icon className="w-3 h-3 stroke-[2.3]" />
-                      </div>
-
                       <span>{item.label}</span>
-
                       {item.badge !== undefined && item.badge > 0 && (
-                        <span className="w-4 h-4 rounded-full bg-primary/25 text-primary border border-primary/40 text-[9px] font-black flex items-center justify-center leading-none">
+                        <span className="px-1.5 py-0.2 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
                           {item.badge}
-                        </span>
-                      )}
-
-                      {(item as any).badgeText && (
-                        <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider">
-                          {(item as any).badgeText}
                         </span>
                       )}
                     </Link>
@@ -309,58 +191,30 @@ export default function Header() {
                 );
               })}
 
-              {/* CLEAN "MORE" DROPDOWN WITH CARTOON ICONS */}
+              {/* MINIMAL "MORE" DROPDOWN */}
               <li className="relative" ref={moreRef}>
                 <button
                   onClick={() => setIsMoreOpen(!isMoreOpen)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 group ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium tracking-wide transition-colors flex items-center gap-1 ${
                     isMoreOpen
                       ? 'bg-white/10 text-white'
-                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.05]'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                   }`}
                   aria-expanded={isMoreOpen}
                 >
-                  <div className="w-5 h-5 rounded-md flex items-center justify-center border border-amber-400/30 bg-amber-500/15 text-amber-400 group-hover:scale-110 transition-transform">
-                    <Sparkles className="w-3 h-3" />
-                  </div>
                   <span>More</span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      isMoreOpen ? 'rotate-180 text-white' : 'text-zinc-500'
+                    className={`w-3 h-3 transition-transform duration-200 ${
+                      isMoreOpen ? 'rotate-180 text-white' : 'text-zinc-400'
                     }`}
                   />
                 </button>
 
                 {isMoreOpen && (
-                  <div className="absolute left-0 top-full mt-2 w-72 rounded-2xl bg-zinc-950/95 border border-zinc-800/90 shadow-2xl p-2 z-50 backdrop-blur-2xl animate-scaleUp">
-                    <div className="space-y-1">
+                  <div className="absolute left-0 top-full mt-2 w-56 rounded-2xl bg-zinc-950/95 border border-zinc-800 shadow-2xl p-1.5 z-50 backdrop-blur-xl animate-fadeIn">
+                    <div className="space-y-0.5">
                       {secondaryLinks.map((sub) => {
-                        const Icon = sub.icon;
                         const isSubActive = pathname === sub.href;
-
-                        const content = (
-                          <div
-                            className={`flex items-start gap-3 p-2.5 rounded-xl transition-colors group cursor-pointer ${
-                              isSubActive
-                                ? 'bg-primary/10 border border-primary/30'
-                                : 'hover:bg-white/[0.06]'
-                            }`}
-                          >
-                            <div
-                              className={`p-2 rounded-xl border transition-transform duration-300 group-hover:scale-115 group-hover:rotate-6 ${sub.iconBg}`}
-                            >
-                              <Icon className="w-4 h-4 stroke-[2.2]" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold text-zinc-200 group-hover:text-white transition-colors">
-                                {sub.label}
-                              </p>
-                              <p className="text-[11px] text-zinc-500 leading-tight mt-0.5">
-                                {sub.desc}
-                              </p>
-                            </div>
-                          </div>
-                        );
 
                         if (sub.external) {
                           return (
@@ -370,8 +224,10 @@ export default function Header() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={() => setIsMoreOpen(false)}
+                              className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
                             >
-                              {content}
+                              <span>{sub.label}</span>
+                              <ExternalLink className="w-3 h-3 text-zinc-500" />
                             </a>
                           );
                         }
@@ -381,8 +237,13 @@ export default function Header() {
                             key={sub.label}
                             href={sub.href}
                             onClick={() => setIsMoreOpen(false)}
+                            className={`flex items-center px-3 py-2 rounded-xl text-xs transition-colors ${
+                              isSubActive
+                                ? 'bg-primary/15 text-primary font-bold'
+                                : 'text-zinc-300 hover:text-white hover:bg-white/[0.06]'
+                            }`}
                           >
-                            {content}
+                            <span>{sub.label}</span>
                           </Link>
                         );
                       })}
@@ -391,19 +252,18 @@ export default function Header() {
                 )}
               </li>
 
+              {/* ADMIN STUDIO LINK */}
               {user?.role === 'ADMIN' && (
                 <li>
                   <Link
                     href="/admin"
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-colors flex items-center gap-1.5 ${
                       pathname === '/admin'
                         ? 'bg-primary/20 text-primary border border-primary/30'
                         : 'text-zinc-400 hover:text-primary hover:bg-primary/10'
                     }`}
                   >
-                    <div className="w-5 h-5 rounded-md flex items-center justify-center bg-primary/20 text-primary border border-primary/30">
-                      <Shield className="w-3 h-3" />
-                    </div>
+                    <Shield className="w-3.5 h-3.5 text-primary" />
                     <span>Admin</span>
                   </Link>
                 </li>
@@ -411,27 +271,27 @@ export default function Header() {
             </ul>
           </div>
 
-          {/* RIGHT: MINIMAL ACTIONS & ENHANCED SEARCH */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* SLEEK SEARCH WITH INSTANT LIVE RESULTS */}
+          {/* RIGHT: MINIMAL ACTIONS */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* MINIMAL SEARCH */}
             <div className="relative flex items-center" ref={searchContainerRef}>
               {searchOpen ? (
                 <div className="relative">
                   <form
                     onSubmit={handleSearchSubmit}
-                    className="flex items-center bg-zinc-900/95 border border-primary/40 rounded-full pl-3.5 pr-2 py-1.5 shadow-xl transition-all animate-fadeIn"
+                    className="flex items-center bg-zinc-900 border border-zinc-700 rounded-full pl-3 pr-1.5 py-1 shadow-lg transition-all"
                   >
-                    <Search className="w-3.5 h-3.5 text-primary shrink-0 mr-2" />
+                    <Search className="w-3.5 h-3.5 text-zinc-400 mr-2 shrink-0" />
                     <input
                       ref={searchInputRef}
                       type="text"
-                      placeholder="Search movie, narrator, genre..."
+                      placeholder="Search title, voice, genre..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-transparent border-none outline-none text-white text-xs w-48 sm:w-64 placeholder:text-zinc-500"
+                      className="bg-transparent border-none outline-none text-white text-xs w-44 sm:w-56 placeholder:text-zinc-500"
                     />
                     {isSearching && (
-                      <span className="w-2.5 h-2.5 rounded-full border-2 border-primary border-t-transparent animate-spin mr-1.5" />
+                      <span className="w-2.5 h-2.5 rounded-full border-2 border-primary border-t-transparent animate-spin mr-1" />
                     )}
                     <button
                       type="button"
@@ -440,42 +300,45 @@ export default function Header() {
                         setSearchQuery('');
                         setSearchResults(null);
                       }}
-                      className="p-1 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors ml-1"
+                      className="p-1 rounded-full text-zinc-400 hover:text-white transition-colors ml-1"
                       aria-label="Close search"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </form>
 
-                  {/* INSTANT LIVE SEARCH PREVIEW DROPDOWN */}
+                  {/* INSTANT LIVE SEARCH DROPDOWN */}
                   {searchResults && (searchResults.movies.length > 0 || searchResults.interpreters.length > 0) && (
-                    <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-zinc-950/95 border border-zinc-800 shadow-2xl p-2.5 z-50 backdrop-blur-2xl animate-scaleUp">
-                      {/* Matching Interpreters */}
-                      {searchResults.interpreters.length > 0 && (
-                        <div className="mb-2 pb-2 border-b border-zinc-800/80">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 mb-1.5">
-                            Interpreters
+                    <div className="absolute right-0 top-full mt-2 w-80 rounded-2xl bg-zinc-950/95 border border-zinc-800 shadow-2xl p-3 z-50 backdrop-blur-xl">
+                      {searchResults.movies.length > 0 && (
+                        <div className="mb-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 px-2 mb-1">
+                            Movies & Series
                           </p>
                           <div className="space-y-1">
-                            {searchResults.interpreters.map((int) => (
+                            {searchResults.movies.map((m) => (
                               <Link
-                                key={int.id}
-                                href={`/interpreters/${int.slug}`}
+                                key={m.id}
+                                href={`/movies/${m.id}`}
                                 onClick={() => {
-                                  setSearchResults(null);
                                   setSearchOpen(false);
+                                  setSearchResults(null);
                                 }}
-                                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/[0.08] transition-colors"
+                                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/[0.06] transition-colors"
                               >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={int.image}
-                                  alt={int.name}
-                                  className="w-7 h-7 rounded-full object-cover border border-zinc-700"
-                                />
-                                <div className="truncate">
-                                  <p className="text-xs font-bold text-white truncate">{int.name}</p>
-                                  <p className="text-[10px] text-primary">{int.followers.toLocaleString()} followers</p>
+                                {m.poster && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={m.poster}
+                                    alt={m.title}
+                                    className="w-8 h-10 object-cover rounded-md bg-zinc-900 shrink-0"
+                                  />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-semibold text-white truncate">{m.title}</p>
+                                  <p className="text-[10px] text-zinc-400 truncate">
+                                    {m.releaseYear} • {m.narrator || 'Rocky Kimomo'}
+                                  </p>
                                 </div>
                               </Link>
                             ))}
@@ -483,49 +346,46 @@ export default function Header() {
                         </div>
                       )}
 
-                      {/* Matching Movies */}
-                      {searchResults.movies.length > 0 && (
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 px-2 mb-1">
-                            Movies & Series
+                      {searchResults.interpreters.length > 0 && (
+                        <div className="pt-2 border-t border-zinc-900">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500 px-2 mb-1">
+                            Interpreters
                           </p>
-                          {searchResults.movies.map((m) => (
-                            <Link
-                              key={m.id}
-                              href={`/movies/${m.id}`}
-                              onClick={() => {
-                                setSearchResults(null);
-                                setSearchOpen(false);
-                              }}
-                              className="flex items-center justify-between p-1.5 rounded-xl hover:bg-white/[0.08] transition-colors group"
-                            >
-                              <div className="flex items-center gap-2 truncate">
-                                <Play className="w-3 h-3 text-primary shrink-0 group-hover:scale-110 transition-transform" />
-                                <span className="text-xs font-semibold text-zinc-200 group-hover:text-white truncate">
-                                  {m.title}
-                                </span>
-                              </div>
-                              {m.narrator && (
-                                <span className="text-[10px] text-zinc-400 shrink-0 ml-2 px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800">
-                                  {m.narrator}
-                                </span>
-                              )}
-                            </Link>
-                          ))}
+                          <div className="space-y-1">
+                            {searchResults.interpreters.map((i) => (
+                              <Link
+                                key={i.id}
+                                href={`/interpreters/${i.slug}`}
+                                onClick={() => {
+                                  setSearchOpen(false);
+                                  setSearchResults(null);
+                                }}
+                                className="flex items-center gap-2.5 p-1.5 rounded-xl hover:bg-white/[0.06] transition-colors"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={i.image}
+                                  alt={i.name}
+                                  className="w-7 h-7 object-cover rounded-full bg-zinc-900 shrink-0"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-semibold text-white truncate">{i.name}</p>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
                         </div>
                       )}
 
-                      {/* View All CTA */}
                       <Link
                         href={`/search?q=${encodeURIComponent(searchQuery)}`}
                         onClick={() => {
-                          setSearchResults(null);
                           setSearchOpen(false);
+                          setSearchResults(null);
                         }}
-                        className="mt-2 pt-2 border-t border-zinc-800/80 flex items-center justify-between px-2 text-xs font-bold text-primary hover:text-orange-400 transition-colors"
+                        className="block text-center text-xs font-bold text-primary hover:underline pt-2 mt-1 border-t border-zinc-900"
                       >
-                        <span>See all results for &quot;{searchQuery}&quot;</span>
-                        <ArrowRight className="w-3 h-3" />
+                        View all results →
                       </Link>
                     </div>
                   )}
@@ -533,89 +393,77 @@ export default function Header() {
               ) : (
                 <button
                   onClick={() => setSearchOpen(true)}
-                  className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
-                  aria-label="Search"
-                  title="Search movies and narrators"
+                  className="p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/[0.06] transition-colors"
+                  aria-label="Open search"
                 >
                   <Search className="w-4 h-4" />
                 </button>
               )}
             </div>
 
-            {/* NOTIFICATION BELL */}
+            {/* MINIMAL NOTIFICATION BELL */}
             <NotificationBell />
 
-            {/* OPTIONAL VOLUNTARY SUPPORT BUTTON */}
+            {/* OPTIONAL SUPPORT MODAL TRIGGER */}
             <button
               onClick={() => setIsSupportModalOpen(true)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-rose-500/20 via-primary/20 to-amber-500/20 border border-rose-500/40 hover:border-rose-400 text-rose-300 hover:text-white text-xs font-bold transition-all shadow-sm hover:scale-105"
-              title="Support FiestaFlix Optionally"
+              className="p-2 text-zinc-400 hover:text-rose-400 rounded-full hover:bg-white/[0.06] transition-colors hidden sm:flex items-center justify-center"
+              title="Support FiestaFlix (Optional)"
             >
-              <Heart className="w-3.5 h-3.5 text-rose-500 fill-current animate-pulse" />
-              <span>Support Us</span>
+              <Heart className="w-4 h-4" />
             </button>
 
-            {/* USER PROFILE OR AUTH */}
+            {/* USER PROFILE OR LOGIN */}
             {user ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1 rounded-full hover:bg-white/[0.08] transition-colors"
-                  aria-label="User menu"
+                  className="flex items-center gap-2 p-1 pl-2 rounded-full hover:bg-white/[0.06] transition-colors"
                 >
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-primary to-orange-400 flex items-center justify-center text-white font-bold text-xs shadow-sm ring-1 ring-white/10">
+                  <span className="text-xs font-medium text-zinc-300 hidden sm:inline">
+                    {user.name.split(' ')[0]}
+                  </span>
+                  <div className="w-7 h-7 rounded-full bg-primary/20 text-primary border border-primary/30 flex items-center justify-center font-bold text-xs">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                 </button>
 
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-52 bg-zinc-950/95 border border-zinc-800/90 rounded-2xl shadow-2xl p-2 z-50 backdrop-blur-2xl animate-scaleUp">
-                    <div className="p-2.5 border-b border-zinc-800/80">
-                      <p className="font-semibold text-white text-xs truncate">{user.name}</p>
-                      <p className="text-[11px] text-zinc-500 truncate mt-0.5">{user.email}</p>
-                      {user.role === 'ADMIN' && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 bg-primary/15 text-primary text-[10px] font-bold rounded-full border border-primary/20">
-                          <Shield className="w-2.5 h-2.5" /> Admin
-                        </span>
-                      )}
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl p-1.5 z-50 animate-fadeIn">
+                    <div className="px-3 py-2 border-b border-zinc-800 text-xs">
+                      <p className="font-bold text-white truncate">{user.name}</p>
+                      <p className="text-[11px] text-zinc-500 truncate">{user.email}</p>
                     </div>
 
-                    <div className="space-y-0.5 pt-1">
-                      <Link
-                        href="/favorites"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors"
-                      >
-                        <Heart className="w-3.5 h-3.5 text-rose-400" />
-                        <span>My List</span>
-                      </Link>
-
-                      <Link
-                        href="/support"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-rose-400 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors font-medium"
-                      >
-                        <Heart className="w-3.5 h-3.5 fill-current" />
-                        <span>Support (Optional)</span>
-                      </Link>
-
+                    <div className="space-y-0.5 pt-1 text-xs">
                       {user.role === 'ADMIN' && (
                         <Link
                           href="/admin"
                           onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-white/[0.06] rounded-xl transition-colors"
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-primary font-semibold hover:bg-primary/10 transition-colors"
                         >
-                          <Shield className="w-3.5 h-3.5 text-primary" />
-                          <span>Admin Dashboard</span>
+                          <Shield className="w-3.5 h-3.5" />
+                          <span>Admin Studio</span>
                         </Link>
                       )}
-
+                      <Link
+                        href="/favorites"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center justify-between px-3 py-2 rounded-xl text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                      >
+                        <span>My List</span>
+                        {favCount > 0 && (
+                          <span className="px-1.5 py-0.2 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
+                            {favCount}
+                          </span>
+                        )}
+                      </Link>
                       <button
                         onClick={() => {
-                          logout();
                           setIsUserMenuOpen(false);
+                          logout();
                         }}
-                        className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors mt-0.5"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         <span>Sign Out</span>
@@ -627,7 +475,7 @@ export default function Header() {
             ) : (
               <Link
                 href="/login"
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-black hover:bg-zinc-200 transition-all shadow-sm"
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-black hover:bg-zinc-200 transition-colors shadow-xs"
               >
                 Sign In
               </Link>
@@ -636,7 +484,7 @@ export default function Header() {
             {/* MOBILE HAMBURGER BUTTON */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/[0.08] transition-colors"
+              className="md:hidden p-2 text-zinc-400 hover:text-white rounded-full hover:bg-white/[0.06] transition-colors"
               aria-label="Toggle navigation menu"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -645,13 +493,12 @@ export default function Header() {
         </nav>
       </div>
 
-      {/* MOBILE SHEET / DRAWER WITH CARTOON ICONS */}
+      {/* MINIMAL MOBILE MENU DRAWER */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-zinc-950/95 border-b border-zinc-800/80 px-5 py-4 backdrop-blur-2xl animate-fadeIn space-y-4">
-          {/* Mobile search bar */}
+        <div className="md:hidden bg-zinc-950/98 border-b border-zinc-800 px-5 py-4 backdrop-blur-2xl animate-fadeIn space-y-4">
           <form
             onSubmit={handleSearchSubmit}
-            className="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs"
+            className="flex items-center bg-zinc-900 border border-zinc-800 rounded-full px-3.5 py-2 text-xs"
           >
             <Search className="w-4 h-4 text-zinc-500 mr-2 shrink-0" />
             <input
@@ -663,78 +510,65 @@ export default function Header() {
             />
           </form>
 
-          {/* Core destinations with cartoon icons */}
-          <div className="space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 px-2 pb-1">
-              Explore
-            </p>
+          <div className="space-y-0.5 text-xs font-medium">
             {primaryLinks.map((item) => {
               const isActive =
                 item.href === '/'
                   ? pathname === '/'
                   : pathname === item.href || pathname.startsWith(item.href + '/');
 
-              const Icon = item.icon;
-
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold ${
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl transition-colors ${
                     isActive
-                      ? 'bg-primary/20 text-white font-bold border border-primary/30'
-                      : 'text-zinc-300 hover:bg-zinc-900 hover:text-white'
+                      ? 'bg-white/10 text-white font-bold'
+                      : 'text-zinc-300 hover:text-white hover:bg-zinc-900'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className={`w-6 h-6 rounded-lg flex items-center justify-center border shadow-xs ${item.iconBg}`}
-                    >
-                      <Icon className="w-3.5 h-3.5 stroke-[2.2]" />
-                    </div>
-                    <span>{item.label}</span>
-                  </div>
+                  <span>{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px]">
+                    <span className="px-1.5 py-0.2 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
                       {item.badge}
                     </span>
                   )}
                 </Link>
               );
             })}
+
+            {user?.role === 'ADMIN' && (
+              <Link
+                href="/admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-primary font-bold hover:bg-primary/10 transition-colors"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Admin Studio</span>
+              </Link>
+            )}
           </div>
 
-          {/* Secondary links with cartoon icons */}
-          <div className="space-y-1 pt-2 border-t border-zinc-800/80">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-500 px-2 pb-1">
-              Community & Support
-            </p>
-            {secondaryLinks.map((sub) => {
-              const Icon = sub.icon;
-              return (
-                <a
-                  key={sub.label}
-                  href={sub.href}
-                  target={sub.external ? '_blank' : '_self'}
-                  rel={sub.external ? 'noopener noreferrer' : ''}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors group"
-                >
-                  <div
-                    className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-transform group-hover:scale-110 ${sub.iconBg}`}
-                  >
-                    <Icon className="w-3.5 h-3.5 stroke-[2.2]" />
-                  </div>
-                  <span>{sub.label}</span>
-                </a>
-              );
-            })}
+          <div className="space-y-0.5 pt-2 border-t border-zinc-800/80 text-xs text-zinc-400">
+            {secondaryLinks.map((sub) => (
+              <a
+                key={sub.label}
+                href={sub.href}
+                target={sub.external ? '_blank' : '_self'}
+                rel={sub.external ? 'noopener noreferrer' : ''}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between px-3 py-2 rounded-xl hover:text-white hover:bg-zinc-900 transition-colors"
+              >
+                <span>{sub.label}</span>
+                {sub.external && <ExternalLink className="w-3 h-3 text-zinc-600" />}
+              </a>
+            ))}
           </div>
         </div>
       )}
 
-      {/* GLOBAL OPTIONAL SUPPORT MODAL */}
+      {/* GLOBAL SUPPORT MODAL */}
       <SupportModal
         isOpen={isSupportModalOpen}
         onClose={() => setIsSupportModalOpen(false)}

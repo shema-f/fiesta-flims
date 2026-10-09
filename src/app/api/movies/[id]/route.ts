@@ -105,3 +105,126 @@ export async function GET(
     { status: 404 }
   );
 }
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+    const {
+      title,
+      releaseYear,
+      genre,
+      narrator,
+      description,
+      rating,
+      fileUrl,
+      thumbnailUrl,
+      poster,
+      backdrop,
+      trailer,
+      type,
+      seasonsCount,
+      episodesCount,
+      episodes,
+    } = body;
+
+    const existing = await prisma.movie.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: 'Movie not found' },
+        { status: 404 }
+      );
+    }
+
+    const currentRes = (existing.resolutions as any) || {};
+    const updatedResolutions = {
+      ...currentRes,
+      type: type || currentRes.type || (episodes && episodes.length > 1 ? 'Series' : 'Movie'),
+      seasonsCount: seasonsCount !== undefined ? seasonsCount : currentRes.seasonsCount,
+      episodesCount: episodesCount !== undefined ? episodesCount : (episodes ? episodes.length : currentRes.episodesCount),
+      episodes: episodes !== undefined ? episodes : currentRes.episodes,
+    };
+
+    const updated = await prisma.movie.update({
+      where: { id: existing.id },
+      data: {
+        ...(title ? { title } : {}),
+        ...(releaseYear ? { releaseYear: parseInt(String(releaseYear), 10) } : {}),
+        ...(genre !== undefined ? { genre } : {}),
+        ...(narrator !== undefined ? { narrator } : {}),
+        ...(description !== undefined ? { description, synopsis: description } : {}),
+        ...(rating !== undefined ? { rating: parseFloat(String(rating)) } : {}),
+        ...(fileUrl !== undefined ? { fileUrl } : {}),
+        ...(thumbnailUrl !== undefined ? { thumbnailUrl } : {}),
+        ...(poster !== undefined ? { poster } : {}),
+        ...(backdrop !== undefined ? { backdrop } : {}),
+        ...(trailer !== undefined ? { trailer } : {}),
+        resolutions: updatedResolutions,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: updated,
+      message: 'Movie updated successfully',
+    });
+  } catch (error: any) {
+    console.error('Error updating movie:', error);
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Failed to update movie' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: Request,
+  props: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, props);
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+
+  try {
+    const existing = await prisma.movie.findFirst({
+      where: { OR: [{ id }, { slug: id }] },
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: 'Movie not found' },
+        { status: 404 }
+      );
+    }
+
+    // Soft delete by deactivating or hard delete
+    await prisma.movie.update({
+      where: { id: existing.id },
+      data: { isActive: false, status: 'ARCHIVED' },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Movie deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Error deleting movie:', error);
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Failed to delete movie' },
+      { status: 500 }
+    );
+  }
+}
+

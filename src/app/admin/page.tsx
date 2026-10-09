@@ -10,6 +10,7 @@ import MediaJobsPanel from '@/components/admin/MediaJobsPanel';
 import AdminNewsPanel from '@/components/admin/AdminNewsPanel';
 import AdminAdsPanel from '@/components/admin/AdminAdsPanel';
 import AdminCatalogReportPanel from '@/components/admin/AdminCatalogReportPanel';
+import AdminMoviesManager from '@/components/admin/AdminMoviesManager';
 
 const movieRequests = [
   {
@@ -376,6 +377,10 @@ export default function AdminPage() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'movies' && (
+                <AdminMoviesManager />
               )}
 
               {activeTab === 'rwandan-movies' && (
