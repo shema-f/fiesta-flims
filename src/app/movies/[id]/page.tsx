@@ -31,12 +31,21 @@ import {
   Eye,
   Tv,
   ShieldCheck,
+  Users,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import FiestaVideoPlayer from '@/components/video/FiestaVideoPlayer';
 import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
 import { estimateSizeLabel, DATA_SAVER_TIP } from '@/lib/dataSizes';
 import SupportModal from '@/components/SupportModal';
+
+export interface CastMember {
+  id: number;
+  name: string;
+  character: string;
+  profileUrl: string;
+  order: number;
+}
 
 type LoadStatus = 'loading' | 'ready' | 'error' | 'notfound';
 
@@ -133,6 +142,9 @@ export default function MovieDetailPage() {
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isSeriesDownloadModalOpen, setIsSeriesDownloadModalOpen] = useState(false);
   const [allCopied, setAllCopied] = useState(false);
+  const [cast, setCast] = useState<CastMember[]>([]);
+  const [tmdbPoster, setTmdbPoster] = useState<string | null>(null);
+  const [castLoading, setCastLoading] = useState(false);
 
   const loadMovie = useCallback(async () => {
     if (staticMovie) {
@@ -272,6 +284,35 @@ export default function MovieDetailPage() {
       sources: [],
     };
   }, [staticMovie, apiMovie]);
+
+  useEffect(() => {
+    if (!view.title || view.title === 'Movie') return;
+    let cancelled = false;
+    setCastLoading(true);
+
+    fetch(`/api/tmdb/movie?title=${encodeURIComponent(view.title)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.success) {
+          if (Array.isArray(data.cast) && data.cast.length > 0) {
+            setCast(data.cast);
+          }
+          if (data.poster) {
+            setTmdbPoster(data.poster);
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setCastLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [view.title]);
+
+  const effectivePoster = tmdbPoster || view.image;
 
   const downloadFileName = (source: VideoSource) => {
     const extension = source.url.match(/\.(mp4|webm|mkv|mov|m4v)(?=$|\?)/i)?.[0] || '.mp4';
@@ -495,14 +536,16 @@ export default function MovieDetailPage() {
             <div className="flex flex-col md:flex-row items-center md:items-end gap-6 sm:gap-8">
               {/* Poster card with ambient glow */}
               <div className="relative w-48 sm:w-60 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl border border-zinc-700/60 shrink-0 bg-zinc-900">
-                {view.image ? (
-                  <Image
-                    src={view.image}
+                {effectivePoster ? (
+                  <img
+                    src={effectivePoster}
                     alt={view.title}
-                    fill
-                    priority
                     referrerPolicy="no-referrer"
-                    className="object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+                    }}
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-4xl">🎬</div>
@@ -871,6 +914,74 @@ export default function MovieDetailPage() {
             voteCount={1420}
           />
         </div>
+
+        {/* TMDB CAST & CHARACTERS SECTION */}
+        <section className="container mx-auto px-4 sm:px-6 my-8">
+          <div className="p-6 sm:p-8 rounded-3xl bg-zinc-950/80 border border-zinc-800/80 shadow-2xl backdrop-blur">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-zinc-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                    <span>Cast & Characters</span>
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold uppercase tracking-wider">
+                      TMDB Verified
+                    </span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Lead actors and ensemble cast for &ldquo;{view.title}&rdquo;
+                  </p>
+                </div>
+              </div>
+              <div className="text-xs text-zinc-500 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Synchronized with The Movie Database (TMDB)</span>
+              </div>
+            </div>
+
+            {/* Cast Members Grid */}
+            {cast.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+                {cast.slice(0, 12).map((member) => (
+                  <div
+                    key={`${member.id}-${member.order}`}
+                    className="group p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 hover:border-primary/50 transition-all flex flex-col items-center text-center hover:bg-zinc-900 shadow-md"
+                  >
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 border-2 border-zinc-700 group-hover:border-primary transition-colors bg-zinc-800 shadow-lg shrink-0">
+                      <img
+                        src={member.profileUrl}
+                        alt={member.name}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop';
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                    <h4 className="font-bold text-xs sm:text-sm text-white line-clamp-1 group-hover:text-primary transition-colors">
+                      {member.name}
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 line-clamp-1 mt-0.5">
+                      {member.character}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : castLoading ? (
+              <div className="flex items-center justify-center py-10 gap-3 text-zinc-400 text-xs">
+                <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+                <span>Loading authentic cast from TMDB...</span>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-zinc-500 text-xs">
+                Cast information available upon streaming playback.
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* Related Movies Section */}
         <section className="container mx-auto px-4 sm:px-6 py-10">

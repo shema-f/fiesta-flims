@@ -331,8 +331,15 @@ const createMovieSchema = z.object({
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    // Allow admin or default studio creator
-    const uploaderId = user?.id || 'admin-studio';
+    let uploaderId = user?.id;
+    if (!uploaderId) {
+      try {
+        const defaultAdmin = await prisma.user.findFirst({ select: { id: true } });
+        uploaderId = defaultAdmin?.id || 'admin-01';
+      } catch {
+        uploaderId = 'admin-01';
+      }
+    }
 
     const body = await request.json();
     const data = createMovieSchema.parse(body);
@@ -347,10 +354,17 @@ export async function POST(request: Request) {
     let createdMovie: any = null;
 
     try {
+      const resolutionsData = {
+        type: isSeries ? 'Series' : 'Movie',
+        seasonsCount: data.seasonsCount || (isSeries ? 1 : undefined),
+        episodesCount: data.episodesCount || (data.episodes ? data.episodes.length : (isSeries ? 1 : undefined)),
+        episodes: data.episodes || [],
+      };
+
       createdMovie = await prisma.movie.create({
         data: {
           title: data.title,
-          slug,
+          slug: `${slug}-${Date.now().toString(36)}`,
           description: data.description || `Experience ${data.title} with high-definition audio and narration by ${data.narrator || 'FiestaFlix'}.`,
           synopsis: data.synopsis || data.description,
           releaseYear: data.releaseYear || new Date().getFullYear(),
@@ -360,6 +374,9 @@ export async function POST(request: Request) {
           rating: data.rating || 8.6,
           fileUrl: data.fileUrl || (data.youtubeId ? `https://www.youtube.com/watch?v=${data.youtubeId}` : null),
           thumbnailUrl: data.thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+          poster: data.thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+          backdrop: data.thumbnailUrl || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+          resolutions: resolutionsData,
           status: 'PUBLISHED',
           isActive: true,
           isFeatured: true,

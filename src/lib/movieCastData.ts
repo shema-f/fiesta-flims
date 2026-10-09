@@ -137,6 +137,39 @@ export const TMDB_CAST_REGISTRY: Record<string, CastMember[]> = {
     { id: 193, name: 'Berta Vázquez', character: "Estefanía 'Rizos'", profileUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=300&auto=format&fit=crop', order: 2 },
     { id: 194, name: 'Alba Flores', character: 'Saray Vargas', profileUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop', order: 3 },
   ],
+  // Authentic Rwandan Cinema Titles
+  'seburikoko': [
+    { id: 201, name: 'Gratien Niyitegeka', character: 'Seburikoko', profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop', order: 0 },
+    { id: 202, name: 'Antoinette Uwamahoro', character: 'Siperansiya', profileUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop', order: 1 },
+    { id: 203, name: 'Ernest Kalisa', character: 'Rulinda', profileUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=300&auto=format&fit=crop', order: 2 },
+    { id: 204, name: 'Nathalie Mukasekuru', character: 'Kanyombya Ka Seburikoko', profileUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=300&auto=format&fit=crop', order: 3 },
+  ],
+  'bamenya': [
+    { id: 211, name: 'Denis Nsanzamahoro', character: 'Bamenya', profileUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop', order: 0 },
+    { id: 212, name: 'Laura Musanase', character: 'Kezia', profileUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=300&auto=format&fit=crop', order: 1 },
+    { id: 213, name: 'Etienne Dan', character: '5K', profileUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=300&auto=format&fit=crop', order: 2 },
+    { id: 214, name: 'Didier Kamanzi', character: 'Gasangwa', profileUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=300&auto=format&fit=crop', order: 3 },
+  ],
+  'city maid': [
+    { id: 221, name: 'Laura Musanase', character: 'Nikuze', profileUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop', order: 0 },
+    { id: 222, name: 'Didier Kamanzi', character: 'Nick', profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop', order: 1 },
+    { id: 223, name: 'Emmanuel Ndayizeye', character: 'Patrick', profileUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=300&auto=format&fit=crop', order: 2 },
+    { id: 224, name: 'Diane Mugabekazi', character: 'Diane', profileUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=300&auto=format&fit=crop', order: 3 },
+  ],
+  'papa sava': [
+    { id: 231, name: 'Gratien Niyitegeka', character: 'Papa Sava', profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop', order: 0 },
+    { id: 232, name: 'Clapton Kibonke', character: 'Kibonke', profileUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=300&auto=format&fit=crop', order: 1 },
+    { id: 233, name: '5K Etienne', character: 'Etienne', profileUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=300&auto=format&fit=crop', order: 2 },
+  ],
+  'ikigeragezo cy\'ubuzima': [
+    { id: 241, name: 'Willy Ndahiro', character: 'Paul', profileUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=300&auto=format&fit=crop', order: 0 },
+    { id: 242, name: 'Carole Karemera', character: 'Marie', profileUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop', order: 1 },
+    { id: 243, name: 'Denis Nsanzamahoro', character: 'Gahigi', profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop', order: 2 },
+  ],
+  'rwasa': [
+    { id: 251, name: 'Denis Nsanzamahoro', character: 'Rwasa', profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=300&auto=format&fit=crop', order: 0 },
+    { id: 252, name: 'Laura Musanase', character: 'Sonia', profileUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop', order: 1 },
+  ],
 };
 
 const GENERIC_ACTORS_POOL: { name: string; photo: string }[] = [

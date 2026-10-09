@@ -7,7 +7,7 @@ import { interpretersData, getInterpreter } from '@/lib/interpreters';
 import { getCatalog } from '@/lib/catalog';
 import type { Movie } from '@/lib/movieData';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
   return interpretersData.map((i) => ({ slug: i.slug }));

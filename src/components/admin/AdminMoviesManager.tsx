@@ -19,6 +19,7 @@ import {
   Calendar,
   Star,
   RefreshCw,
+  Sparkles,
 } from 'lucide-react';
 import type { ApiMovie } from '@/lib/apiTypes';
 
@@ -26,6 +27,7 @@ const POPULAR_NARRATORS = [
   'Rocky Kimomo',
   'Junior Giti',
   'Sankara da Premier',
+  'Original Rwandan Cast (Nyarwanda)',
   'Gaheza Simba',
   'Savimbi',
   'Yanga',
@@ -35,9 +37,15 @@ const POPULAR_NARRATORS = [
   'Master P',
   'PK',
   'Skov',
+  'Misago Wilson',
+  '5K Etienne',
 ];
 
 const GENRES = [
+  'Filime Nyarwanda',
+  'Comedy Nyarwanda',
+  'Drama Nyarwanda',
+  'Romance Nyarwanda',
   'Action',
   'Adventure',
   'Animation',
@@ -51,6 +59,80 @@ const GENRES = [
   'Sci-Fi',
   'Thriller',
   'War',
+  'Documentary',
+];
+
+export const RWANDAN_MOVIE_PRESETS = [
+  {
+    title: "Ikigeragezo cy'Ubuzima",
+    releaseYear: 2021,
+    genre: 'Filime Nyarwanda',
+    narrator: 'Original Rwandan Cast (Nyarwanda)',
+    description: 'Filime yerekana ubuzima busharira bwa buri munsi, ibigeragezo n\'urukundo mu muryango nyarwanda.',
+    poster: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?q=80&w=900&auto=format&fit=crop',
+    backdrop: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1280&auto=format&fit=crop',
+    rating: 9.2,
+    type: 'Movie' as const,
+  },
+  {
+    title: 'Seburikoko',
+    releaseYear: 2023,
+    genre: 'Comedy Nyarwanda',
+    narrator: 'Original Rwandan Cast (Nyarwanda)',
+    description: 'Urugendo rwa Seburikoko na Siperansiya mu gutebya no kwerekana imibereho n\'umuco nyarwanda.',
+    poster: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=900&auto=format&fit=crop',
+    backdrop: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=1280&auto=format&fit=crop',
+    rating: 9.4,
+    type: 'Series' as const,
+    seasonsCount: 5,
+  },
+  {
+    title: 'Bamenya Series',
+    releaseYear: 2024,
+    genre: 'Drama Nyarwanda',
+    narrator: 'Original Rwandan Cast (Nyarwanda)',
+    description: 'Filime ikunzwe cyane mu Rwanda yakinwe na Bamenya (Denis Nsanzamahoro), Kezia na 5K.',
+    poster: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=900&auto=format&fit=crop',
+    backdrop: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?q=80&w=1280&auto=format&fit=crop',
+    rating: 9.5,
+    type: 'Series' as const,
+    seasonsCount: 4,
+  },
+  {
+    title: 'City Maid',
+    releaseYear: 2022,
+    genre: 'Drama Nyarwanda',
+    narrator: 'Original Rwandan Cast (Nyarwanda)',
+    description: 'Urugendo rw\'umukobwa Nikuze uvuye mu cyaro akaza i Kigali gushaka ubuzima n\'ibyo ahura nabyo.',
+    poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
+    backdrop: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1280&auto=format&fit=crop',
+    rating: 9.1,
+    type: 'Series' as const,
+    seasonsCount: 8,
+  },
+  {
+    title: 'Papa Sava',
+    releaseYear: 2023,
+    genre: 'Comedy Nyarwanda',
+    narrator: 'Original Rwandan Cast (Nyarwanda)',
+    description: 'Guseka bidasanzwe hamwe na Papa Sava, Kibonke na Niyitegeka Gratien mu gace gakunzwe.',
+    poster: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=900&auto=format&fit=crop',
+    backdrop: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=1280&auto=format&fit=crop',
+    rating: 9.3,
+    type: 'Series' as const,
+    seasonsCount: 6,
+  },
+  {
+    title: 'Rwasa',
+    releaseYear: 2020,
+    genre: 'Filime Nyarwanda',
+    narrator: 'Original Rwandan Cast (Nyarwanda)',
+    description: 'Filime y\'ubutwari n\'akaga yakinwe na Denis Nsanzamahoro akina ari Rwasa.',
+    poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
+    backdrop: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?q=80&w=1280&auto=format&fit=crop',
+    rating: 8.9,
+    type: 'Movie' as const,
+  },
 ];
 
 interface EpisodeEditItem {
@@ -74,6 +156,7 @@ export default function AdminMoviesManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<ApiMovie | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fetchingTmdb, setFetchingTmdb] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Form state
@@ -104,13 +187,62 @@ export default function AdminMoviesManager() {
       const res = await fetch('/api/movies?limit=300');
       if (res.ok) {
         const json = await res.json();
-        setMovies(json.data?.movies || []);
+        const list = Array.isArray(json.data) ? json.data : (json.data?.movies || []);
+        setMovies(list);
       }
     } catch {
       showToast('Failed to load movies from database', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFetchTmdb = async () => {
+    if (!form.title.trim()) {
+      showToast('Enter a movie title to search on TMDB', 'error');
+      return;
+    }
+    setFetchingTmdb(true);
+    try {
+      const res = await fetch(`/api/tmdb/movie?title=${encodeURIComponent(form.title)}`);
+      const data = await res.json();
+      if (data.success && (data.poster || data.title || data.overview)) {
+        setForm((prev) => ({
+          ...prev,
+          title: data.title || prev.title,
+          poster: data.poster || prev.poster,
+          backdrop: data.backdrop || prev.backdrop,
+          description: data.overview || prev.description,
+          releaseYear: data.releaseYear || prev.releaseYear,
+          rating: data.voteAverage ? parseFloat(data.voteAverage.toFixed(1)) : prev.rating,
+          type: data.mediaType === 'tv' ? 'Series' : prev.type,
+        }));
+        showToast(`Loaded metadata for "${data.title || form.title}" from TMDB!`);
+      } else {
+        showToast('No TMDB match found. You can fill details manually.', 'error');
+      }
+    } catch {
+      showToast('Failed to connect to TMDB', 'error');
+    } finally {
+      setFetchingTmdb(false);
+    }
+  };
+
+  const handleApplyRwandanPreset = (preset: typeof RWANDAN_MOVIE_PRESETS[number]) => {
+    setForm((prev) => ({
+      ...prev,
+      title: preset.title,
+      releaseYear: preset.releaseYear,
+      genre: preset.genre,
+      narrator: preset.narrator,
+      description: preset.description,
+      poster: preset.poster,
+      backdrop: preset.backdrop,
+      rating: preset.rating,
+      type: preset.type,
+      seasonsCount: (preset as any).seasonsCount || 1,
+    }));
+    showToast(`Loaded Rwandan Cinema preset: "${preset.title}"!`);
   };
 
   useEffect(() => {
@@ -333,8 +465,15 @@ export default function AdminMoviesManager() {
         (m.narrator && m.narrator.toLowerCase().includes(filterNarrator.toLowerCase()));
 
       const isSeries = m.contentType === 'series' || (m.episodes && m.episodes.length > 0);
+      const isRwandan =
+        (m.genre && m.genre.toLowerCase().includes('nyarwanda')) ||
+        (m.narrator && m.narrator.toLowerCase().includes('rwandan')) ||
+        (m.description && m.description.toLowerCase().includes('kinyarwanda')) ||
+        (m.title && RWANDAN_MOVIE_PRESETS.some((p) => p.title.toLowerCase() === m.title.toLowerCase()));
+
       const matchesType =
         filterType === 'all' ||
+        (filterType === 'rwandan' && isRwandan) ||
         (filterType === 'series' && isSeries) ||
         (filterType === 'movie' && !isSeries);
 
@@ -437,6 +576,7 @@ export default function AdminMoviesManager() {
             <option value="all">All Types</option>
             <option value="movie">Movies</option>
             <option value="series">Series</option>
+            <option value="rwandan">Filime Nyarwanda 🇷🇼</option>
           </select>
         </div>
       </div>
@@ -470,6 +610,11 @@ export default function AdminMoviesManager() {
               <tbody className="divide-y divide-zinc-900">
                 {filteredMovies.map((m) => {
                   const isSeries = m.contentType === 'series' || (m.episodes && m.episodes.length > 0);
+                  const isRwandan =
+                    (m.genre && m.genre.toLowerCase().includes('nyarwanda')) ||
+                    (m.narrator && m.narrator.toLowerCase().includes('rwandan')) ||
+                    (m.description && m.description.toLowerCase().includes('kinyarwanda')) ||
+                    RWANDAN_MOVIE_PRESETS.some((p) => p.title.toLowerCase() === m.title.toLowerCase());
                   const posterUrl = m.poster || m.thumbnailUrl || m.image;
 
                   return (
@@ -491,9 +636,16 @@ export default function AdminMoviesManager() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-white text-sm line-clamp-1 group-hover:text-primary transition-colors">
-                              {m.title}
-                            </p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-bold text-white text-sm line-clamp-1 group-hover:text-primary transition-colors">
+                                {m.title}
+                              </p>
+                              {isRwandan && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                  🇷🇼 Nyarwanda
+                                </span>
+                              )}
+                            </div>
                             <p className="text-[11px] text-zinc-500 line-clamp-1 mt-0.5">
                               ID: {m.id}
                             </p>
@@ -615,27 +767,70 @@ export default function AdminMoviesManager() {
                 </button>
               </div>
 
-              {/* Title & Year */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="text-zinc-300 font-bold">Movie Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.title}
-                    onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-                    placeholder="e.g. Prison Break, Outer Banks, Bilal"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
-                  />
+              {/* RWANDAN CINEMA QUICK PRESETS */}
+              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-zinc-900 to-zinc-900 border border-emerald-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-bold flex items-center gap-1.5 text-xs">
+                    <span>🇷🇼 Filime Nyarwanda Presets</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-black uppercase">
+                      One-Click Fill
+                    </span>
+                  </span>
+                  <span className="text-[11px] text-zinc-400">Click to autofill popular Rwandan movies</span>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-zinc-300 font-bold">Release Year</label>
-                  <input
-                    type="number"
-                    value={form.releaseYear}
-                    onChange={(e) => setForm((p) => ({ ...p, releaseYear: parseInt(e.target.value, 10) || 2024 }))}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-primary"
-                  />
+                <div className="flex flex-wrap gap-1.5">
+                  {RWANDAN_MOVIE_PRESETS.map((p) => (
+                    <button
+                      key={p.title}
+                      type="button"
+                      onClick={() => handleApplyRwandanPreset(p)}
+                      className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-emerald-600 hover:text-white text-zinc-300 font-semibold text-[11px] border border-zinc-700/80 transition-all flex items-center gap-1"
+                    >
+                      <span>🇷🇼</span>
+                      <span>{p.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Title & Year + TMDB Sync */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-zinc-300 font-bold">Movie Title *</label>
+                  <button
+                    type="button"
+                    onClick={handleFetchTmdb}
+                    disabled={fetchingTmdb}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-[11px] font-bold transition-colors"
+                    title="Fetch official TMDB poster, backdrop, overview and cast"
+                  >
+                    {fetchingTmdb ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    )}
+                    <span>Fetch TMDB Poster & Cast</span>
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <input
+                      type="text"
+                      required
+                      value={form.title}
+                      onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                      placeholder="e.g. Prison Break, Seburikoko, Outer Banks..."
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      value={form.releaseYear}
+                      onChange={(e) => setForm((p) => ({ ...p, releaseYear: parseInt(e.target.value, 10) || 2024 }))}
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-primary"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -685,7 +880,16 @@ export default function AdminMoviesManager() {
                   {form.poster && (
                     <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-zinc-800 bg-zinc-900">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={form.poster} alt="Preview" className="w-full h-full object-cover" />
+                      <img
+                        src={form.poster}
+                        alt="Preview"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+                        }}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   )}
                 </div>

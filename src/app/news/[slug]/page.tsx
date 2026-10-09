@@ -276,6 +276,17 @@ export default function FiestaFlixNewsDetailPage() {
     );
   };
 
+  const heroRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+
+  const headlineY = useTransform(scrollYProgress, [0, 1], [0, -20]);
+  const headlineOpacity = useTransform(scrollYProgress, [0, 0.85], [1, 0.85]);
+  const imageY = useTransform(scrollYProgress, [0, 1], [0, 24]);
+  const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.04]);
+
   const sortedComments = useMemo(() => {
     const list = [...comments];
     if (sortOption === 'Newest') {

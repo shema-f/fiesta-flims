@@ -132,15 +132,47 @@ export async function PUT(
       episodes,
     } = body;
 
-    const existing = await prisma.movie.findFirst({
+    let existing = await prisma.movie.findFirst({
       where: { OR: [{ id }, { slug: id }] },
     });
 
     if (!existing) {
-      return NextResponse.json(
-        { success: false, error: 'Movie not found' },
-        { status: 404 }
-      );
+      const staticItem = findMovieOrSeries(id);
+      let defaultAdminId = 'admin-01';
+      try {
+        const adminUser = await prisma.user.findFirst({ select: { id: true } });
+        if (adminUser) defaultAdminId = adminUser.id;
+      } catch {
+        // fallback
+      }
+
+      const cleanSlug = (title || staticItem?.title || id)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      existing = await prisma.movie.create({
+        data: {
+          title: title || staticItem?.title || 'Untitled',
+          slug: `${cleanSlug}-${Date.now().toString(36)}`,
+          description: description || staticItem?.description || '',
+          synopsis: description || staticItem?.description || '',
+          releaseYear: releaseYear ? parseInt(String(releaseYear), 10) : (staticItem?.year || 2024),
+          duration: 7200,
+          narrator: narrator || staticItem?.narrator || 'Rocky Kimomo',
+          genre: genre || staticItem?.genre || 'Action',
+          rating: rating ? parseFloat(String(rating)) : (staticItem?.rating || 8.5),
+          fileUrl: fileUrl || staticItem?.directStreamUrl || null,
+          thumbnailUrl: poster || thumbnailUrl || staticItem?.image || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+          poster: poster || staticItem?.image || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+          backdrop: backdrop || staticItem?.backdrop || staticItem?.image || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+          trailer: trailer || null,
+          status: 'PUBLISHED',
+          isActive: true,
+          isFeatured: true,
+          uploaderId: defaultAdminId,
+        },
+      });
     }
 
     const currentRes = (existing.resolutions as any) || {};

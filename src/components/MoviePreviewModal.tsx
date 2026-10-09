@@ -106,11 +106,11 @@ export default function MoviePreviewModal({ movie, onClose }: MoviePreviewModalP
 
           {/* Hero Visual / Mobile-optimized Video Player */}
           <div className="relative w-full aspect-video sm:h-[380px] bg-zinc-900 overflow-hidden shrink-0">
-            {isPlayingPreview && movie.directStreamUrl ? (
+            {isPlayingPreview ? (
               <div className="relative w-full h-full bg-black">
                 <video
                   ref={videoRef}
-                  src={movie.directStreamUrl}
+                  src={movie.directStreamUrl || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'}
                   autoPlay
                   controls
                   playsInline
@@ -140,26 +140,17 @@ export default function MoviePreviewModal({ movie, onClose }: MoviePreviewModalP
 
                 {/* Big Touch Play Button */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  {movie.directStreamUrl ? (
-                    <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setIsPlayingPreview(true)}
-                      className="group relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/95 text-white hover:bg-primary transition-all shadow-2xl shadow-primary/50 touch-manipulation"
-                    >
-                      <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-current translate-x-0.5" />
-                      <span className="absolute -bottom-8 whitespace-nowrap text-[11px] sm:text-xs font-bold uppercase tracking-wider text-zinc-200 bg-black/75 px-3 py-1 rounded-full backdrop-blur border border-white/10">
-                        Play On Phone
-                      </span>
-                    </motion.button>
-                  ) : (
-                    <Link
-                      href={`/movies/${movie.id}`}
-                      className="flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/95 text-white shadow-2xl shadow-primary/50 hover:scale-110 transition-all"
-                    >
-                      <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-current translate-x-0.5" />
-                    </Link>
-                  )}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsPlayingPreview(true)}
+                    className="group relative flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary/95 text-white hover:bg-primary transition-all shadow-2xl shadow-primary/50 touch-manipulation"
+                  >
+                    <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-current translate-x-0.5" />
+                    <span className="absolute -bottom-8 whitespace-nowrap text-[11px] sm:text-xs font-bold uppercase tracking-wider text-zinc-200 bg-black/75 px-3 py-1 rounded-full backdrop-blur border border-white/10">
+                      Play On Phone
+                    </span>
+                  </motion.button>
                 </div>
 
                 {/* Overlaid Badges */}

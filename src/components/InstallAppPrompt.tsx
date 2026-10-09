@@ -104,9 +104,14 @@ export default function InstallAppPrompt() {
         </button>
 
         <div className="flex items-start gap-3.5">
-          {/* Logo Icon */}
-          <div className="p-2 rounded-xl bg-zinc-900 border border-zinc-800 shrink-0 shadow-inner">
-            <AppLogo size={36} glow />
+          {/* Logo / App Icon */}
+          <div className="w-12 h-12 rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900 shrink-0 shadow-lg shadow-black/40">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icon-192.png"
+              alt="FiestaFlix App Icon"
+              className="w-full h-full object-cover"
+            />
           </div>
 
           <div className="space-y-1 pr-4">
@@ -115,11 +120,11 @@ export default function InstallAppPrompt() {
                 Install FiestaFlix on Phone
               </h4>
               <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
-                PWA
+                App
               </span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Watch Agasobanuye with faster 4K playback, offline downloads, and native fullscreen mode.
+              Pin FiestaFlix with full app icon to your phone home screen for 4K streaming & offline downloads.
             </p>
           </div>
         </div>

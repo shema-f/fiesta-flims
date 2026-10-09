@@ -32,21 +32,23 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
   const trendingMovies = movies;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [rotationSpeed, setRotationSpeed] = useState<1 | 3>(1); // Default to 1-second live rotation per request
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const activeMovie = trendingMovies[currentIndex] || trendingMovies[0];
   const favorited = activeMovie ? isFavorite(activeMovie.id) : false;
 
-  // 3-second automated rotation timer
+  // Reliable automated rotation timer (1-second or 3-second mode)
   useEffect(() => {
     if (isPaused || trendingMovies.length <= 1) return;
 
+    const intervalMs = rotationSpeed === 1 ? 1000 : 3000;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % trendingMovies.length);
-    }, 3000);
+    }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [isPaused, trendingMovies.length, currentIndex]);
+  }, [isPaused, trendingMovies.length, rotationSpeed]);
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % trendingMovies.length);
@@ -58,6 +60,8 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
 
   if (!activeMovie) return null;
 
+  const durationSec = rotationSpeed === 1 ? 1.0 : 3.0;
+
   return (
     <section 
       className="container mx-auto px-4 sm:px-6 my-8 select-none"
@@ -67,13 +71,13 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
       onTouchEnd={() => setIsPaused(false)}
     >
       <div className="relative rounded-3xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-2xl shadow-primary/10">
-        {/* 3-Second Visual Progress Countdown Bar */}
+        {/* 1-Second Live Visual Progress Countdown Bar */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-800/80 z-30 overflow-hidden">
           <motion.div
-            key={currentIndex}
+            key={`${currentIndex}-${rotationSpeed}`}
             initial={{ width: '0%' }}
             animate={{ width: isPaused ? '0%' : '100%' }}
-            transition={{ duration: 3, ease: 'linear' }}
+            transition={{ duration: durationSec, ease: 'linear' }}
             className="h-full bg-gradient-to-r from-primary via-orange-400 to-amber-300"
           />
         </div>
@@ -110,11 +114,33 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary text-xs font-black uppercase tracking-wider">
                 <Flame className="w-3.5 h-3.5 animate-pulse text-orange-400" />
-                Trending Showcase • 3s Live Rotation
+                Trending Showcase • {rotationSpeed === 1 ? '1s Live' : '3s Classic'}
               </span>
               <span className="text-[11px] text-zinc-400 hidden sm:inline-block">
-                {isPaused ? '(Paused on hover)' : 'Auto-switching every 3s'}
+                {isPaused ? '(Paused)' : rotationSpeed === 1 ? 'Live 1s Cadence' : 'Auto 3s Cadence'}
               </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setRotationSpeed((s) => (s === 1 ? 3 : 1))}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${
+                    rotationSpeed === 1
+                      ? 'bg-primary/25 text-primary border border-primary/40'
+                      : 'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700'
+                  }`}
+                  title="Toggle rotation speed between 1 second and 3 seconds"
+                >
+                  {rotationSpeed === 1 ? '⚡ 1s Live' : '⏱️ 3s'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPaused((p) => !p)}
+                  className="text-zinc-400 hover:text-white p-1 transition-colors"
+                  title={isPaused ? 'Resume auto rotation' : 'Pause auto rotation'}
+                >
+                  {isPaused ? <PlayCircle className="w-3.5 h-3.5 text-primary" /> : <Pause className="w-3.5 h-3.5" />}
+                </button>
+              </div>
             </div>
 
             {/* Navigation Arrows */}

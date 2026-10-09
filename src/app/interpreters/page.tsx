@@ -1,31 +1,47 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import InterpreterCard from '@/components/interpreter/InterpreterCard';
-import { interpretersData, formatFollowers } from '@/lib/interpreters';
+import { interpretersData as initialInterpreters, formatFollowers } from '@/lib/interpreters';
 import { Search, Mic2 } from 'lucide-react';
 
 export default function InterpretersPage() {
+  const [interpreters, setInterpreters] = useState(initialInterpreters);
+  const [totalMoviesCount, setTotalMoviesCount] = useState(138);
   const [query, setQuery] = useState('');
 
-  const featured = useMemo(() => interpretersData.filter((i) => i.featured), []);
+  useEffect(() => {
+    fetch('/api/interpreters')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setInterpreters(json.data);
+          if (json.totalPlatformMovies) {
+            setTotalMoviesCount(json.totalPlatformMovies);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const featured = useMemo(() => interpreters.filter((i) => i.featured), [interpreters]);
   const totalFollowers = useMemo(
-    () => interpretersData.reduce((sum, i) => sum + i.followers, 0),
-    []
+    () => interpreters.reduce((sum, i) => sum + i.followers, 0),
+    [interpreters]
   );
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
-    if (!term) return interpretersData;
-    return interpretersData.filter(
+    if (!term) return interpreters;
+    return interpreters.filter(
       (i) =>
         i.name.toLowerCase().includes(term) ||
         i.tags.some((t) => t.toLowerCase().includes(term)) ||
         i.city.toLowerCase().includes(term)
     );
-  }, [query]);
+  }, [query, interpreters]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -44,8 +60,8 @@ export default function InterpretersPage() {
 
           <div className="mx-auto mt-8 grid max-w-2xl grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Interpreters', value: interpretersData.length },
-              { label: 'Total Movies We Have', value: '138 (616 Eps)' },
+              { label: 'Interpreters', value: interpreters.length },
+              { label: 'Total Movies We Have', value: `${totalMoviesCount} (616 Eps)` },
               { label: 'Featured Voices', value: featured.length },
               { label: 'Real Followers', value: formatFollowers(totalFollowers) },
             ].map((stat) => (

@@ -27,6 +27,16 @@ export interface FiestaVideoPlayerProps {
   className?: string;
 }
 
+export function extractYouTubeId(urlOrId: string | null | undefined): string | null {
+  if (!urlOrId || typeof urlOrId !== 'string') return null;
+  const str = urlOrId.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+    return str;
+  }
+  const match = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : null;
+}
+
 function trackLabel(height: number | undefined, index: number): string {
   if (height) return `${height}p`;
   return `Level ${index + 1}`;
@@ -43,6 +53,8 @@ export default function FiestaVideoPlayer({
   onError,
   className,
 }: FiestaVideoPlayerProps) {
+  const ytId = useMemo(() => extractYouTubeId(src), [src]);
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<any>(null);
@@ -409,6 +421,20 @@ export default function FiestaVideoPlayer({
       /* PiP unavailable */
     }
   }, []);
+
+  if (ytId) {
+    return (
+      <div className={`relative aspect-video w-full overflow-hidden rounded-xl bg-black ${className ?? ''}`}>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
+          title="Video Playback"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          className="w-full h-full border-0"
+        />
+      </div>
+    );
+  }
 
   const bufferedFraction = duration > 0 ? buffered / duration : 0;
 
