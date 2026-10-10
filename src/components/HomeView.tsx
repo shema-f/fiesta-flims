@@ -24,6 +24,8 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground pb-20 md:pb-0">
       <Header />
+
+      {/* Top Header Announcement / Sponsor Ribbon */}
       <div className="pt-16">
         <AdBanner placement="HEADER_BANNER" dismissible />
       </div>
@@ -41,7 +43,7 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
         />
 
         {/* Top interpreters — the star of the platform */}
-        <section className="container-tight py-6">
+        <section className="container-tight py-4 sm:py-6">
           <div className="section-title">
             <div>
               <h2 className="text-lg font-bold tracking-tight">👑 Top interpreters</h2>
@@ -82,6 +84,11 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
           </div>
         </section>
 
+        {/* Responsive Native Sponsor Card slot (between Interpreters and Popular movies) */}
+        <section className="container-tight py-3 sm:py-5" aria-label="Sponsored content">
+          <AdBanner placement="NEWS_IN_FEED" variant="card" dismissible />
+        </section>
+
         <MovieRail
           title="🎬 All-time popular"
           subtitle="Timeless Rwandan favourites"
@@ -90,17 +97,17 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
         />
 
         {/* Rwanda Cinema */}
-        <section className="container-tight py-6">
+        <section className="container-tight py-4 sm:py-6">
           <Link
             href="/rwandan-movies"
-            className="card-surface group flex flex-col items-start gap-6 overflow-hidden p-8 sm:flex-row sm:items-center sm:justify-between"
+            className="card-surface group flex flex-col items-start gap-6 overflow-hidden p-6 sm:p-8 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="max-w-xl">
               <span className="eyebrow">🇷🇼 Rwanda Cinema</span>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight">
+              <h2 className="mt-2 text-xl font-bold tracking-tight sm:text-2xl">
                 Films that are uniquely ours
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
+              <p className="mt-2 text-xs leading-relaxed text-muted sm:text-sm">
                 Foreign titles are everywhere — Rwandan cinema is where our identity lives. Movies,
                 short films, documentaries, classics and Fiesta Flix Originals.
               </p>
@@ -112,23 +119,23 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
           </Link>
         </section>
 
-        {/* Mid-Page Responsive Sponsor Slot */}
-        <section className="container-tight py-3 sm:py-5 px-3 sm:px-4">
+        {/* Mid-Page Responsive Sponsor Billboard */}
+        <section className="container-tight py-3 sm:py-5" aria-label="Featured sponsor">
           <AdBanner placement="HOME_INTERSTITIAL" dismissible />
         </section>
 
         <MovieRail title="📺 Series" subtitle="Binge the full season" movies={tvShows} href="/movies" />
 
         {/* Video & Entertainment Partner Showcase Slot */}
-        <section className="container-tight py-2 sm:py-4 px-3 sm:px-4">
+        <section className="container-tight py-3 sm:py-5" aria-label="Partner spotlight">
           <AdBanner placement="VIDEO_PLAYER_BANNER" dismissible />
         </section>
 
         {/* Offline / Data saver strip */}
-        <section className="container-tight py-8">
+        <section className="container-tight py-6 sm:py-8">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="card-surface flex items-start gap-4 p-6">
-              <Download className="mt-0.5 h-5 w-5 text-primary" />
+            <div className="card-surface flex items-start gap-4 p-5 sm:p-6">
+              <Download className="mt-0.5 h-5 w-5 text-primary shrink-0" />
               <div>
                 <h3 className="text-sm font-bold">Downloads are first-class</h3>
                 <p className="mt-1 text-xs leading-relaxed text-muted">
@@ -137,8 +144,8 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
                 </p>
               </div>
             </div>
-            <div className="card-surface flex items-start gap-4 p-6">
-              <Wifi className="mt-0.5 h-5 w-5 text-primary" />
+            <div className="card-surface flex items-start gap-4 p-5 sm:p-6">
+              <Wifi className="mt-0.5 h-5 w-5 text-primary shrink-0" />
               <div>
                 <h3 className="text-sm font-bold">Data Saver</h3>
                 <p className="mt-1 text-xs leading-relaxed text-muted">
@@ -155,8 +162,8 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
         {/* Frequently Asked Questions Section */}
         <HomeFaqSection />
 
-        {/* Bottom Responsive Ad / App Banner Slot */}
-        <section className="container-tight py-2 sm:py-4 px-3 sm:px-4">
+        {/* Pre-Footer Mobile-Friendly App & Partner Promo Slot */}
+        <section className="container-tight py-3 sm:py-5" aria-label="Official app announcement">
           <AdBanner placement="FOOTER_PROMO" dismissible />
         </section>
 
