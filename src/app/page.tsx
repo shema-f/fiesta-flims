@@ -13,6 +13,11 @@ export default async function Home() {
   const popularMovies = movies.filter((movie) => !movie.trending);
 
   return (
-    <HomeView trendingMovies={trendingMovies} popularMovies={popularMovies} tvShows={tvShows} />
+    <HomeView
+      trendingMovies={trendingMovies}
+      popularMovies={popularMovies}
+      tvShows={tvShows}
+      allMovies={movies}
+    />
   );
 }

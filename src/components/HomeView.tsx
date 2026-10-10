@@ -6,6 +6,7 @@ import Hero from '@/components/Hero';
 import CTA from '@/components/CTA';
 import AdBanner from '@/components/AdBanner';
 import MovieRail from '@/components/MovieRail';
+import MovieTile from '@/components/MovieTile';
 import type { Movie } from '@/lib/movieData';
 import { topInterpreters, formatFollowers } from '@/lib/interpreters';
 
@@ -13,9 +14,16 @@ interface HomeViewProps {
   trendingMovies: Movie[];
   popularMovies: Movie[];
   tvShows: Movie[];
+  /** The complete uncapped catalogue — every published title. */
+  allMovies: Movie[];
 }
 
-export default function HomeView({ trendingMovies, popularMovies, tvShows }: HomeViewProps) {
+export default function HomeView({
+  trendingMovies,
+  popularMovies,
+  tvShows,
+  allMovies,
+}: HomeViewProps) {
   const interpreters = topInterpreters(10);
 
   return (
@@ -28,7 +36,7 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
       </div>
 
       <main className="flex-1">
-        <Hero />
+        <Hero movies={trendingMovies} />
 
         <MovieRail
           title="🔥 Trending now"
@@ -120,6 +128,37 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
         </section>
 
         <MovieRail title="📺 Series" subtitle="Binge the full season" movies={tvShows} href="/movies" />
+
+        {/* Complete catalogue — every published title, no pagination. */}
+        <section className="container-tight py-6" aria-label="All movies">
+          <div className="section-title">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight">🍿 All movies</h2>
+              <p className="mt-0.5 text-xs text-muted">
+                The full catalogue in one place — {allMovies.length}{' '}
+                {allMovies.length === 1 ? 'title' : 'titles'} and counting
+              </p>
+            </div>
+            <Link
+              href="/movies"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-muted transition-colors hover:text-foreground"
+            >
+              Filter & sort <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          {allMovies.length === 0 ? (
+            <p className="card-surface p-6 text-sm text-muted">
+              No titles are published yet — add your first movie from the admin panel.
+            </p>
+          ) : (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8">
+              {allMovies.map((movie) => (
+                <MovieTile key={movie.id} movie={movie} />
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Video & Entertainment Partner Spotlight Slot */}
         <section className="container-tight py-3 sm:py-5" aria-label="Partner spotlight">

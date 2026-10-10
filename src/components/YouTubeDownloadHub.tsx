@@ -8,7 +8,6 @@ import {
   Copy, 
   Check, 
   Sparkles, 
-  Youtube, 
   ShieldCheck,
   Film
 } from 'lucide-react';
@@ -53,7 +52,7 @@ export default function YouTubeDownloadHub({
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-black uppercase tracking-wider">
-              <Youtube className="w-4 h-4 fill-red-500 text-white" />
+              <Play className="w-4 h-4 fill-red-500 text-white" />
               <span>YouTube Video Stream</span>
             </span>
             {isRwandanCinema && (

@@ -21,7 +21,6 @@ import {
   RefreshCw,
   Sparkles,
   Flame,
-  Youtube,
   Copy,
 } from 'lucide-react';
 import type { ApiMovie } from '@/lib/apiTypes';

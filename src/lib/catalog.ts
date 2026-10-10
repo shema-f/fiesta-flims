@@ -10,7 +10,14 @@ import { prisma } from '@/lib/prisma';
 import { movieData, tvShowsData, type Movie } from '@/lib/movieData';
 import { dbMovieToView, type DbMovieLike } from './catalogMap';
 
-const CATALOG_LIMIT = Number(process.env.CATALOG_LIMIT || 300);
+/**
+ * The whole catalogue is served by default — the home page renders every
+ * published title. Set `CATALOG_LIMIT` to a positive integer only when you
+ * deliberately want to cap it (e.g. a very large library).
+ */
+const configuredLimit = Number(process.env.CATALOG_LIMIT || 0);
+const CATALOG_LIMIT =
+  Number.isFinite(configuredLimit) && configuredLimit > 0 ? Math.floor(configuredLimit) : 0;
 
 export interface CatalogResult {
   movies: Movie[];
@@ -24,7 +31,7 @@ export async function getCatalog(): Promise<CatalogResult> {
     const rows = (await prisma.movie.findMany({
       where: { isActive: true, status: { in: ['READY', 'PUBLISHED'] } },
       orderBy: { createdAt: 'desc' },
-      take: CATALOG_LIMIT,
+      ...(CATALOG_LIMIT > 0 ? { take: CATALOG_LIMIT } : {}),
     })) as unknown as DbMovieLike[];
 
     if (rows && rows.length > 0) {

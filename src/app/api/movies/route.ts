@@ -152,6 +152,15 @@ export async function GET(request: NextRequest) {
       orderBy = { title: order };
     }
 
+    // A content-type filter is derived from fields Prisma cannot index (the
+    // episode list lives inside `resolutions`), so when it is requested we scan
+    // the matching rows up front and paginate in memory. That keeps
+    // X-Total-Count honest instead of reporting a single page's length.
+    const typeReq = sp.get('type')?.toLowerCase();
+    const typeFiltered = typeReq === 'series' || typeReq === 'movie';
+    const TYPE_SCAN_LIMIT: number = 2000;
+    const skip = (page - 1) * limit;
+
     const [dbMovies, total] = await Promise.all([
       prisma.movie.findMany({
         where,
@@ -161,8 +170,7 @@ export async function GET(request: NextRequest) {
           interpreters: { include: { interpreter: true } },
         },
         orderBy,
-        skip: (page - 1) * limit,
-        take: limit,
+        ...(typeFiltered ? { take: TYPE_SCAN_LIMIT } : { skip, take: limit }),
       }),
       prisma.movie.count({ where }),
     ]);
@@ -198,7 +206,6 @@ export async function GET(request: NextRequest) {
         };
       });
 
-      const typeReq = sp.get('type')?.toLowerCase();
       if (typeReq === 'series') {
         filteredDbMovies = filteredDbMovies.filter((m: any) => m.contentType === 'series');
       } else if (typeReq === 'movie') {
@@ -209,9 +216,13 @@ export async function GET(request: NextRequest) {
       if (typeReq === 'series' && filteredDbMovies.length === 0) {
         // fall through to catalog fallback
       } else {
-        return jsonOk(filteredDbMovies, {
+        const pageRows = typeFiltered
+          ? filteredDbMovies.slice(skip, skip + limit)
+          : filteredDbMovies;
+        const totalCount = typeFiltered ? filteredDbMovies.length : total;
+        return jsonOk(pageRows, {
           headers: {
-            'X-Total-Count': String(filteredDbMovies.length),
+            'X-Total-Count': String(totalCount),
             'X-Page': String(page),
             'X-Limit': String(limit),
           },

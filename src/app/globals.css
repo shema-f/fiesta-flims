@@ -97,6 +97,12 @@ body {
   animation: rotate 30s linear infinite;
 }
 
+/* Featured hero — progress fill on the active slide's indicator bar. */
+@keyframes heroProgress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
 /* Subtle slide-in on the header search field */
 @keyframes searchSlideIn {
   0% { transform: translateX(-4px); opacity: 0.9; }

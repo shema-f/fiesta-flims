@@ -973,10 +973,10 @@ export default function MovieDetailPage() {
                   ? view.trailer
                   : view.sources.find((s) => s.url.includes('youtu'))?.url || ''
               }
-              isRwandanCinema={
+              isRwandanCinema={Boolean(
                 (view.genre && view.genre.toLowerCase().includes('nyarwanda')) ||
-                (view.narrator && view.narrator.toLowerCase().includes('rwandan'))
-              }
+                  (view.narrator && view.narrator.toLowerCase().includes('rwandan'))
+              )}
             />
           </div>
         )}
