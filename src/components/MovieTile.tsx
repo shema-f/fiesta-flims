@@ -11,7 +11,7 @@ interface MovieTileProps {
   className?: string;
 }
 
-const FALLBACK_POSTER = 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+const FALLBACK_POSTER = '/fallback-poster.png';
 
 /** Minimal, modern poster tile used across rails and grids. */
 export default function MovieTile({ movie, badge, className }: MovieTileProps) {

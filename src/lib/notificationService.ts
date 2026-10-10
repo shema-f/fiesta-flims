@@ -31,7 +31,7 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [
     link: '/movies/1',
     movieId: 1,
     movieTitle: 'Echoes of Tomorrow',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900&auto=format&fit=crop',
+    thumbnailUrl: '/fallback-poster.png',
     createdAt: new Date(Date.now() - 1000 * 60 * 18).toISOString(), // 18 mins ago
   },
   {
@@ -43,7 +43,7 @@ const INITIAL_NOTIFICATIONS: AppNotification[] = [
     link: '/movies/4',
     movieId: 4,
     movieTitle: 'Bamporiki',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+    thumbnailUrl: '/fallback-poster.png',
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
   },
   {

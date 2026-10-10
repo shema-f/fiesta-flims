@@ -119,16 +119,16 @@ export async function POST(req: NextRequest) {
         role: authorRole || 'Cinema Journalist',
         avatar:
           authorAvatar ||
-          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+          '/fallback-poster.png',
       },
       readTime: readTime || '4 min read',
       image:
         image ||
-        'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1200&auto=format&fit=crop',
+        '/fallback-poster.png',
       backdrop:
         backdrop ||
         image ||
-        'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1600&auto=format&fit=crop',
+        '/fallback-poster.png',
       tags: parsedTags,
       isBreaking: !!isBreaking,
       isFeatured: !!isFeatured,

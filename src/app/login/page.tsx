@@ -22,13 +22,8 @@ export default function LoginPage() {
     if (success) {
       router.push('/');
     } else {
-      setError('Invalid credentials. Try demo login below!');
+      setError('Invalid email or password. Please check your credentials.');
     }
-  };
-
-  const handleDemoLogin = (role: 'ADMIN' | 'FAN') => {
-    loginDemo(role);
-    router.push('/');
   };
 
   return (
@@ -137,37 +132,6 @@ export default function LoginPage() {
                   </svg>
                   <span>Continue with Google</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('ADMIN')}
-                  className="w-full py-3 bg-primary/20 text-primary font-semibold rounded-lg hover:bg-primary/30 transition-all flex items-center justify-center gap-2"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  Demo Admin Login
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('FAN')}
-                  className="w-full py-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-all flex items-center justify-center gap-2"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                  Demo Fan Login
-                </button>
-              </div>
-
-              <div className="mt-6 text-center">
-                <p className="text-muted text-sm">
-                  Demo credentials:{' '}
-                  <span className="text-white">admin@fiestaflix.com / admin123</span>
-                </p>
               </div>
             </div>
 

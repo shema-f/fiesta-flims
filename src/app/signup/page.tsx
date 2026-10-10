@@ -182,23 +182,6 @@ export default function SignUpPage() {
                     </svg>
                     <span>Continue with Google</span>
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setName('Movie Fan');
-                      setEmail('fan@fiestaflix.com');
-                      setPassword('password123');
-                      setConfirmPassword('password123');
-                    }}
-                    className="w-full py-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-all flex items-center justify-center gap-2"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    Quick Demo Signup
-                  </button>
                 </div>
               )}
             </div>

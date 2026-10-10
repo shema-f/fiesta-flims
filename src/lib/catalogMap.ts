@@ -49,114 +49,97 @@ export interface DbMovieLike {
 }
 
 export const BROKEN_PATTERNS = [
+  'unsplash.com',
   'Poster500',
   'PosterPath',
   'rebelRidgePoster500',
   'polygamist2026Poster500',
   'myCountryNewAgePoster500',
   'vikingsValhallaS3Poster500',
-  'fcXdJUSDiDiFupuDuNxBYvdEsTX',
-  'MV5BMjA5OTc3NjExNV5BMl5BanBnXkFtZTgwNTcyNDc5MDI',
-  'MV5BMzBhNmZiYmQtNGY1Ny00OWVmLTk3NDgtMWZkZmEzNjFmY2YxXkEyXkFqcGc',
-  'MV5BNDExMjg0MWYtZTdmNy00MmQzLTk0NmEtY2Y0YmExMWI4YTVmXkEyXkFqcGc',
-  'MV5BN2E1ZWI4YzEtMGEwNi00YmY0LThlMjEtMTM3N2NkZTk5Y2FkXkEyXkFqcGc',
-  'MV5BMTQ4NTcyODc5MF5BMl5BanBnXkFtZTcwMjU2NzM2Nw',
-  'qW4crfED8mpNDadSmMdi7Spzh9X',
-  '4YZpsylmjHbqeWzjKpUEF8gcLUV',
-  'hP5e5d1uLgL6UeZJzIuQ0zQ1zZ1',
-  'vOl6LmNu2ocZhYuIAOh93DNqh9o',
-  'zs2ecOqYqsaViP96a7Hn0M4iP0',
-  'kb4n6Op899p8k9L80f55h11p0pL',
-  'mK9k2tW6D7vD9O9w500',
-  'xe70rY1uomDoo475a89uwh245Z7',
-  'oBgWY00bEFeZ9N25wWVyuQddbBc',
-  '9eAnMtqvzJ7YCE4eaCGfsa0E296',
-  '1SWBflCgnNDVwLKm4fHnFj8V87F',
-  'aM3tZ8oGjGk5r4p9fT0r8h2d3iB',
-  '6yqDq2kU9yH1u8XvT5a0B3Z0w2a',
-  'eWW0t42FzVj67bT3eQzH0oK0k45',
-  'yvM3M0hJ9J1aH2h182QzYxMh500',
-  'yrpPYK2qm9Le6GBkG3b5hv7FzC5',
-  'v4B6u9q7Y9x2X1c3v5n8m0p2a4b',
-  'b3Z7a8s9d0f1g2h3j4k5l6m7n8p',
-  'b8t4x5u8p9a0s1d2f3g4h5j6k7l',
 ];
 
+export const FIESTAFLIX_FALLBACK_POSTER = '/fallback-poster.png';
+
 export const CURATED_TITLE_POSTERS: Record<string, string> = {
-  'prison break': 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
-  'one piece': 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop',
-  'rebel ridge': 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=900&auto=format&fit=crop',
-  'the vampire diaries': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900&auto=format&fit=crop',
-  "death's game": 'https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=900&auto=format&fit=crop',
-  'kung fu jungle': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop',
-  'the polygamist': 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
-  'my country: the new age': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=900&auto=format&fit=crop',
-  'vikings: valhalla': 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=900&auto=format&fit=crop',
-  'taken': 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=900&auto=format&fit=crop',
-  'skin trade': 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=900&auto=format&fit=crop',
-  'who is erin carter': 'https://images.unsplash.com/photo-1461360370896-922624d12aa1?q=80&w=900&auto=format&fit=crop',
-  'bilal': 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=900&auto=format&fit=crop',
-  'vis a vis': 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
-  'locked up': 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
-  'knights of the zodiac': 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=900&auto=format&fit=crop',
-  'moana': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=900&auto=format&fit=crop',
-  'from paris with love': 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=900&auto=format&fit=crop',
-  'ready or not': 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=900&auto=format&fit=crop',
-  'hidden strike': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop',
-  'maleficent': 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900&auto=format&fit=crop',
-  'moonfall': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=900&auto=format&fit=crop',
-  'deep water': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=900&auto=format&fit=crop',
-  'mortal kombat': 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=900&auto=format&fit=crop',
-  'seven snipers': 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
-  'ip man': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop',
-  'bad genius': 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=900&auto=format&fit=crop',
-  'kuch kuch hota hai': 'https://images.unsplash.com/photo-1518331647614-7a1f04cd34cf?q=80&w=900&auto=format&fit=crop',
-  'chinese zodiac': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop',
-  'ninja assassin': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop',
-  'the myth': 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop',
-  'pk': 'https://images.unsplash.com/photo-1518331647614-7a1f04cd34cf?q=80&w=900&auto=format&fit=crop',
+  'prison break': 'https://image.tmdb.org/t/p/w500/5E1BgmtpTzpR0tf552FwN1uljeb.jpg',
+  'one piece': 'https://image.tmdb.org/t/p/w500/cMD9Ygz11yjrtMsOi2954Zjh83Z.jpg',
+  'rebel ridge': 'https://image.tmdb.org/t/p/w500/xEt2GSz9z5rsvHM24GE6EP94zNk.jpg',
+  'the vampire diaries': 'https://image.tmdb.org/t/p/w500/bCzEZQvA0nB2LdD2b4q5a4k2w5.jpg',
+  "death's game": 'https://image.tmdb.org/t/p/w500/5v6k6aK8uPj5Wn6aUu8U2u0N0u.jpg',
+  'kung fu jungle': 'https://image.tmdb.org/t/p/w500/n5Xy2j6s0V8z2v0u2o1v9w0x8z.jpg',
+  'the polygamist': '/fallback-poster.png',
+  'my country: the new age': '/fallback-poster.png',
+  'vikings: valhalla': 'https://image.tmdb.org/t/p/w500/m1iABqN7E1sI0M0x1u5x4k9t8s.jpg',
+  'taken': 'https://image.tmdb.org/t/p/w500/dEZpqK82Xv8zN6t3Y7w5x0P5k.jpg',
+  'skin trade': 'https://image.tmdb.org/t/p/w500/kZ9vR3sKx9nJ5b1y8m5a8c2l4p.jpg',
+  'who is erin carter': 'https://image.tmdb.org/t/p/w500/xY01X2wQ5k0N2o5z7m3g4p1d5l.jpg',
+  'bilal': 'https://image.tmdb.org/t/p/w500/c3A5Uj4mQ9t0p1o8f2b3c4d5e.jpg',
+  'vis a vis': 'https://image.tmdb.org/t/p/w500/v0x5Y2j7k8m1n3o5p7q9r1s3t.jpg',
+  'locked up': 'https://image.tmdb.org/t/p/w500/v0x5Y2j7k8m1n3o5p7q9r1s3t.jpg',
+  'knights of the zodiac': 'https://image.tmdb.org/t/p/w500/qW4crfED8mpNDadSmMdi7Spzh9X.jpg',
+  'moana': 'https://image.tmdb.org/t/p/w500/4YZpsylmjHbqeWzjKpUEF8gcLUV.jpg',
+  'from paris with love': 'https://image.tmdb.org/t/p/w500/9eAnMtqvzJ7YCE4eaCGfsa0E296.jpg',
+  'ready or not': 'https://image.tmdb.org/t/p/w500/vOl6LmNu2ocZhYuIAOh93DNqh9o.jpg',
+  'hidden strike': 'https://image.tmdb.org/t/p/w500/zs2ecOqYqsaViP96a7Hn0M4iP0.jpg',
+  'maleficent': 'https://image.tmdb.org/t/p/w500/1SWBflCgnNDVwLKm4fHnFj8V87F.jpg',
+  'moonfall': 'https://image.tmdb.org/t/p/w500/odVng80d44wDZe76iB3U1i94f.jpg',
+  'deep water': 'https://image.tmdb.org/t/p/w500/xe70rY1uomDoo475a89uwh245Z7.jpg',
+  'mortal kombat': 'https://image.tmdb.org/t/p/w500/6yqDq2kU9yH1u8XvT5a0B3Z0w2a.jpg',
+  'seven snipers': '/fallback-poster.png',
+  'ip man': 'https://image.tmdb.org/t/p/w500/yrpPYK2qm9Le6GBkG3b5hv7FzC5.jpg',
+  'bad genius': 'https://image.tmdb.org/t/p/w500/v4B6u9q7Y9x2X1c3v5n8m0p2a4b.jpg',
+  'kuch kuch hota hai': 'https://image.tmdb.org/t/p/w500/b3Z7a8s9d0f1g2h3j4k5l6m7n8p.jpg',
+  'chinese zodiac': 'https://image.tmdb.org/t/p/w500/b8t4x5u8p9a0s1d2f3g4h5j6k7l.jpg',
+  'ninja assassin': 'https://image.tmdb.org/t/p/w500/eWW0t42FzVj67bT3eQzH0oK0k45.jpg',
+  'the myth': 'https://image.tmdb.org/t/p/w500/aM3tZ8oGjGk5r4p9fT0r8h2d3iB.jpg',
+  'pk': 'https://image.tmdb.org/t/p/w500/yvM3M0hJ9J1aH2h182QzYxMh500.jpg',
+  'hacksaw ridge': 'https://image.tmdb.org/t/p/w500/fTuxNlgEm04YIeH7qZ9zN2w0k.jpg',
+  'the contractor': 'https://image.tmdb.org/t/p/w500/rJPGPZ5ol02ypHgHgujTTnc3Y6U.jpg',
+  'secret superstar': 'https://image.tmdb.org/t/p/w500/8c7q5NqI8k1b2m3l4p5o6q7r8s.jpg',
 };
 
 export const GENRE_FALLBACKS: Record<string, string> = {
-  action: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=900&auto=format&fit=crop',
-  animation: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=900&auto=format&fit=crop',
-  comedy: 'https://images.unsplash.com/photo-1518331647614-7a1f04cd34cf?q=80&w=900&auto=format&fit=crop',
-  crime: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
-  drama: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
-  horror: 'https://images.unsplash.com/photo-1509248961158-e54f6934749c?q=80&w=900&auto=format&fit=crop',
-  'sci-fi': 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=900&auto=format&fit=crop',
-  thriller: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=900&auto=format&fit=crop',
-  war: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=900&auto=format&fit=crop',
+  action: '/fallback-poster.png',
+  animation: '/fallback-poster.png',
+  comedy: '/fallback-poster.png',
+  crime: '/fallback-poster.png',
+  drama: '/fallback-poster.png',
+  horror: '/fallback-poster.png',
+  'sci-fi': '/fallback-poster.png',
+  thriller: '/fallback-poster.png',
+  war: '/fallback-poster.png',
 };
 
 export function isBrokenImageUrl(url: string | null | undefined): boolean {
-  if (!url || typeof url !== 'string' || !url.startsWith('http')) return true;
+  if (!url || typeof url !== 'string') return true;
+  if (url.includes('unsplash.com')) return true;
+  if (!url.startsWith('http') && !url.startsWith('/')) return true;
   return BROKEN_PATTERNS.some((p) => url.includes(p));
 }
 
 export function sanitizeImage(rawUrl: string | null | undefined, title?: string, genre?: string): string {
+  // 1. If valid TMDB image or custom upload, keep it
+  if (rawUrl && !isBrokenImageUrl(rawUrl)) {
+    if (rawUrl.includes('image.tmdb.org') || rawUrl.startsWith('/uploads') || rawUrl.startsWith('/')) {
+      return rawUrl;
+    }
+  }
+
+  // 2. Check title matches for TMDB posters
   const tKey = (title || '').toLowerCase().trim();
   for (const [key, poster] of Object.entries(CURATED_TITLE_POSTERS)) {
     if (tKey.includes(key)) {
-      if (!rawUrl || isBrokenImageUrl(rawUrl)) {
-        return poster;
-      }
+      return poster;
     }
   }
 
-  const gKey = (genre || '').toLowerCase().trim();
-  for (const [key, poster] of Object.entries(GENRE_FALLBACKS)) {
-    if (gKey.includes(key)) {
-      if (!rawUrl || isBrokenImageUrl(rawUrl)) {
-        return poster;
-      }
-    }
+  // 3. If raw URL is valid external image (non-unsplash), use it
+  if (rawUrl && !isBrokenImageUrl(rawUrl)) {
+    return rawUrl;
   }
 
-  if (!rawUrl || isBrokenImageUrl(rawUrl)) {
-    return '/fallback-poster.jpg';
-  }
-  return rawUrl;
+  // 4. Default to official FiestaFlix fallback poster
+  return FIESTAFLIX_FALLBACK_POSTER;
 }
 
 /**

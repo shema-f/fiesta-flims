@@ -9,7 +9,7 @@ interface CastSectionProps {
   title: string;
 }
 
-const FALLBACK_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop';
+const FALLBACK_AVATAR = '/apple-touch-icon.png';
 
 function CastCard({ member }: { member: CastMember }) {
   const [imgSrc, setImgSrc] = useState(member.profileUrl);

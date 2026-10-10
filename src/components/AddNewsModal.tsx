@@ -27,14 +27,14 @@ interface AddNewsModalProps {
 }
 
 const PRESET_IMAGES = [
-  { label: 'Sci-Fi / Space', url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Cinema Hall / Festival', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Action / Desert Epic', url: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Film Camera / 70mm', url: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Anime / Fantasy', url: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'African Cinema / Spotlight', url: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Kigali / Urban Night', url: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Studio Tech / Streaming', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop' },
+  { label: 'Sci-Fi / Space', url: '/fallback-poster.png' },
+  { label: 'Cinema Hall / Festival', url: '/hero-cinema.jpg' },
+  { label: 'Action / Desert Epic', url: '/fallback-poster.png' },
+  { label: 'Film Camera / 70mm', url: '/hero-cinema.jpg' },
+  { label: 'Anime / Fantasy', url: '/fallback-poster.png' },
+  { label: 'African Cinema / Spotlight', url: '/hero-cinema.jpg' },
+  { label: 'Kigali / Urban Night', url: '/hero-cinema.jpg' },
+  { label: 'Studio Tech / Streaming', url: '/fallback-poster.png' },
 ];
 
 const CATEGORIES = [
@@ -327,7 +327,7 @@ export default function AddNewsModal({ isOpen, onClose, onSuccess }: AddNewsModa
                     name="image"
                     value={formData.image}
                     onChange={handleChange}
-                    placeholder="https://images.unsplash.com/..."
+                    placeholder="/fallback-poster.png"
                     className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none mb-2"
                   />
 

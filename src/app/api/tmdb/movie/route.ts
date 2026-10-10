@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
               character: c.character || 'Supporting Role',
               profileUrl: c.profile_path
                 ? `https://image.tmdb.org/t/p/w185${c.profile_path}`
-                : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop',
+                : '/fallback-poster.png',
               order: c.order !== undefined ? c.order : index,
             }));
         }

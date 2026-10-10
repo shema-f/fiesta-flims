@@ -4,11 +4,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Hero from '@/components/Hero';
 import CTA from '@/components/CTA';
-import HomeFaqSection from '@/components/HomeFaqSection';
-import HomeNewsSection from '@/components/HomeNewsSection';
 import AdBanner from '@/components/AdBanner';
 import MovieRail from '@/components/MovieRail';
-import TrendingShowcase from '@/components/TrendingShowcase';
 import type { Movie } from '@/lib/movieData';
 import { topInterpreters, formatFollowers } from '@/lib/interpreters';
 
@@ -32,8 +29,6 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
 
       <main className="flex-1">
         <Hero />
-
-        {trendingMovies.length > 0 && <TrendingShowcase movies={trendingMovies} />}
 
         <MovieRail
           title="🔥 Trending now"
@@ -126,7 +121,7 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
 
         <MovieRail title="📺 Series" subtitle="Binge the full season" movies={tvShows} href="/movies" />
 
-        {/* Video & Entertainment Partner Showcase Slot */}
+        {/* Video & Entertainment Partner Spotlight Slot */}
         <section className="container-tight py-3 sm:py-5" aria-label="Partner spotlight">
           <AdBanner placement="VIDEO_PLAYER_BANNER" dismissible />
         </section>
@@ -155,12 +150,6 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
             </div>
           </div>
         </section>
-
-        {/* Global Cinema News & Blogs Section */}
-        <HomeNewsSection />
-
-        {/* Frequently Asked Questions Section */}
-        <HomeFaqSection />
 
         {/* Pre-Footer Mobile-Friendly App & Partner Promo Slot */}
         <section className="container-tight py-3 sm:py-5" aria-label="Official app announcement">

@@ -21,8 +21,11 @@ import {
   RefreshCw,
   Sparkles,
   Flame,
+  Youtube,
+  Copy,
 } from 'lucide-react';
 import type { ApiMovie } from '@/lib/apiTypes';
+import { extractYouTubeId } from '@/components/video/FiestaVideoPlayer';
 
 const POPULAR_NARRATORS = [
   'Rocky Kimomo',
@@ -70,8 +73,8 @@ export const RWANDAN_MOVIE_PRESETS = [
     genre: 'Filime Nyarwanda',
     narrator: 'Original Rwandan Cast (Nyarwanda)',
     description: 'Filime yerekana ubuzima busharira bwa buri munsi, ibigeragezo n\'urukundo mu muryango nyarwanda.',
-    poster: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?q=80&w=900&auto=format&fit=crop',
-    backdrop: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1280&auto=format&fit=crop',
+    poster: '/fallback-poster.png',
+    backdrop: '/fallback-poster.png',
     rating: 9.2,
     type: 'Movie' as const,
   },
@@ -81,8 +84,8 @@ export const RWANDAN_MOVIE_PRESETS = [
     genre: 'Comedy Nyarwanda',
     narrator: 'Original Rwandan Cast (Nyarwanda)',
     description: 'Urugendo rwa Seburikoko na Siperansiya mu gutebya no kwerekana imibereho n\'umuco nyarwanda.',
-    poster: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=900&auto=format&fit=crop',
-    backdrop: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=1280&auto=format&fit=crop',
+    poster: '/fallback-poster.png',
+    backdrop: '/fallback-poster.png',
     rating: 9.4,
     type: 'Series' as const,
     seasonsCount: 5,
@@ -93,8 +96,8 @@ export const RWANDAN_MOVIE_PRESETS = [
     genre: 'Drama Nyarwanda',
     narrator: 'Original Rwandan Cast (Nyarwanda)',
     description: 'Filime ikunzwe cyane mu Rwanda yakinwe na Bamenya (Denis Nsanzamahoro), Kezia na 5K.',
-    poster: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=900&auto=format&fit=crop',
-    backdrop: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?q=80&w=1280&auto=format&fit=crop',
+    poster: '/fallback-poster.png',
+    backdrop: '/fallback-poster.png',
     rating: 9.5,
     type: 'Series' as const,
     seasonsCount: 4,
@@ -105,8 +108,8 @@ export const RWANDAN_MOVIE_PRESETS = [
     genre: 'Drama Nyarwanda',
     narrator: 'Original Rwandan Cast (Nyarwanda)',
     description: 'Urugendo rw\'umukobwa Nikuze uvuye mu cyaro akaza i Kigali gushaka ubuzima n\'ibyo ahura nabyo.',
-    poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
-    backdrop: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1280&auto=format&fit=crop',
+    poster: '/fallback-poster.png',
+    backdrop: '/fallback-poster.png',
     rating: 9.1,
     type: 'Series' as const,
     seasonsCount: 8,
@@ -117,8 +120,8 @@ export const RWANDAN_MOVIE_PRESETS = [
     genre: 'Comedy Nyarwanda',
     narrator: 'Original Rwandan Cast (Nyarwanda)',
     description: 'Guseka bidasanzwe hamwe na Papa Sava, Kibonke na Niyitegeka Gratien mu gace gakunzwe.',
-    poster: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=900&auto=format&fit=crop',
-    backdrop: 'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=1280&auto=format&fit=crop',
+    poster: '/fallback-poster.png',
+    backdrop: '/fallback-poster.png',
     rating: 9.3,
     type: 'Series' as const,
     seasonsCount: 6,
@@ -129,8 +132,8 @@ export const RWANDAN_MOVIE_PRESETS = [
     genre: 'Filime Nyarwanda',
     narrator: 'Original Rwandan Cast (Nyarwanda)',
     description: 'Filime y\'ubutwari n\'akaga yakinwe na Denis Nsanzamahoro akina ari Rwasa.',
-    poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop',
-    backdrop: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?q=80&w=1280&auto=format&fit=crop',
+    poster: '/fallback-poster.png',
+    backdrop: '/fallback-poster.png',
     rating: 8.9,
     type: 'Movie' as const,
   },
@@ -875,7 +878,7 @@ export default function AdminMoviesManager() {
                     type="url"
                     value={form.poster}
                     onChange={(e) => setForm((p) => ({ ...p, poster: e.target.value }))}
-                    placeholder="https://images.unsplash.com/... or media image"
+                    placeholder="/fallback-poster.png or media image"
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white placeholder-zinc-500 focus:outline-none focus:border-primary"
                   />
                   {form.poster && (
@@ -887,7 +890,7 @@ export default function AdminMoviesManager() {
                         referrerPolicy="no-referrer"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src =
-                            'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+                            '/fallback-poster.png';
                         }}
                         className="w-full h-full object-cover"
                       />

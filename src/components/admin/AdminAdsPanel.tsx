@@ -29,12 +29,12 @@ const PLACEMENT_LABELS: Record<AdPlacement, string> = {
 };
 
 const PRESET_AD_IMAGES = [
-  { label: 'Fiesta Plus / VIP', url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Cinema Hall / Soundstage', url: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Cloud Tech / Telegram', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Audio / Headphones', url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'High Speed Fiber / Screen', url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=1200&auto=format&fit=crop' },
-  { label: 'Smartphone App PWA', url: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=1200&auto=format&fit=crop' },
+  { label: 'Fiesta Plus / VIP', url: '/fallback-poster.png' },
+  { label: 'Cinema Hall / Soundstage', url: '/hero-cinema.jpg' },
+  { label: 'Cloud Tech / Telegram', url: '/fallback-poster.png' },
+  { label: 'Audio / Headphones', url: '/hero-cinema.jpg' },
+  { label: 'High Speed Fiber / Screen', url: '/hero-cinema.jpg' },
+  { label: 'Smartphone App PWA', url: '/apple-touch-icon.png' },
 ];
 
 export default function AdminAdsPanel() {
@@ -520,7 +520,7 @@ export default function AdminAdsPanel() {
                 <label className="block text-zinc-300 font-bold mb-1">Banner Image URL</label>
                 <input
                   type="url"
-                  placeholder="https://images.unsplash.com/..."
+                  placeholder="/fallback-poster.png"
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none mb-2"

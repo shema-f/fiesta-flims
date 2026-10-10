@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       headline: headline.trim(),
       description: (description || '').trim(),
       placement: placement || 'HEADER_BANNER',
-      imageUrl: imageUrl || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&auto=format&fit=crop',
+      imageUrl: imageUrl || '/fallback-poster.png',
       targetUrl: targetUrl.trim(),
       badgeText: badgeText || 'Sponsored',
       ctaText: ctaText || 'Learn More',

@@ -40,6 +40,7 @@ import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
 import { estimateSizeLabel, DATA_SAVER_TIP } from '@/lib/dataSizes';
 import SupportModal from '@/components/SupportModal';
 import MediaFireDownloadHub from '@/components/MediaFireDownloadHub';
+import YouTubeDownloadHub from '@/components/YouTubeDownloadHub';
 
 export interface CastMember {
   id: number;
@@ -468,7 +469,7 @@ export default function MovieDetailPage() {
         year: apiMovie.releaseYear || 2025,
         genre: apiMovie.genre,
         rating: 8.8,
-        image: apiMovie.thumbnailUrl || 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=900',
+        image: apiMovie.thumbnailUrl || '/fallback-poster.png',
         narrator: apiMovie.narrator,
       };
       toggleFavorite(mockAsMovie);
@@ -962,6 +963,24 @@ export default function MovieDetailPage() {
           </div>
         )}
 
+        {/* PROMINENT YOUTUBE DOWNLOAD & STREAMING HUB */}
+        {(view.trailer?.includes('youtu') || view.sources.some((s) => s.url.includes('youtu'))) && (
+          <div className="container mx-auto px-4 sm:px-6">
+            <YouTubeDownloadHub
+              movieTitle={view.title}
+              youtubeUrl={
+                view.trailer?.includes('youtu')
+                  ? view.trailer
+                  : view.sources.find((s) => s.url.includes('youtu'))?.url || ''
+              }
+              isRwandanCinema={
+                (view.genre && view.genre.toLowerCase().includes('nyarwanda')) ||
+                (view.narrator && view.narrator.toLowerCase().includes('rwandan'))
+              }
+            />
+          </div>
+        )}
+
         {/* MODERN AUDIENCE RATING SYSTEM */}
         <div className="container mx-auto px-4 sm:px-6 my-6">
           <ModernRatingSystem
@@ -1012,7 +1031,7 @@ export default function MovieDetailPage() {
                         referrerPolicy="no-referrer"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src =
-                            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop';
+                            '/fallback-poster.png';
                         }}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />

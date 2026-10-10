@@ -111,7 +111,7 @@ export default function NotificationBell() {
           genre: 'Action',
           narrator: randomNarrator,
           rating: 8.8,
-          thumbnailUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop',
+          thumbnailUrl: '/fallback-poster.png',
         }),
       });
 

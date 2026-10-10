@@ -80,7 +80,7 @@ export default function Footer() {
 
       <div className="container mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
-          {/* Brand & Talk to Us Showcase */}
+          {/* Brand & Community Platform */}
           <div className="lg:col-span-2 space-y-6">
             <div>
               <div className="flex items-center gap-2.5 mb-2">
