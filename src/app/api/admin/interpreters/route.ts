@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { interpretersData } from '@/lib/interpreters';
+import { requireAdmin } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     let interpreters = await prisma.interpreter.findMany({
       orderBy: { moviesCount: 'desc' },
@@ -31,6 +34,8 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const { id, slug, name, bio, image, rating, moviesCount } = await request.json();
 
@@ -68,6 +73,8 @@ export async function PUT(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const { name, bio, image, rating } = await request.json();
     if (!name) {

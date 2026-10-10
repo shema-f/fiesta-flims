@@ -160,7 +160,9 @@ export default function Hero({ movies }: HeroProps) {
         </div>
 
         {/* --------------------------------------------------------- Right */}
-        <div className="relative mx-auto w-full max-w-[440px] animate-fadeIn">
+        {/* On mobile the artwork leads (as in the reference), then the copy;
+            from lg up the two sit side by side in reading order. */}
+        <div className="relative mx-auto w-full max-w-[440px] animate-fadeIn order-first lg:order-none">
           {showSides && (
             <>
               <div className="absolute -left-4 top-16 z-0 w-[44%] -rotate-[10deg] overflow-hidden rounded-2xl border border-white/10 opacity-25 sm:-left-14">

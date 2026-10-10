@@ -5,7 +5,9 @@ export const dynamic = 'force-dynamic';
 
 function authorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // no secret configured — allow (dev / manual)
+  // Fail closed: an unconfigured secret must never leave a maintenance route
+  // open to the public.
+  if (!secret) return false;
   return request.headers.get('authorization') === `Bearer ${secret}`;
 }
 

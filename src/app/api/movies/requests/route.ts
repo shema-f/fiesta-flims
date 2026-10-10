@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/lib/notificationService';
+import { getClientIp, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -202,6 +203,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  // Public form, so it is rate limited per IP rather than authenticated —
+  // stops anonymous spam without blocking guests from requesting a title.
+  const limit = checkRateLimit(`movie-request:${getClientIp(request)}`, 5, 60 * 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
   try {
     const body = await request.json();
     const { title, genre, narratorRequest, description, userEmail } = body;

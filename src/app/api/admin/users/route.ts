@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -44,13 +47,15 @@ export async function GET() {
   } catch (error: any) {
     console.error('Error fetching admin users:', error);
     return NextResponse.json(
-      { success: false, error: error?.message || 'Failed to fetch users' },
+      { success: false, error: 'Failed to fetch users' },
       { status: 500 }
     );
   }
 }
 
 export async function PATCH(request: Request) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const { id, role, name } = await request.json();
     if (!id) {
@@ -73,13 +78,15 @@ export async function PATCH(request: Request) {
     });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error?.message || 'Failed to update user' },
+      { success: false, error: 'Failed to update user' },
       { status: 500 }
     );
   }
 }
 
 export async function DELETE(request: Request) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -95,7 +102,7 @@ export async function DELETE(request: Request) {
     });
   } catch (error: any) {
     return NextResponse.json(
-      { success: false, error: error?.message || 'Failed to delete user' },
+      { success: false, error: 'Failed to delete user' },
       { status: 500 }
     );
   }

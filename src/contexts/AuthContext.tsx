@@ -17,7 +17,6 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
-  loginDemo: (role: 'ADMIN' | 'FAN') => void;
   loginWithGoogle: () => Promise<boolean>;
   logout: () => void;
 }
@@ -90,24 +89,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!fbUser || !fbUser.email) return false;
 
-      // Sync and store in database
+      const idToken = await fbUser.getIdToken();
+
+      // Mint a real NextAuth session from the verified ID token so server-side
+      // guards (middleware, requireAdmin) recognise this user.
+      const session = await signIn('firebase', { idToken, redirect: false });
+      if (session?.error) {
+        console.error('[Auth] Google session could not be established:', session.error);
+        return false;
+      }
+
+      // Persist/refresh the row. The server verifies the token itself and
+      // decides the role — we never infer it from the email address.
       const syncRes = await fetch('/api/auth/firebase-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: fbUser.uid,
-          email: fbUser.email,
-          name: fbUser.displayName || fbUser.email.split('@')[0],
-          photoURL: fbUser.photoURL,
-        }),
+        body: JSON.stringify({ idToken }),
       });
 
-      const data = await syncRes.json();
+      const data = syncRes.ok ? await syncRes.json() : {};
       const synchronizedUser: User = data.user || {
         id: fbUser.uid,
         name: fbUser.displayName || 'Google Fan',
         email: fbUser.email,
-        role: fbUser.email.includes('admin') ? 'ADMIN' : 'FAN',
+        role: 'FAN',
         avatar: fbUser.photoURL || undefined,
       };
 
@@ -120,22 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loginDemo = (role: 'ADMIN' | 'FAN') => {
-    if (role === 'ADMIN') {
-      signIn('credentials', {
-        email: 'admin@fiestaflix.com',
-        password: 'admin123',
-        redirect: false,
-      });
-    } else {
-      signIn('credentials', {
-        email: 'fan@fiestaflix.com',
-        password: 'fan123',
-        redirect: false,
-      });
-    }
-  };
-
   const logout = () => {
     setFirebaseUser(null);
     localStorage.removeItem('fiestaflix_firebase_user');
@@ -143,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, loginDemo, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

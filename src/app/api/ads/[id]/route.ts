@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateAd, toggleAdActive, deleteAd } from '@/lib/adsData';
+import { requireAdmin } from '@/lib/api/helpers';
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const { id } = await params;
     const body = await req.json();
@@ -33,6 +36,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const { id } = await params;
     const deleted = deleteAd(id);

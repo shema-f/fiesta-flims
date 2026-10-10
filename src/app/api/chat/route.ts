@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 import { prisma } from '@/lib/prisma';
 import catalogFallback from '@/data/csvCatalog.json';
+import { getClientIp, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -232,6 +233,9 @@ async function getLocalFallbackResponse(query: string, summary: DbSummary): Prom
 }
 
 export async function POST(req: NextRequest) {
+  // The bot calls a paid model on every message — cap anonymous usage per IP.
+  const limit = checkRateLimit(`chat:${getClientIp(req)}`, 20, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
   try {
     const body = await req.json();
     const { message, history } = body;

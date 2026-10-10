@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findMovieOrSeries } from '@/lib/movieData';
 import { sanitizeImage } from '@/lib/catalogMap';
+import { requireAdmin } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -110,6 +111,8 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   const { id } = await params;
 
   try {
@@ -227,6 +230,8 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   const { id } = await params;
 
   try {

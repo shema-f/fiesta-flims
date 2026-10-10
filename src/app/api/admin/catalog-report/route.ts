@@ -4,6 +4,7 @@ import path from 'path';
 import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/lib/notificationService';
 import { VERIFIED_FOLLOWERS } from '@/lib/interpreters';
+import { requireAdmin } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +71,8 @@ function getStoredMissing(): any[] {
 }
 
 export async function GET() {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     // 1. Try reading the generated report file
     const reportPath = path.join(process.cwd(), 'data', 'admin-catalog-report.json');
@@ -184,6 +187,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const body = await request.json().catch(() => ({}));
     const note = body.note || 'Catalog synchronization & missing movies report review requested.';

@@ -1,39 +1,43 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { interpretersData, TOTAL_PLATFORM_MOVIES, TOTAL_PLATFORM_EPISODES } from '@/lib/interpreters';
+import { interpretersData } from '@/lib/interpreters';
+import { getCatalog } from '@/lib/catalog';
+import { buildInterpreterStats, withLiveCounts } from '@/lib/interpreterCounts';
 
 export const dynamic = 'force-dynamic';
 
-/** GET /api/interpreters — the Agasobanuye voice directory with real movies and follower stats. */
+/**
+ * GET /api/interpreters — the Agasobanuye voice directory.
+ *
+ * Counts are computed live from the same catalogue the profile pages render,
+ * so "N in catalog" always equals the number of titles actually listed.
+ */
 export async function GET() {
+  const { movies, tvShows } = await getCatalog();
+  const stats = buildInterpreterStats(movies, tvShows);
+  const merged = withLiveCounts(interpretersData, stats);
+
+  // Persist the computed counts so the database agrees with what the site
+  // shows (best-effort — a read must never fail because of a write).
   try {
-    const totalPlatformMovies = await prisma.movie.count({ where: { isActive: true } });
-    const dbInterpreters = await prisma.interpreter.findMany({
-      orderBy: { moviesCount: 'desc' },
-    });
-
-    const countMap = new Map(dbInterpreters.map((i) => [i.slug.toLowerCase(), i.moviesCount || 0]));
-
-    const merged = interpretersData.map((it) => {
-      const dbCount = countMap.get(it.slug.toLowerCase());
-      return {
-        ...it,
-        catalogMoviesCount: dbCount !== undefined && dbCount > 0 ? dbCount : it.catalogMoviesCount,
-      };
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: merged,
-      totalPlatformMovies: totalPlatformMovies > 0 ? totalPlatformMovies : TOTAL_PLATFORM_MOVIES,
-      totalPlatformEpisodes: TOTAL_PLATFORM_EPISODES,
-    });
+    for (const it of merged) {
+      const live = stats.countsBySlug.get(it.slug);
+      if (live === undefined) continue;
+      await prisma.interpreter.upsert({
+        where: { slug: it.slug },
+        create: { name: it.name, slug: it.slug, moviesCount: live },
+        update: { moviesCount: live },
+      });
+    }
   } catch {
-    return NextResponse.json({
-      success: true,
-      data: interpretersData,
-      totalPlatformMovies: TOTAL_PLATFORM_MOVIES,
-      totalPlatformEpisodes: TOTAL_PLATFORM_EPISODES,
-    });
+    // No database in this environment — the computed counts still ship.
   }
+
+  return NextResponse.json({
+    success: true,
+    data: merged,
+    totalPlatformMovies: stats.totalMovies,
+    totalPlatformEpisodes: stats.totalEpisodes,
+    unattributedMovies: stats.unattributedMovies,
+  });
 }

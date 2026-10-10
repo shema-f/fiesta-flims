@@ -7,6 +7,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { findMovieOrSeries } from '@/lib/movieData';
 import {
   getProvider,
   getProviderDefinition,
@@ -280,19 +281,43 @@ class StorageManager {
     } catch {
       movie = null;
     }
-    if (!movie) return null;
+
+    // Same graceful degradation as the rest of the catalogue: when the row —
+    // or the whole database — is unavailable, fall back to the bundled seed so
+    // the title still plays instead of 404ing.
+    if (!movie) {
+      const seed = findMovieOrSeries(movieId);
+      const seedUrl = seed?.directStreamUrl;
+      if (seedUrl) {
+        return {
+          provider: 'S3_COMPATIBLE',
+          url: seedUrl,
+          purpose,
+          quality,
+          supportsRange: true,
+          isHls: seedUrl.endsWith('.m3u8'),
+        };
+      }
+      return null;
+    }
 
     let url: string | undefined;
+    // `resolutions` doubles as series metadata ({ type, seasonsCount,
+    // episodes, ... }), so only ever treat an actual http(s) URL as a source.
+    // Otherwise the string "Movie" gets handed to the player as a video URL.
+    const isUrl = (value: unknown): value is string =>
+      typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+
     if (movie.resolutions && typeof movie.resolutions === 'object') {
       const res = movie.resolutions as Record<string, unknown>;
-      if (quality && typeof res[quality] === 'string') url = res[quality] as string;
+      if (quality && isUrl(res[quality])) url = res[quality].trim();
       else {
         const keys = Object.keys(res).sort((a, b) => rankQuality(a) - rankQuality(b));
-        const first = keys.find((k) => typeof res[k] === 'string');
-        if (first) url = res[first] as string;
+        const first = keys.find((k) => isUrl(res[k]));
+        if (first) url = (res[first] as string).trim();
       }
     }
-    if (!url) url = movie.fileUrl || undefined;
+    if (!url) url = (isUrl(movie.fileUrl) ? movie.fileUrl.trim() : undefined) || undefined;
     if (!url) return null;
 
     return {

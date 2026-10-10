@@ -13,6 +13,7 @@ import TelegramDownloadHub from '@/components/TelegramDownloadHub';
 import ModernRatingSystem from '@/components/ModernRatingSystem';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { movieData, findMovieOrSeries, type Movie, type Episode } from '@/lib/movieData';
+import { isMediaFireLandingPage } from '@/lib/media/directLink';
 import { sanitizeImage } from '@/lib/catalogMap';
 import type { ApiMovie } from '@/lib/apiTypes';
 import { 
@@ -96,17 +97,24 @@ function formatViews(views: number) {
 
 function parseSources(fileUrl: string, resolutions: unknown): VideoSource[] {
   const sources: VideoSource[] = [];
+  // `resolutions` also carries series metadata ({ type: 'Movie', episodes, ... });
+  // only real http(s) URLs are playable, so anything else is skipped — otherwise
+  // "Movie" ends up as the first (and only) source.
+  const isUrl = (value: unknown): value is string =>
+    typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+
   if (resolutions && typeof resolutions === 'object' && !Array.isArray(resolutions)) {
     for (const [label, url] of Object.entries(resolutions as Record<string, unknown>)) {
-      if (['episodes', 'seasonsCount', 'episodesCount'].includes(label)) continue;
-      if (typeof url === 'string' && url.length > 0) {
-        sources.push({ label, url });
+      if (['episodes', 'seasonsCount', 'episodesCount', 'type'].includes(label)) continue;
+      if (isUrl(url)) {
+        sources.push({ label, url: url.trim() });
       }
     }
   }
-  if (sources.length === 0 && fileUrl) {
-    const isMf = fileUrl.includes('mediafire.com');
-    sources.push({ label: isMf ? 'MediaFire 1080p FHD' : '1080p FHD', url: fileUrl });
+  if (sources.length === 0 && isUrl(fileUrl)) {
+    const trimmed = fileUrl.trim();
+    const isMf = trimmed.includes('mediafire.com');
+    sources.push({ label: isMf ? 'MediaFire 1080p FHD' : '1080p FHD', url: trimmed });
   }
   const rank = (label: string) => {
     const n = parseInt(label, 10);
@@ -399,6 +407,26 @@ export default function MovieDetailPage() {
       }
     } catch {
       // Non-critical — playback still works without resume or subtitles.
+    }
+
+    // MediaFire landing pages serve HTML, not video — unwrap them to the real
+    // binary or the <video> element never starts.
+    if (isMediaFireLandingPage(url)) {
+      try {
+        const res = await fetch(`/api/download?url=${encodeURIComponent(url)}&format=json`);
+        if (res.ok) {
+          const json = await res.json();
+          if (typeof json?.directUrl === 'string' && !isMediaFireLandingPage(json.directUrl)) {
+            url = json.directUrl;
+          }
+        }
+      } catch {
+        // Fall through to the redirect below.
+      }
+      // Last resort: let the browser follow our own 307 straight to the binary.
+      if (isMediaFireLandingPage(url)) {
+        url = `/api/download?url=${encodeURIComponent(url)}`;
+      }
     }
 
     setSubtitleTracks(subs);

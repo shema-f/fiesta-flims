@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllAds, getActiveAds, createAd, AdPlacement } from '@/lib/adsData';
+import { requireAdmin } from '@/lib/api/helpers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,6 +22,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
   try {
     const body = await req.json();
     const {
