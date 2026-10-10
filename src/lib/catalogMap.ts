@@ -143,6 +143,34 @@ export function sanitizeImage(rawUrl: string | null | undefined, title?: string,
 }
 
 /**
+ * Classify a catalogue row as a series or a standalone movie.
+ *
+ * Recognises the shapes the catalogue actually uses — "Season 2", "S01 Ep 03",
+ * "Ep 5", "Series" in the title — plus a real episode list. Deliberately does
+ * NOT treat "Part A/B" as a series: those are two halves of one film.
+ *
+ * Shared by the list and detail APIs so a title can never be a series in one
+ * place and a movie in another.
+ */
+export function isSeriesTitle(
+  title?: string | null,
+  description?: string | null,
+  episodes?: unknown[] | null
+): boolean {
+  if (Array.isArray(episodes) && episodes.length > 1) return true;
+
+  const t = (title || '').toLowerCase();
+  const d = (description || '').toLowerCase();
+
+  if (t.includes('series')) return true;
+  if (/\bseason\s*\d/.test(t) || /\bseason\s*\d/.test(d)) return true;
+  if (/\bs\d{1,2}[\s._-]*(?:e|ep)\b/.test(t)) return true;
+  if (/\bep(?:isode)?[\s._-]*\d+/.test(t)) return true;
+
+  return false;
+}
+
+/**
  * Convert a database movie into the UI `Movie` shape. Falls back to the seed
  * entry for display-only fields (rating, telegram links, sizes) until the
  * catalog is fully backfilled, so the UI never regresses to empty values.
@@ -165,6 +193,7 @@ export function dbMovieToView(m: DbMovieLike): Movie {
     backdrop,
     trending: Boolean(m.isFeatured ?? (seed?.trending ?? true)),
     narrator: m.narrator || seed?.narrator || undefined,
+    contentType: isSeriesTitle(m.title, m.description) ? 'series' : 'movie',
     duration: formatDuration(m.duration) || seed?.duration,
     quality: seed?.quality || '1080p FHD',
     fileSize: seed?.fileSize || '1.4 GB',

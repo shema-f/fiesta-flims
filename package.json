@@ -9,6 +9,7 @@
     "lint": "next lint",
     "postinstall": "prisma generate || true",
     "import:movies": "npx ts-node scripts/import-movies.ts",
+    "import:tsv": "ts-node scripts/import-tsv.ts",
     "worker": "ts-node scripts/media-worker.ts",
     "db:migrate": "prisma migrate deploy",
     "db:seed-providers": "ts-node scripts/seed-providers.ts"

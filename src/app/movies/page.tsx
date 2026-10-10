@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CatalogMovieCard from '@/components/CatalogMovieCard';
 import type { ApiMovie } from '@/lib/apiTypes';
+import { fetchAllMovies } from '@/lib/fetchAllMovies';
 import {
   Search,
   SlidersHorizontal,
@@ -24,9 +25,6 @@ import {
 type LoadStatus = 'loading' | 'ready' | 'error';
 type SortOption = 'rating' | 'popularity' | 'latest' | 'year' | 'title';
 type SortDirection = 'desc' | 'asc';
-
-const FETCH_PAGE_SIZE = 100; // hard cap enforced by GET /api/movies
-const MAX_PAGES = 100; // safety valve — never pull more than 10k rows in one load
 
 const RATING_FILTER_OPTIONS = [
   { label: 'All Ratings', value: 0 },
@@ -68,56 +66,24 @@ export default function MoviesPage() {
     }
   }, []);
 
-  // Fetch the whole catalogue in one pass. The API caps a single response at
-  // FETCH_PAGE_SIZE rows, so keep asking for the next page until the server
-  // reports we hold every title — that way the client-side filters and sorting
-  // below always operate on the complete library instead of the first page.
+  // Fetch the whole catalogue in one pass. `fetchAllMovies` pages past the
+  // endpoint's 100-row cap, so the client-side filters and sorting below always
+  // operate on the complete library instead of the first page.
   const loadMovies = useCallback(
-    async (page = 1, currentSort = sortBy, currentOrder = sortDirection) => {
+    async (currentSort = sortBy, currentOrder = sortDirection) => {
       setStatus('loading');
 
       try {
-        const buildParams = (requestPage: number) => {
-          const params = new URLSearchParams({
-            page: String(requestPage),
-            limit: String(FETCH_PAGE_SIZE),
-            sortBy: currentSort,
-            order: currentOrder,
-          });
+        const params: Record<string, string> = { sortBy: currentSort, order: currentOrder };
 
-          if (contentType !== 'all') params.set('type', contentType);
-          if (activeGenre !== 'All') params.set('genre', activeGenre);
-          if (activeNarrator !== 'All') params.set('narrator', activeNarrator);
-          if (minRating > 0) params.set('minRating', String(minRating));
-          if (selectedYear !== 'All') params.set('year', selectedYear);
-          if (query.trim()) params.set('q', query.trim());
+        if (contentType !== 'all') params.type = contentType;
+        if (activeGenre !== 'All') params.genre = activeGenre;
+        if (activeNarrator !== 'All') params.narrator = activeNarrator;
+        if (minRating > 0) params.minRating = String(minRating);
+        if (selectedYear !== 'All') params.year = selectedYear;
+        if (query.trim()) params.q = query.trim();
 
-          return params;
-        };
-
-        const collected: ApiMovie[] = [];
-        let totalCount = 0;
-
-        for (let requestPage = page; requestPage < page + MAX_PAGES; requestPage++) {
-          const res = await fetch(`/api/movies?${buildParams(requestPage).toString()}`, {
-            cache: 'no-store',
-          });
-          const json = await res.json();
-          if (!res.ok || !json.success) {
-            throw new Error(json.error || 'Failed to fetch movies');
-          }
-
-          const batch: ApiMovie[] = json.data ?? [];
-          collected.push(...batch);
-
-          const countHeader = res.headers.get('X-Total-Count');
-          totalCount =
-            countHeader !== null ? parseInt(countHeader, 10) || collected.length : collected.length;
-
-          // A short page means the catalogue is exhausted; so does holding
-          // everything the server says exists.
-          if (batch.length < FETCH_PAGE_SIZE || collected.length >= totalCount) break;
-        }
+        const { movies: collected, total: totalCount } = await fetchAllMovies({ params });
 
         setMovies(collected);
         setTotal(totalCount);
@@ -131,13 +97,13 @@ export default function MoviesPage() {
 
   // Re-fetch whenever filters or sort criteria change
   useEffect(() => {
-    loadMovies(1, sortBy, sortDirection);
+    loadMovies(sortBy, sortDirection);
   }, [loadMovies, sortBy, sortDirection]);
 
   // Handle live search debounce or search submit
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadMovies(1, sortBy, sortDirection);
+      loadMovies(sortBy, sortDirection);
     }, 350);
     return () => clearTimeout(timer);
   }, [query, loadMovies, sortBy, sortDirection]);
@@ -644,7 +610,7 @@ export default function MoviesPage() {
                 We couldn&apos;t reach the movie catalog. Please try again.
               </p>
               <button
-                onClick={() => loadMovies(1, sortBy, sortDirection)}
+                onClick={() => loadMovies(sortBy, sortDirection)}
                 className="px-8 py-3 rounded-full bg-gradient-to-r from-primary to-orange-400 text-white font-bold hover:-translate-y-1 hover:shadow-xl transition-all"
               >
                 Retry

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { findMovieOrSeries } from '@/lib/movieData';
-import { sanitizeImage } from '@/lib/catalogMap';
+import { sanitizeImage, isSeriesTitle } from '@/lib/catalogMap';
 import { requireAdmin } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
@@ -24,12 +24,7 @@ export async function GET(
     if (movie) {
       const resObj = movie.resolutions && typeof movie.resolutions === 'object' ? (movie.resolutions as any) : null;
       const episodes = Array.isArray(resObj?.episodes) ? resObj.episodes : null;
-      const isSeries = Boolean(
-        (episodes && episodes.length > 1) ||
-        movie.description?.toLowerCase().includes('season') ||
-        movie.title?.toLowerCase().includes('season') ||
-        movie.title?.toLowerCase().includes('series')
-      );
+      const isSeries = isSeriesTitle(movie.title, movie.description, episodes);
       const safePoster = sanitizeImage(movie.poster || movie.thumbnailUrl, movie.title, movie.genre);
       const safeBackdrop = sanitizeImage(movie.backdrop || safePoster, movie.title, movie.genre);
 
@@ -60,7 +55,10 @@ export async function GET(
   // Fallback to rich seed/series catalog
   const staticItem = findMovieOrSeries(id);
   if (staticItem) {
-    const isSeries = staticItem.contentType === 'series' || (staticItem.duration && staticItem.duration.includes('Eps'));
+    const isSeries =
+      staticItem.contentType === 'series' ||
+      Boolean(staticItem.duration && staticItem.duration.includes('Eps')) ||
+      isSeriesTitle(staticItem.title, staticItem.description, staticItem.episodes);
     const durationSeconds = isSeries
       ? 45 * 60
       : staticItem.duration

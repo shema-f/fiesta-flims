@@ -24,6 +24,7 @@ import {
   Copy,
 } from 'lucide-react';
 import type { ApiMovie } from '@/lib/apiTypes';
+import { fetchAllMovies } from '@/lib/fetchAllMovies';
 import { extractYouTubeId } from '@/components/video/FiestaVideoPlayer';
 
 const POPULAR_NARRATORS = [
@@ -187,12 +188,10 @@ export default function AdminMoviesManager() {
   const fetchMovies = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/movies?limit=300');
-      if (res.ok) {
-        const json = await res.json();
-        const list = Array.isArray(json.data) ? json.data : (json.data?.movies || []);
-        setMovies(list);
-      }
+      // Page through the endpoint — a single response is capped at 100 rows,
+      // so `?limit=300` used to silently hide most of the catalogue here.
+      const { movies: list } = await fetchAllMovies();
+      setMovies(list);
     } catch {
       showToast('Failed to load movies from database', 'error');
     } finally {

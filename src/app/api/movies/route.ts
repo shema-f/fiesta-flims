@@ -5,12 +5,15 @@ import { jsonOk, jsonError, intParam } from '@/lib/api/helpers';
 import { movieData, getAllCatalogContent, type Movie as SeedMovie } from '@/lib/movieData';
 import { notifyNewMovieUploaded } from '@/lib/notificationService';
 import { getCurrentUser } from '@/lib/auth';
-import { sanitizeImage } from '@/lib/catalogMap';
+import { sanitizeImage, isSeriesTitle } from '@/lib/catalogMap';
 
 export const dynamic = 'force-dynamic';
 
 function seedToApiMovie(seed: SeedMovie, index: number) {
-  const isSeries = seed.contentType === 'series' || (seed.duration && seed.duration.includes('Eps'));
+  const isSeries =
+    seed.contentType === 'series' ||
+    Boolean(seed.duration && seed.duration.includes('Eps')) ||
+    isSeriesTitle(seed.title, seed.description, seed.episodes);
   const durationSeconds = isSeries
     ? 45 * 60
     : seed.duration
@@ -179,12 +182,7 @@ export async function GET(request: NextRequest) {
       let filteredDbMovies = dbMovies.map((m: any) => {
         const resObj = m.resolutions && typeof m.resolutions === 'object' ? m.resolutions : null;
         const episodes = Array.isArray(resObj?.episodes) ? resObj.episodes : null;
-        const isSeries = Boolean(
-          (episodes && episodes.length > 1) ||
-          m.description?.toLowerCase().includes('season') ||
-          m.title?.toLowerCase().includes('season') ||
-          m.title?.toLowerCase().includes('series')
-        );
+        const isSeries = isSeriesTitle(m.title, m.description, episodes);
         const posterImg = sanitizeImage(m.poster || m.thumbnailUrl, m.title, m.genre);
         const backdropImg = sanitizeImage(m.backdrop || posterImg, m.title, m.genre);
         return {
