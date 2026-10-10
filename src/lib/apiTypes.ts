@@ -7,6 +7,12 @@ import type { Movie } from '@prisma/client';
  */
 export type ApiMovie = Movie & {
   uploader?: { id: string; name: string } | null;
+  contentType?: 'movie' | 'series';
+  episodes?: any[];
+  year?: number;
+  image?: string;
+  trailerUrl?: string | null;
+  seasonsCount?: number;
 };
 
 export interface ApiListResponse<T> {

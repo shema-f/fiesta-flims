@@ -76,7 +76,7 @@ class StorageManager {
             priority: def.defaultPriority,
             tiers: def.defaultTiers,
             purposes: def.defaultPurposes,
-            capabilities: def.capabilities,
+            capabilities: def.capabilities as any,
           },
           update: {},
         });

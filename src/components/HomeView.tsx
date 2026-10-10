@@ -112,12 +112,17 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
           </Link>
         </section>
 
-        {/* Sponsored Interstitial Ad Banner */}
-        <section className="container-tight py-4">
+        {/* Mid-Page Responsive Sponsor Slot */}
+        <section className="container-tight py-3 sm:py-5 px-3 sm:px-4">
           <AdBanner placement="HOME_INTERSTITIAL" dismissible />
         </section>
 
         <MovieRail title="📺 Series" subtitle="Binge the full season" movies={tvShows} href="/movies" />
+
+        {/* Video & Entertainment Partner Showcase Slot */}
+        <section className="container-tight py-2 sm:py-4 px-3 sm:px-4">
+          <AdBanner placement="VIDEO_PLAYER_BANNER" dismissible />
+        </section>
 
         {/* Offline / Data saver strip */}
         <section className="container-tight py-8">
@@ -149,6 +154,11 @@ export default function HomeView({ trendingMovies, popularMovies, tvShows }: Hom
 
         {/* Frequently Asked Questions Section */}
         <HomeFaqSection />
+
+        {/* Bottom Responsive Ad / App Banner Slot */}
+        <section className="container-tight py-2 sm:py-4 px-3 sm:px-4">
+          <AdBanner placement="FOOTER_PROMO" dismissible />
+        </section>
 
         <CTA />
       </main>

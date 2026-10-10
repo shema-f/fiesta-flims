@@ -5,10 +5,17 @@
  * components (e.g. the search page) without pulling Prisma into the bundle.
  */
 
-import { movieData, type Movie } from './movieData';
+import type { Movie } from './types/movie';
+import { movieData } from './movieData';
 
-/** Seed catalog indexed by lowercase title, used to enrich DB rows while the catalog is being migrated. */
-const seedByTitle = new Map(movieData.map((m) => [m.title.toLowerCase(), m]));
+/** Seed catalog indexed by lowercase title, lazily evaluated */
+let _seedByTitle: Map<string, Movie> | null = null;
+function getSeedByTitle(): Map<string, Movie> {
+  if (!_seedByTitle) {
+    _seedByTitle = new Map((movieData || []).map((m) => [m.title.toLowerCase(), m]));
+  }
+  return _seedByTitle;
+}
 
 function formatDuration(seconds: number | null | undefined): string | undefined {
   if (!seconds) return undefined;
@@ -36,6 +43,7 @@ export interface DbMovieLike {
   thumbnailUrl?: string | null;
   resolutions?: unknown;
   isFeatured?: boolean | null;
+  fileUrl?: string | null;
   status?: string | null;
   createdAt?: string | Date | null;
 }
@@ -157,7 +165,7 @@ export function sanitizeImage(rawUrl: string | null | undefined, title?: string,
  * catalog is fully backfilled, so the UI never regresses to empty values.
  */
 export function dbMovieToView(m: DbMovieLike): Movie {
-  const seed = seedByTitle.get((m.title || '').toLowerCase());
+  const seed = getSeedByTitle().get((m.title || '').toLowerCase());
   const year = m.releaseYear ?? seed?.year ?? new Date().getFullYear();
   const rawImage = m.poster || m.thumbnailUrl || seed?.image;
   const image = sanitizeImage(rawImage, m.title, m.genre || seed?.genre);

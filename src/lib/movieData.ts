@@ -1,43 +1,6 @@
-export interface Episode {
-  id: string | number;
-  episodeNumber: number;
-  seasonNumber: number;
-  title: string;
-  duration?: string;
-  description?: string;
-  thumbnail?: string;
-  videoUrl?: string;
-  youtubeId?: string;
-  directStreamUrl?: string;
-  downloadUrl?: string;
-  quality?: string;
-  fileSize?: string;
-  narrator?: string;
-}
-
-export interface Movie {
-  id: number | string;
-  title: string;
-  year: number;
-  genre: string;
-  rating: number;
-  image: string; // High-resolution portrait poster (2:3 aspect ratio)
-  backdrop?: string; // High-resolution widescreen backdrop (16:9 aspect ratio)
-  trending?: boolean;
-  narrator?: string;
-  duration?: string;
-  quality?: string;
-  fileSize?: string;
-  description?: string;
-  telegramChannelPost?: string; // e.g. https://t.me/fiestaflix_movies/101
-  telegramBotLink?: string;     // e.g. https://t.me/FiestaFlixBot?start=watch_101
-  telegramStreamUrl?: string;   // Streaming proxy link
-  directStreamUrl?: string;     // HTML5 playable video url
-  contentType?: 'movie' | 'series';
-  seasonsCount?: number;
-  episodesCount?: number;
-  episodes?: Episode[];
-}
+import type { Movie, Episode } from './types/movie';
+export type { Movie, Episode };
+import { loadCsvCatalog } from './csvCatalog';
 
 export const movieData: Movie[] = [
   {
@@ -552,10 +515,27 @@ export function getAllCatalogContent(): Movie[] {
     ...m,
     contentType: 'movie' as const,
   }));
-  return [...moviesWithContentType, ...tvShowsData];
+  const baseCatalog = [...moviesWithContentType, ...tvShowsData];
+  const baseTitles = new Set(baseCatalog.map((m) => m.title.toLowerCase().trim()));
+
+  let csvMovies: Movie[] = [];
+  try {
+    csvMovies = loadCsvCatalog().filter(
+      (m) => !baseTitles.has(m.title.toLowerCase().trim())
+    );
+  } catch (err) {
+    console.warn('[movieData] Could not load csvCatalog:', err);
+  }
+
+  return [...baseCatalog, ...csvMovies];
 }
 
 export function findMovieOrSeries(id: string | number): Movie | undefined {
   const all = getAllCatalogContent();
-  return all.find((item) => String(item.id) === String(id));
+  const idStr = String(id).toLowerCase();
+  return all.find(
+    (item) =>
+      String(item.id).toLowerCase() === idStr ||
+      item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === idStr
+  );
 }

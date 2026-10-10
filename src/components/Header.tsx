@@ -39,7 +39,7 @@ export default function Header() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  const moreRef = useRef<HTMLDivElement>(null);
+  const moreRef = useRef<HTMLLIElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const { user, logout } = useAuth();

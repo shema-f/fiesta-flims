@@ -29,7 +29,7 @@ export const authOptions: AuthOptions = {
             name: user.name,
             email: user.email,
             role: user.role,
-            image: user.image,
+            image: user.image ?? undefined,
           };
         } catch (err) {
           console.error('[Auth] Authorize error:', err);
