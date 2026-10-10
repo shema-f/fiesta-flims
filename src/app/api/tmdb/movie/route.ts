@@ -93,10 +93,48 @@ export async function GET(req: NextRequest) {
 
         const posterUrl = best.poster_path
           ? `https://image.tmdb.org/t/p/w500${best.poster_path}`
-          : null;
+          : '/fallback-poster.jpg';
         const backdropUrl = best.backdrop_path
           ? `https://image.tmdb.org/t/p/w1280${best.backdrop_path}`
-          : null;
+          : '/fallback-poster.jpg';
+
+        // Fetch TV Season 1 episodes if it is a television series
+        let seasonEpisodes: any[] = [];
+        if (mediaType === 'tv') {
+          try {
+            let seasonRes = await fetch(
+              `https://api.themoviedb.org/3/tv/${tmdbId}/season/1?language=en-US`,
+              {
+                headers: { Authorization: `Bearer ${TMDB_READ_TOKEN}` },
+                next: { revalidate: 86400 },
+              }
+            );
+            if (!seasonRes.ok && TMDB_API_KEY) {
+              seasonRes = await fetch(
+                `https://api.themoviedb.org/3/tv/${tmdbId}/season/1?api_key=${encodeURIComponent(TMDB_API_KEY)}&language=en-US`,
+                { next: { revalidate: 86400 } }
+              );
+            }
+            if (seasonRes.ok) {
+              const seasonData = await seasonRes.json();
+              if (Array.isArray(seasonData.episodes)) {
+                seasonEpisodes = seasonData.episodes.map((ep: any) => ({
+                  id: ep.id,
+                  episodeNumber: ep.episode_number,
+                  seasonNumber: ep.season_number || 1,
+                  title: ep.name || `Episode ${ep.episode_number}`,
+                  description: ep.overview || '',
+                  thumbnail: ep.still_path
+                    ? `https://image.tmdb.org/t/p/w500${ep.still_path}`
+                    : backdropUrl || posterUrl || '/fallback-poster.jpg',
+                  duration: ep.runtime ? `${ep.runtime}m` : '45m',
+                }));
+              }
+            }
+          } catch (e) {
+            console.warn('[TMDB] Season episodes fetch error:', e);
+          }
+        }
 
         const finalCast = curatedCast || (liveCast.length > 0 ? liveCast : getMovieCast(title));
 
@@ -116,6 +154,7 @@ export async function GET(req: NextRequest) {
             ? parseInt(best.first_air_date.split('-')[0], 10)
             : undefined,
           cast: finalCast,
+          episodes: seasonEpisodes.length > 0 ? seasonEpisodes : undefined,
         });
       }
     }

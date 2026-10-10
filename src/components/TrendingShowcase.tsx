@@ -32,23 +32,22 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
   const trendingMovies = movies;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-  const [rotationSpeed, setRotationSpeed] = useState<1 | 3>(1); // Default to 1-second live rotation per request
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const activeMovie = trendingMovies[currentIndex] || trendingMovies[0];
   const favorited = activeMovie ? isFavorite(activeMovie.id) : false;
 
-  // Reliable automated rotation timer (1-second or 3-second mode)
+  // Reliable automated rotation timer (strictly 3-second cadence per specification)
   useEffect(() => {
     if (isPaused || trendingMovies.length <= 1) return;
 
-    const intervalMs = rotationSpeed === 1 ? 1000 : 3000;
+    const intervalMs = 3000;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % trendingMovies.length);
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [isPaused, trendingMovies.length, rotationSpeed]);
+  }, [isPaused, trendingMovies.length]);
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % trendingMovies.length);
@@ -60,7 +59,7 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
 
   if (!activeMovie) return null;
 
-  const durationSec = rotationSpeed === 1 ? 1.0 : 3.0;
+  const durationSec = 3.0;
 
   return (
     <section 
@@ -71,10 +70,10 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
       onTouchEnd={() => setIsPaused(false)}
     >
       <div className="relative rounded-3xl overflow-hidden border border-zinc-800 bg-zinc-950 shadow-2xl shadow-primary/10">
-        {/* 1-Second Live Visual Progress Countdown Bar */}
+        {/* 3-Second Live Visual Progress Countdown Bar */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-zinc-800/80 z-30 overflow-hidden">
           <motion.div
-            key={`${currentIndex}-${rotationSpeed}`}
+            key={currentIndex}
             initial={{ width: '0%' }}
             animate={{ width: isPaused ? '0%' : '100%' }}
             transition={{ duration: durationSec, ease: 'linear' }}
@@ -114,33 +113,19 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 border border-primary/40 text-primary text-xs font-black uppercase tracking-wider">
                 <Flame className="w-3.5 h-3.5 animate-pulse text-orange-400" />
-                Trending Showcase • {rotationSpeed === 1 ? '1s Live' : '3s Classic'}
+                Trending Showcase • 3s Rotation
               </span>
               <span className="text-[11px] text-zinc-400 hidden sm:inline-block">
-                {isPaused ? '(Paused)' : rotationSpeed === 1 ? 'Live 1s Cadence' : 'Auto 3s Cadence'}
+                {isPaused ? '(Paused)' : 'Auto 3s Cadence'}
               </span>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setRotationSpeed((s) => (s === 1 ? 3 : 1))}
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors ${
-                    rotationSpeed === 1
-                      ? 'bg-primary/25 text-primary border border-primary/40'
-                      : 'bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-700'
-                  }`}
-                  title="Toggle rotation speed between 1 second and 3 seconds"
-                >
-                  {rotationSpeed === 1 ? '⚡ 1s Live' : '⏱️ 3s'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsPaused((p) => !p)}
-                  className="text-zinc-400 hover:text-white p-1 transition-colors"
-                  title={isPaused ? 'Resume auto rotation' : 'Pause auto rotation'}
-                >
-                  {isPaused ? <PlayCircle className="w-3.5 h-3.5 text-primary" /> : <Pause className="w-3.5 h-3.5" />}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsPaused((p) => !p)}
+                className="text-zinc-400 hover:text-white p-1 transition-colors"
+                title={isPaused ? 'Resume auto rotation' : 'Pause auto rotation'}
+              >
+                {isPaused ? <PlayCircle className="w-3.5 h-3.5 text-primary" /> : <Pause className="w-3.5 h-3.5" />}
+              </button>
             </div>
 
             {/* Navigation Arrows */}
@@ -169,44 +154,48 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
             {/* Animated High-Res Poster with 3D Depth */}
             <div className="md:col-span-4 lg:col-span-3 flex justify-center">
               <AnimatePresence mode="wait">
-                <motion.div
+                <Link
                   key={activeMovie.id}
-                  initial={{ opacity: 0, y: 20, rotateY: -15, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, rotateY: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -20, rotateY: 15, scale: 0.9 }}
-                  transition={{ type: 'spring', damping: 20, stiffness: 200 }}
-                  onClick={() => onSelectMovie && onSelectMovie(activeMovie)}
-                  className="group relative w-48 sm:w-56 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-primary/30 border-2 border-primary/40 cursor-pointer bg-zinc-900"
+                  href={`/movies/${activeMovie.id}`}
+                  className="block group"
                 >
-                  <Image
-                    src={sanitizeImage(activeMovie.image, activeMovie.title, activeMovie.genre)}
-                    alt={activeMovie.title}
-                    fill
-                    priority
-                    referrerPolicy="no-referrer"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  <motion.div
+                    initial={{ opacity: 0, y: 20, rotateY: -15, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, rotateY: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, rotateY: 15, scale: 0.9 }}
+                    transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+                    className="relative w-48 sm:w-56 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl shadow-primary/30 border-2 border-primary/40 cursor-pointer bg-zinc-900"
+                  >
+                    <Image
+                      src={sanitizeImage(activeMovie.image, activeMovie.title, activeMovie.genre)}
+                      alt={activeMovie.title}
+                      fill
+                      priority
+                      referrerPolicy="no-referrer"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
 
-                  {/* Rating Tag */}
-                  <div className="absolute top-2.5 right-2.5 bg-black/80 backdrop-blur px-2.5 py-1 rounded-lg text-amber-400 text-xs font-black flex items-center gap-1 border border-amber-400/30">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" />
-                    <span>{activeMovie.rating}</span>
-                  </div>
-
-                  {/* Quality Pill */}
-                  {activeMovie.quality && (
-                    <div className="absolute top-2.5 left-2.5 bg-primary text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-md">
-                      {activeMovie.quality}
+                    {/* Rating Tag */}
+                    <div className="absolute top-2.5 right-2.5 bg-black/80 backdrop-blur px-2.5 py-1 rounded-lg text-amber-400 text-xs font-black flex items-center gap-1 border border-amber-400/30">
+                      <Star className="w-3.5 h-3.5 fill-amber-400" />
+                      <span>{activeMovie.rating}</span>
                     </div>
-                  )}
 
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/50 group-hover:scale-110 transition-transform">
-                      <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                    {/* Quality Pill */}
+                    {activeMovie.quality && (
+                      <div className="absolute top-2.5 left-2.5 bg-primary text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-md">
+                        {activeMovie.quality}
+                      </div>
+                    )}
+
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white shadow-xl shadow-primary/50 group-hover:scale-110 transition-transform">
+                        <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </Link>
               </AnimatePresence>
             </div>
 
@@ -264,14 +253,13 @@ export default function TrendingShowcase({ movies, onSelectMovie }: TrendingShow
 
                   {/* Action Buttons */}
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => onSelectMovie && onSelectMovie(activeMovie)}
+                    <Link
+                      href={`/movies/${activeMovie.id}`}
                       className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white font-bold text-xs sm:text-sm shadow-xl shadow-primary/30 transition-all hover:scale-105"
                     >
                       <Play className="w-4 h-4 fill-current" />
-                      <span>Watch Preview</span>
-                    </button>
+                      <span>Watch Movie</span>
+                    </Link>
 
                     {activeMovie.telegramChannelPost && (
                       <a

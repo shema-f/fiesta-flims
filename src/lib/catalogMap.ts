@@ -146,7 +146,7 @@ export function sanitizeImage(rawUrl: string | null | undefined, title?: string,
   }
 
   if (!rawUrl || isBrokenImageUrl(rawUrl)) {
-    return 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+    return '/fallback-poster.jpg';
   }
   return rawUrl;
 }

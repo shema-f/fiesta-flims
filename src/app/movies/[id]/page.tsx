@@ -148,6 +148,7 @@ export default function MovieDetailPage() {
   const [allCopied, setAllCopied] = useState(false);
   const [cast, setCast] = useState<CastMember[]>([]);
   const [tmdbPoster, setTmdbPoster] = useState<string | null>(null);
+  const [tmdbEpisodes, setTmdbEpisodes] = useState<any[]>([]);
   const [castLoading, setCastLoading] = useState(false);
 
   const loadMovie = useCallback(async () => {
@@ -311,6 +312,9 @@ export default function MovieDetailPage() {
           if (data.poster) {
             setTmdbPoster(data.poster);
           }
+          if (Array.isArray(data.episodes) && data.episodes.length > 0) {
+            setTmdbEpisodes(data.episodes);
+          }
         }
       })
       .catch(() => {})
@@ -323,7 +327,7 @@ export default function MovieDetailPage() {
     };
   }, [view.title]);
 
-  const effectivePoster = tmdbPoster || view.image;
+  const effectivePoster = tmdbPoster || view.image || '/fallback-poster.jpg';
 
   const downloadFileName = (source: VideoSource) => {
     const extension = source.url.match(/\.(mp4|webm|mkv|mov|m4v)(?=$|\?)/i)?.[0] || '.mp4';
@@ -553,13 +557,16 @@ export default function MovieDetailPage() {
                     alt={view.title}
                     referrerPolicy="no-referrer"
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src =
-                        'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+                      (e.currentTarget as HTMLImageElement).src = '/fallback-poster.jpg';
                     }}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl">🎬</div>
+                  <img
+                    src="/fallback-poster.jpg"
+                    alt={view.title}
+                    className="w-full h-full object-cover"
+                  />
                 )}
                 {view.quality && (
                   <span className="absolute top-3 right-3 px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase bg-black/80 backdrop-blur text-white border border-zinc-700">
@@ -836,6 +843,8 @@ export default function MovieDetailPage() {
                   .map((ep) => {
                     const isPlayingThis = selectedEpisode?.id === ep.id;
                     const mediaLink = ep.directStreamUrl || ep.videoUrl || ep.downloadUrl;
+                    const tmdbEp = tmdbEpisodes.find((t) => t.episodeNumber === ep.episodeNumber);
+                    const epThumb = ep.thumbnail || tmdbEp?.thumbnail || tmdbPoster || view.image || '/fallback-poster.jpg';
                     return (
                       <div
                         key={ep.id}
@@ -849,8 +858,11 @@ export default function MovieDetailPage() {
                         <div>
                           <div className="relative aspect-video rounded-xl overflow-hidden mb-3 bg-zinc-950">
                             <img
-                              src={ep.thumbnail || view.image || ''}
+                              src={epThumb}
                               alt={ep.title}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = '/fallback-poster.jpg';
+                              }}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                             <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/80 backdrop-blur text-[10px] font-black uppercase text-purple-300 border border-purple-500/30">

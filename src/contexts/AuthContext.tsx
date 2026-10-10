@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import { firebaseAuth, googleAuthProvider, signInWithPopup, initFirebaseAnalytics } from '@/lib/firebase';
 
 interface User {
   id: string;
@@ -17,6 +18,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   signup: (name: string, email: string, password: string) => Promise<boolean>;
   loginDemo: (role: 'ADMIN' | 'FAN') => void;
+  loginWithGoogle: () => Promise<boolean>;
   logout: () => void;
 }
 
@@ -24,9 +26,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
+  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const isLoading = status === 'loading';
 
-  const user: User | null = session?.user
+  useEffect(() => {
+    initFirebaseAnalytics().catch(() => {});
+    // Check localStorage for persisted Firebase user session if next-auth is not active
+    const saved = localStorage.getItem('fiestaflix_firebase_user');
+    if (saved) {
+      try {
+        setFirebaseUser(JSON.parse(saved));
+      } catch {}
+    }
+  }, []);
+
+  const sessionUser: User | null = session?.user
     ? {
         id: session.user.id || '',
         name: session.user.name || '',
@@ -35,6 +49,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar: session.user.image || undefined,
       }
     : null;
+
+  const user = sessionUser || firebaseUser;
 
   const login = async (email: string, password: string): Promise<boolean> => {
     const result = await signIn('credentials', {
@@ -67,6 +83,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (): Promise<boolean> => {
+    try {
+      const result = await signInWithPopup(firebaseAuth, googleAuthProvider);
+      const fbUser = result.user;
+
+      if (!fbUser || !fbUser.email) return false;
+
+      // Sync and store in database
+      const syncRes = await fetch('/api/auth/firebase-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: fbUser.uid,
+          email: fbUser.email,
+          name: fbUser.displayName || fbUser.email.split('@')[0],
+          photoURL: fbUser.photoURL,
+        }),
+      });
+
+      const data = await syncRes.json();
+      const synchronizedUser: User = data.user || {
+        id: fbUser.uid,
+        name: fbUser.displayName || 'Google Fan',
+        email: fbUser.email,
+        role: fbUser.email.includes('admin') ? 'ADMIN' : 'FAN',
+        avatar: fbUser.photoURL || undefined,
+      };
+
+      setFirebaseUser(synchronizedUser);
+      localStorage.setItem('fiestaflix_firebase_user', JSON.stringify(synchronizedUser));
+      return true;
+    } catch (err: any) {
+      console.error('[Firebase Auth] Google login error:', err);
+      return false;
+    }
+  };
+
   const loginDemo = (role: 'ADMIN' | 'FAN') => {
     if (role === 'ADMIN') {
       signIn('credentials', {
@@ -84,11 +137,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    signOut();
+    setFirebaseUser(null);
+    localStorage.removeItem('fiestaflix_firebase_user');
+    signOut({ redirect: false });
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, loginDemo, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, loginDemo, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

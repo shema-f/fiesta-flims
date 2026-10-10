@@ -31,12 +31,12 @@ export default function MovieCard({ movie, onSelect }: MovieCardProps) {
       {/* Poster Image Container */}
       <div className="relative w-full aspect-[2/3] overflow-hidden bg-zinc-800">
         <Image
-          src={imgSrc || movie.image}
+          src={imgSrc || movie.image || '/fallback-poster.jpg'}
           alt={movie.title}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           referrerPolicy="no-referrer"
-          onError={() => setImgSrc('https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop')}
+          onError={() => setImgSrc('/fallback-poster.jpg')}
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
 

@@ -13,7 +13,9 @@ import {
   Eye, 
   CheckCircle2, 
   AlertCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Pencil,
+  X
 } from 'lucide-react';
 import { SiteAd, AdPlacement, INITIAL_ADS } from '@/lib/adsData';
 
@@ -39,6 +41,7 @@ export default function AdminAdsPanel() {
   const [ads, setAds] = useState<SiteAd[]>([]);
   const [selectedPlacement, setSelectedPlacement] = useState<string>('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingAd, setEditingAd] = useState<SiteAd | null>(null);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -48,6 +51,18 @@ export default function AdminAdsPanel() {
     description: '',
     targetUrl: '',
     imageUrl: PRESET_AD_IMAGES[0].url,
+    badgeText: 'Sponsored',
+    ctaText: 'Learn More',
+    isActive: true,
+  });
+
+  const [editFormData, setEditFormData] = useState({
+    title: '',
+    placement: 'HOME_INTERSTITIAL' as AdPlacement,
+    headline: '',
+    description: '',
+    targetUrl: '',
+    imageUrl: '',
     badgeText: 'Sponsored',
     ctaText: 'Learn More',
     isActive: true,
@@ -90,15 +105,53 @@ export default function AdminAdsPanel() {
   };
 
   const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Are you sure you want to delete ad "${title}"?`)) return;
+    if (!confirm(`Are you sure you want to delete ad campaign "${title}"?\nThis action cannot be undone.`)) return;
 
     setAds((prev) => prev.filter((ad) => ad.id !== id));
     try {
       await fetch(`/api/ads/${id}`, { method: 'DELETE' });
-      setActionFeedback(`Deleted ad "${title}"`);
+      setActionFeedback(`Deleted ad campaign "${title}"`);
       setTimeout(() => setActionFeedback(null), 2500);
     } catch {
       // silent
+    }
+  };
+
+  const handleOpenEdit = (ad: SiteAd) => {
+    setEditingAd(ad);
+    setEditFormData({
+      title: ad.title,
+      placement: ad.placement,
+      headline: ad.headline,
+      description: ad.description || '',
+      targetUrl: ad.targetUrl,
+      imageUrl: ad.imageUrl || PRESET_AD_IMAGES[0].url,
+      badgeText: ad.badgeText || 'Sponsored',
+      ctaText: ad.ctaText || 'Learn More',
+      isActive: ad.isActive,
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAd) return;
+
+    try {
+      const res = await fetch(`/api/ads/${editingAd.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setEditingAd(null);
+        fetchAds();
+        setActionFeedback(`Ad campaign "${editFormData.title}" updated!`);
+        setTimeout(() => setActionFeedback(null), 3000);
+      }
+    } catch (err: any) {
+      alert('Failed to update ad campaign: ' + err.message);
     }
   };
 
@@ -326,14 +379,26 @@ export default function AdminAdsPanel() {
                     </td>
 
                     <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(ad.id, ad.title)}
-                        className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                        title="Delete Ad"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(ad)}
+                          className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-primary/20 text-zinc-300 hover:text-primary transition-colors flex items-center gap-1 font-semibold text-[11px]"
+                          title="Set / Edit Ad Campaign"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Set / Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(ad.id, ad.title)}
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1 font-semibold text-[11px]"
+                          title="Delete Ad Campaign"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -494,6 +559,181 @@ export default function AdminAdsPanel() {
                 >
                   Deploy Ad Campaign
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT / SET AD CAMPAIGN MODAL */}
+      {editingAd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-zinc-950 border border-zinc-800 rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <Pencil className="w-5 h-5 text-primary" />
+                Configure & Set Ad Campaign
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingAd(null)}
+                className="text-zinc-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Campaign Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.title}
+                  onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Target Placement Slot *</label>
+                  <select
+                    value={editFormData.placement}
+                    onChange={(e) => setEditFormData({ ...editFormData, placement: e.target.value as AdPlacement })}
+                    className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none"
+                  >
+                    {(Object.keys(PLACEMENT_LABELS) as AdPlacement[]).map((p) => (
+                      <option key={p} value={p}>
+                        {PLACEMENT_LABELS[p]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Badge Text</label>
+                  <input
+                    type="text"
+                    value={editFormData.badgeText}
+                    onChange={(e) => setEditFormData({ ...editFormData, badgeText: e.target.value })}
+                    className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Catchy Headline *</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.headline}
+                  onChange={(e) => setEditFormData({ ...editFormData, headline: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Description / Subtitle</label>
+                <textarea
+                  rows={2}
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Target Click URL *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.targetUrl}
+                    onChange={(e) => setEditFormData({ ...editFormData, targetUrl: e.target.value })}
+                    className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-bold mb-1">Call To Action (CTA) Text</label>
+                  <input
+                    type="text"
+                    value={editFormData.ctaText}
+                    onChange={(e) => setEditFormData({ ...editFormData, ctaText: e.target.value })}
+                    className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Banner Image URL */}
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">Banner Image URL</label>
+                <input
+                  type="url"
+                  value={editFormData.imageUrl}
+                  onChange={(e) => setEditFormData({ ...editFormData, imageUrl: e.target.value })}
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-3 py-2 text-white focus:outline-none mb-2"
+                />
+                <div className="flex flex-wrap gap-1">
+                  {PRESET_AD_IMAGES.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => setEditFormData({ ...editFormData, imageUrl: preset.url })}
+                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                        editFormData.imageUrl === preset.url
+                          ? 'bg-primary/20 border-primary text-white font-bold'
+                          : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status Toggle */}
+              <div className="flex items-center gap-2 pt-2">
+                <input
+                  type="checkbox"
+                  id="editIsActive"
+                  checked={editFormData.isActive}
+                  onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.checked })}
+                  className="rounded text-primary focus:ring-primary w-4 h-4 bg-zinc-900 border-zinc-800"
+                />
+                <label htmlFor="editIsActive" className="text-zinc-200 font-bold cursor-pointer">
+                  Campaign is Active &amp; Displaying Live
+                </label>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-zinc-800 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => handleDelete(editingAd.id, editingAd.title)}
+                  className="px-3.5 py-2 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Campaign</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingAd(null)}
+                    className="px-4 py-2 rounded-xl border border-zinc-800 text-zinc-400 hover:text-white text-xs font-bold"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-primary via-orange-500 to-amber-500 text-white font-black text-xs shadow-lg shadow-primary/30 hover:scale-[1.02] active:scale-98 transition-all"
+                  >
+                    Save Changes
+                  </button>
+                </div>
               </div>
             </form>
           </div>

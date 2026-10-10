@@ -42,23 +42,16 @@ export default function CatalogMovieCard({ movie }: CatalogMovieCardProps) {
     <Link href={`/movies/${movie.id}`} className="block group">
       <div className="bg-zinc-900/90 rounded-2xl overflow-hidden border border-zinc-800/80 transition-all duration-300 hover:-translate-y-2 hover:border-primary/40 hover:shadow-2xl hover:shadow-primary/20 flex flex-col h-full">
         <div className="relative w-full aspect-[2/3] overflow-hidden bg-zinc-800">
-          {movie.thumbnailUrl || movie.poster ? (
-            <img
-              src={movie.thumbnailUrl || movie.poster || ''}
-              alt={movie.title}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
-              }}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-zinc-600 gap-2">
-              <Film className="w-10 h-10 stroke-1" />
-              <span className="text-xs uppercase font-bold tracking-wider">No Poster</span>
-            </div>
-          )}
+          <img
+            src={movie.thumbnailUrl || movie.poster || '/fallback-poster.jpg'}
+            alt={movie.title}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = '/fallback-poster.jpg';
+            }}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
 
           {/* Rating Badge Top Left */}
           <div className="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur text-amber-400 px-2 py-0.5 rounded-full text-xs font-black border border-amber-400/30 flex items-center gap-1 shadow-lg">
