@@ -1,10 +1,16 @@
 /**
  * Shared API helpers: typed responses, rate limiting, IP hashing and guards.
+ *
+ * IP resolution, hashing and rate limiting live in `@/lib/security`; this
+ * module only re-exports them so route handlers keep a single import surface.
  */
 
 import { NextResponse } from 'next/server';
-import { createHash } from 'crypto';
 import { getCurrentUser, type CurrentUser } from '@/lib/auth';
+import { getClientIp, hashIp } from '@/lib/security/clientIp';
+import { consumeRateLimit, type RateLimitResult } from '@/lib/security/rateLimit';
+
+export { getClientIp, hashIp };
 
 export function jsonOk<T>(data: T, init?: ResponseInit) {
   return NextResponse.json({ success: true, data }, init);
@@ -14,53 +20,24 @@ export function jsonError(message: string, status = 400, extra?: Record<string, 
   return NextResponse.json({ success: false, error: message, ...extra }, { status });
 }
 
-export function getClientIp(request: Request): string {
-  const headers = request.headers;
-  const forwarded = headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
-  return headers.get('x-real-ip') || 'unknown';
-}
-
-/** Never store raw IPs (privacy); store a salted hash instead. */
-export function hashIp(ip: string): string {
-  const salt = process.env.IP_HASH_SALT || 'fiesta-flix';
-  return createHash('sha256').update(`${salt}:${ip}`).digest('hex').slice(0, 32);
-}
-
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const buckets = new Map<string, RateLimitEntry>();
-
 /**
- * Fixed-window rate limit. In-memory per server instance — good enough as a
- * first line of defence; swap for Redis/Upstash at scale.
+ * Fixed-window rate limit.
+ *
+ * Counters live in Upstash Redis when configured, so the limit holds across
+ * serverless instances; otherwise they are per instance (a warning is logged
+ * once in production). The caller's key usually embeds a raw address
+ * (`download:203.0.113.9`) — it is hashed before reaching the store so no
+ * third party ever sees an IP and no key can be reversed back to one.
+ *
+ * Async because the store may be remote, so every call site must `await`.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number
-): { allowed: boolean; remaining: number; retryAfterSeconds: number } {
-  const now = Date.now();
-  const entry = buckets.get(key);
-
-  if (!entry || entry.resetAt < now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1, retryAfterSeconds: 0 };
-  }
-
-  if (entry.count >= limit) {
-    return {
-      allowed: false,
-      remaining: 0,
-      retryAfterSeconds: Math.ceil((entry.resetAt - now) / 1000),
-    };
-  }
-
-  entry.count += 1;
-  return { allowed: true, remaining: limit - entry.count, retryAfterSeconds: 0 };
+): Promise<RateLimitResult> {
+  const storeKey = hashIp(key) ?? key;
+  return consumeRateLimit({ key: storeKey, limit, windowMs });
 }
 
 export function rateLimitResponse(retryAfterSeconds: number) {

@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   const guard = await requireUser();
   if (guard.error) return guard.error;
 
-  const limit = checkRateLimit(`watch-history:${guard.user.id}`, 120, 60_000);
+  const limit = await checkRateLimit(`watch-history:${guard.user.id}`, 120, 60_000);
   if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   try {

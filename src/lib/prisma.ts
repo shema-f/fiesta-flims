@@ -1,32 +1,35 @@
 import { PrismaClient } from '@prisma/client';
+import { reportEnv } from '@/lib/env';
 
-const NEON_DEFAULT_URL =
-  'postgresql://neondb_owner:npg_Ais3XE9DuWLz@ep-twilight-glitter-b5gdjgeo-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require';
-
-const rawUrl = process.env.DATABASE_URL;
-const isDummy =
-  !rawUrl ||
-  rawUrl.includes('ep-xxx') ||
-  rawUrl.includes('user:password') ||
-  rawUrl.includes('localhost');
-
-const activeDatabaseUrl = isDummy ? NEON_DEFAULT_URL : rawUrl;
-process.env.DATABASE_URL = activeDatabaseUrl;
+/**
+ * Database client.
+ *
+ * Connection string comes exclusively from `DATABASE_URL`. There is no
+ * fallback: the previous default was a live production credential committed to
+ * source, which meant anyone with repository access could connect to the
+ * database — and a missing environment variable went unnoticed.
+ */
+reportEnv();
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    datasources: {
-      db: {
-        url: activeDatabaseUrl,
-      },
-    },
+function createClient(): PrismaClient {
+  if (!process.env.DATABASE_URL) {
+    // Fail closed with an actionable message rather than connecting somewhere
+    // unexpected. `auditEnv()` reports this once per process in production.
+    throw new Error(
+      'DATABASE_URL is not set. Copy .env.example to .env (or set it in your hosting dashboard) before running.'
+    );
+  }
+
+  return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
   });
+}
+
+export const prisma = globalForPrisma.prisma ?? createClient();
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;

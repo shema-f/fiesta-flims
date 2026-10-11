@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const quality = request.nextUrl.searchParams.get('quality') || undefined;
 
-  const limit = checkRateLimit(`play:${getClientIp(request)}`, 120, 60_000);
+  const limit = await checkRateLimit(`play:${getClientIp(request)}`, 120, 60_000);
   if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   const resolved = await storageManager.getStreamingSource({ movieId: id, quality });

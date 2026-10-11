@@ -205,7 +205,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   // Public form, so it is rate limited per IP rather than authenticated —
   // stops anonymous spam without blocking guests from requesting a title.
-  const limit = checkRateLimit(`movie-request:${getClientIp(request)}`, 5, 60 * 60_000);
+  const limit = await checkRateLimit(`movie-request:${getClientIp(request)}`, 5, 60 * 60_000);
   if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
   try {
     const body = await request.json();

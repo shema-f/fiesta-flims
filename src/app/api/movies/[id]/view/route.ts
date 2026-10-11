@@ -23,7 +23,7 @@ const viewSchema = z.object({
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const limit = checkRateLimit(`view:${getClientIp(request)}`, 120, 60_000);
+  const limit = await checkRateLimit(`view:${getClientIp(request)}`, 120, 60_000);
   if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   try {

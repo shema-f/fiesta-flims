@@ -1,17 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { interpretersData } from '../src/lib/interpreters';
-
-const NEON_URL =
-  process.env.DATABASE_URL &&
-  !process.env.DATABASE_URL.includes('ep-xxx') &&
-  !process.env.DATABASE_URL.includes('user:password')
-    ? process.env.DATABASE_URL
-    : 'postgresql://neondb_owner:npg_Ais3XE9DuWLz@ep-twilight-glitter-b5gdjgeo-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require';
+import { requireDatabaseUrl } from './_database-url';
 
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: NEON_URL,
+      url: requireDatabaseUrl(),
     },
   },
 });

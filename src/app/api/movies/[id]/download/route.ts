@@ -26,7 +26,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   const requestedQuality = request.nextUrl.searchParams.get('quality') || undefined;
 
-  const limit = checkRateLimit(`download:${getClientIp(request)}`, 60, 60_000);
+  const limit = await checkRateLimit(`download:${getClientIp(request)}`, 60, 60_000);
   if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   const resolved = await storageManager.getDownloadSource({

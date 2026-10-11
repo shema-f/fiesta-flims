@@ -234,7 +234,7 @@ async function getLocalFallbackResponse(query: string, summary: DbSummary): Prom
 
 export async function POST(req: NextRequest) {
   // The bot calls a paid model on every message — cap anonymous usage per IP.
-  const limit = checkRateLimit(`chat:${getClientIp(req)}`, 20, 60_000);
+  const limit = await checkRateLimit(`chat:${getClientIp(req)}`, 20, 60_000);
   if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
   try {
     const body = await req.json();

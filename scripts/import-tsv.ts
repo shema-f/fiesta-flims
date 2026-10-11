@@ -16,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
+import { requireDatabaseUrl } from './_database-url';
 
 const COLUMNS = [
   'title',
@@ -37,10 +38,7 @@ const COLUMNS = [
 
 type Row = Record<(typeof COLUMNS)[number], string>;
 
-/** Same fallback the other scripts use so the import works without a local .env. */
-const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  'postgresql://neondb_owner:npg_Ais3XE9DuWLz@ep-twilight-glitter-b5gdjgeo-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require';
+const DATABASE_URL = requireDatabaseUrl();
 
 function slugify(value: string): string {
   return value
