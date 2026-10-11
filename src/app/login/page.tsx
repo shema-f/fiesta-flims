@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -14,6 +14,31 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  // Surface a deployment misconfiguration instead of blaming the visitor's
+  // password — a missing DATABASE_URL otherwise shows up as a plain 401.
+  const [backendIssue, setBackendIssue] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/health', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((json) => {
+        const d = json?.data;
+        if (!d || d.ok !== false) return;
+        if (d.database !== 'ok') {
+          setBackendIssue(
+            'The site database is not reachable from this deployment, so accounts and sign-in cannot work yet.'
+          );
+          return;
+        }
+        if (Array.isArray(d.missingEnv) && d.missingEnv.length > 0) {
+          setBackendIssue(`Sign-in is unavailable until these settings are added: ${d.missingEnv.join(', ')}.`);
+          return;
+        }
+        setBackendIssue('Sign-in is temporarily unavailable.');
+      })
+      .catch(() => {});
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -22,7 +47,11 @@ export default function LoginPage() {
     if (success) {
       router.push('/');
     } else {
-      setError('Invalid email or password. Please check your credentials.');
+      setError(
+        backendIssue
+          ? `${backendIssue} Please try again once the site is fixed.`
+          : 'Invalid email or password. Please check your credentials.'
+      );
     }
   };
 
@@ -38,12 +67,20 @@ export default function LoginPage() {
               <p className="text-muted">Sign in to continue to Fiesta Flix</p>
             </div>
 
+            {backendIssue && (
+              <div className="mb-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs font-semibold leading-relaxed">
+                <strong className="block text-amber-100 mb-0.5">Backend not ready</strong>
+                {backendIssue}
+              </div>
+            )}
+
             <div className="bg-card rounded-2xl p-8 border border-white/10">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium mb-2">Email</label>
                   <input
                     type="email"
+                    autoComplete="username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="your@email.com"
@@ -64,6 +101,7 @@ export default function LoginPage() {
                   </div>
                   <input
                     type="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"

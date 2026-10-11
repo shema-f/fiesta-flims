@@ -49,6 +49,18 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    // Tell "the deployment has no database" apart from a genuine server bug:
+    // otherwise an unconfigured deployment just shows visitors a bare 500.
+    if (!process.env.DATABASE_URL?.trim()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Sign-ups are temporarily unavailable: this deployment has no database configured (DATABASE_URL is missing).',
+        },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
