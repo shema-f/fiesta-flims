@@ -115,12 +115,24 @@ export const authOptions: AuthOptions = {
   session: { strategy: 'jwt' },
   pages: { signIn: '/login', newUser: '/signup', error: '/login' },
   callbacks: {
+    /**
+     * On sign-in `user` is the object `authorize()` returned (which includes
+     * `id`); afterwards only the JWT is available, so the id must be carried
+     * in the token. Without this, `session.user.id` was `undefined` at
+     * runtime while the type augmentation in types/next-auth.d.ts claimed it
+     * was a string — every signed-in write (follows, watch history, comments,
+     * view/play/download attribution) then failed on a null foreign key.
+     */
     async jwt({ token, user }) {
-      if (user) token.role = user.role;
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+      }
       return token;
     },
     async session({ session, token }) {
       if (session?.user) {
+        session.user.id = (token.id as string) ?? '';
         session.user.role = (token.role as 'ADMIN' | 'FAN') || 'FAN';
       }
       return session;
@@ -141,6 +153,10 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
     const session: Session | null = await getServerSession(authOptions);
     if (!session?.user) return null;
+    // Sessions issued before the id was carried in the JWT have no id at
+    // all. Fail closed (401) instead of letting writes hit the database
+    // with an empty foreign key — the user just needs to sign in again.
+    if (!session.user.id) return null;
     return session.user as CurrentUser;
   } catch {
     return null;
