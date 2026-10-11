@@ -3,9 +3,13 @@
  *
  * The API routes double-check with `requireAdmin()`, but the admin *pages* had
  * no server-side gate at all — anyone could load the dashboard markup. This
- * middleware is the outer wall: unauthenticated visitors are sent to /login,
- * authenticated non-admins are sent home, and API callers get 401/403 JSON
- * instead of a redirect.
+ * middleware is the outer wall for the API (401/403 JSON).
+ *
+ * Admin *pages* are different: /admin renders its own credential form to an
+ * anonymous visitor and an "Admins only" panel to a signed-in fan, so the
+ * dashboard markup never ships without an admin session. Redirecting those
+ * visitors to /login hid the reason and left the admin with no way in — so
+ * pages pass through and the page-level gate decides.
  *
  * It only ever *denies*; every route keeps its own checks too (defence in depth).
  */
@@ -39,21 +43,16 @@ export async function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/login';
-    loginUrl.search = '';
-    loginUrl.searchParams.set('callbackUrl', pathname);
-    return NextResponse.redirect(loginUrl);
+    // Page request — let /admin render its own sign-in panel.
+    return NextResponse.next();
   }
 
   if (role !== 'ADMIN') {
     if (isApi) {
       return NextResponse.json({ success: false, error: 'Admin access required' }, { status: 403 });
     }
-    const homeUrl = request.nextUrl.clone();
-    homeUrl.pathname = '/';
-    homeUrl.search = '';
-    return NextResponse.redirect(homeUrl);
+    // Page request — /admin renders its own "Admins only" panel.
+    return NextResponse.next();
   }
 
   return NextResponse.next();

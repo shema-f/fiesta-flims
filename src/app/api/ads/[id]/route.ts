@@ -13,14 +13,14 @@ export async function PATCH(
     const body = await req.json();
 
     if (body.toggleActive) {
-      const updated = toggleAdActive(id);
+      const updated = await toggleAdActive(id);
       if (!updated) {
         return NextResponse.json({ success: false, error: 'Ad not found' }, { status: 404 });
       }
       return NextResponse.json({ success: true, ad: updated });
     }
 
-    const updated = updateAd(id, body);
+    const updated = await updateAd(id, body);
     if (!updated) {
       return NextResponse.json({ success: false, error: 'Ad not found' }, { status: 404 });
     }
@@ -40,7 +40,7 @@ export async function DELETE(
   if (guard.error) return guard.error;
   try {
     const { id } = await params;
-    const deleted = deleteAd(id);
+    const deleted = await deleteAd(id);
     if (!deleted) {
       return NextResponse.json({ success: false, error: 'Ad not found' }, { status: 404 });
     }

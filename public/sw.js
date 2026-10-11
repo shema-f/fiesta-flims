@@ -192,3 +192,59 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+// ---------------------------------------------------------------------------
+// Push & notification handlers — Android surfaces these in the system tray,
+// including when FiestaFlix is installed as a PWA and not in the foreground.
+// ---------------------------------------------------------------------------
+
+self.addEventListener('push', (event) => {
+  const payload = {
+    title: 'FiestaFlix',
+    body: 'You have a new notification.',
+    icon: '/icon-192.png',
+    url: '/',
+  };
+
+  try {
+    const data = event.data ? event.data.json() : null;
+    if (data) {
+      payload.title = data.title || payload.title;
+      payload.body = data.body || data.message || payload.body;
+      payload.icon = data.icon || payload.icon;
+      payload.url = data.url || data.link || payload.url;
+    }
+  } catch (err) {
+    // Plain-text push body.
+    if (event.data) payload.body = event.data.text();
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: payload.icon,
+      badge: '/icon-192.png',
+      data: { url: payload.url },
+      vibrate: [120, 60, 120],
+      tag: 'fiesta-notification',
+      renotify: true,
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(targetUrl);
+    })
+  );
+});

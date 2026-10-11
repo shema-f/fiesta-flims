@@ -74,12 +74,12 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-[#050505] pt-20 pb-8 border-t border-white/10 relative overflow-hidden">
+    <footer className="bg-[#050505] pt-14 sm:pt-20 pb-28 md:pb-8 border-t border-white/10 relative overflow-hidden">
       {/* Background glow */}
       <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-10 mb-10 sm:mb-12">
           {/* Brand & Community Platform */}
           <div className="lg:col-span-2 space-y-6">
             <div>
@@ -95,14 +95,14 @@ export default function Footer() {
             </div>
             
             {/* Social Icons with Glowing "Talk to us!" Indicator */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               {socialLinks.map((social) => (
                 <a
                   key={social.name}
                   href={social.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${
+                  className={`relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl transition-all duration-300 ${
                     social.animated 
                       ? 'bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 scale-105 shadow-lg shadow-emerald-500/10' 
                       : 'bg-white/5 hover:bg-white/15 hover:-translate-y-1 border border-white/10'

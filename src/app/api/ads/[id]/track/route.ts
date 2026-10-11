@@ -10,9 +10,9 @@ export async function POST(
     const { action } = await req.json();
 
     if (action === 'click') {
-      trackAdClick(id);
+      await trackAdClick(id);
     } else {
-      trackAdImpression(id);
+      await trackAdImpression(id);
     }
 
     return NextResponse.json({ success: true });

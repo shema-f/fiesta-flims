@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const placement = searchParams.get('placement') as AdPlacement | null;
     const all = searchParams.get('all') === 'true';
 
-    const ads = all ? getAllAds() : getActiveAds(placement || undefined);
+    const ads = await (all ? getAllAds() : getActiveAds(placement || undefined));
 
     return NextResponse.json({
       success: true,
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const newAd = createAd({
+    const newAd = await createAd({
       title: title.trim(),
       headline: headline.trim(),
       description: (description || '').trim(),

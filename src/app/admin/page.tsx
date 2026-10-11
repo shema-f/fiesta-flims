@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import Footer from '@/components/Footer';
 import StoragePanel from '@/components/admin/StoragePanel';
 import MediaJobsPanel from '@/components/admin/MediaJobsPanel';
@@ -24,6 +26,8 @@ import {
   RefreshCw,
   Plus,
   Shield,
+  LogIn,
+  LockKeyhole,
   Star,
   X,
   Loader2,
@@ -82,6 +86,31 @@ const TABS = [
 ];
 
 export default function AdminPage() {
+  const { user, isLoading: authLoading, login, logout } = useAuth();
+
+  // Inline credential form for an unauthenticated visitor.
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [signingIn, setSigningIn] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
+
+  const handleAdminSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminEmail.trim() || !adminPassword) {
+      setSignInError('Enter your admin email and password.');
+      return;
+    }
+    setSigningIn(true);
+    setSignInError(null);
+    try {
+      const ok = await login(adminEmail.trim(), adminPassword);
+      if (!ok) setSignInError('Wrong email or password. Check your credentials and try again.');
+    } catch {
+      setSignInError('Sign in failed. Please try again.');
+    } finally {
+      setSigningIn(false);
+    }
+  };
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loadingStats, setLoadingStats] = useState(true);
   const [stats, setStats] = useState<LiveStats>({
@@ -258,6 +287,128 @@ export default function AdminPage() {
       showToast('Network error saving interpreter', 'error');
     }
   };
+
+  // The dashboard is admin-only, but an unauthenticated visitor is shown a
+  // credential form instead of a dead end.
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <main className="pt-24 sm:pt-28 pb-20 px-4">
+          <div className="mx-auto w-full max-w-md p-6 sm:p-8 rounded-3xl bg-zinc-950 border border-zinc-800 shadow-2xl">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-11 h-11 rounded-2xl bg-primary/10 border border-primary/30 text-primary flex items-center justify-center">
+                <LockKeyhole className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-xl font-black text-white">Admin Sign In</h1>
+                <p className="text-xs text-zinc-400">Enter your admin credentials to open the dashboard.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAdminSignIn} className="mt-5 space-y-3">
+              <div>
+                <label htmlFor="admin-email" className="block text-xs font-bold text-zinc-300 mb-1">
+                  Email
+                </label>
+                <input
+                  id="admin-email"
+                  type="email"
+                  autoComplete="username"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="admin@fiestaflix.com"
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="admin-password" className="block text-xs font-bold text-zinc-300 mb-1">
+                  Password
+                </label>
+                <input
+                  id="admin-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-zinc-900 border border-zinc-800 focus:border-primary rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none"
+                />
+              </div>
+
+              {signInError && (
+                <p className="text-xs text-rose-400 font-semibold bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2">
+                  {signInError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={signingIn}
+                className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-orange-500 text-white text-sm font-black shadow-lg shadow-primary/25 disabled:opacity-60 transition-all"
+              >
+                {signingIn ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <LogIn className="w-4 h-4" />
+                )}
+                <span>{signingIn ? 'Signing in…' : 'Sign In to Admin'}</span>
+              </button>
+            </form>
+
+            <p className="mt-4 text-[11px] text-zinc-500 leading-relaxed">
+              Not an admin? Browsing the catalogue, commenting and requesting movies all work
+              without an account. <Link href="/" className="text-primary hover:underline font-semibold">Back home</Link>
+            </p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (user.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <Header />
+        <main className="pt-24 sm:pt-28 pb-20 px-4">
+          <div className="mx-auto w-full max-w-md p-6 sm:p-8 rounded-3xl bg-zinc-950 border border-zinc-800 shadow-2xl text-center">
+            <div className="w-11 h-11 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+              <Shield className="w-5 h-5" />
+            </div>
+            <h1 className="mt-3 text-xl font-black text-white">Admins only</h1>
+            <p className="mt-2 text-sm text-zinc-400">
+              You are signed in as <strong className="text-zinc-200">{user.name || user.email}</strong>,
+              which is not an admin account. Sign out and use your admin credentials to continue.
+            </p>
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <button
+                onClick={logout}
+                className="px-5 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-200 text-sm font-bold border border-zinc-700 transition-colors"
+              >
+                Sign out
+              </button>
+              <Link
+                href="/"
+                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-orange-500 text-white text-sm font-black shadow-lg shadow-primary/25"
+              >
+                Back home
+              </Link>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">

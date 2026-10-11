@@ -9,11 +9,11 @@ import Footer from '@/components/Footer';
 import AdBanner from '@/components/AdBanner';
 import CatalogMovieCard from '@/components/CatalogMovieCard';
 import RatingStars from '@/components/RatingStars';
-import TelegramDownloadHub from '@/components/TelegramDownloadHub';
+import MovieComments from '@/components/MovieComments';
 import ModernRatingSystem from '@/components/ModernRatingSystem';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { movieData, findMovieOrSeries, type Movie, type Episode } from '@/lib/movieData';
-import { isMediaFireLandingPage } from '@/lib/media/directLink';
+import { isMediaFireLandingPage, isUnplayableUrl } from '@/lib/media/directLink';
 import { sanitizeImage } from '@/lib/catalogMap';
 import type { ApiMovie } from '@/lib/apiTypes';
 import { 
@@ -40,7 +40,6 @@ import FiestaVideoPlayer from '@/components/video/FiestaVideoPlayer';
 import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
 import { estimateSizeLabel, DATA_SAVER_TIP } from '@/lib/dataSizes';
 import SupportModal from '@/components/SupportModal';
-import MediaFireDownloadHub from '@/components/MediaFireDownloadHub';
 import YouTubeDownloadHub from '@/components/YouTubeDownloadHub';
 
 export interface CastMember {
@@ -145,6 +144,7 @@ export default function MovieDetailPage() {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const [watchSource, setWatchSource] = useState<VideoSource | null>(null);
   const [isDownloadOpen, setIsDownloadOpen] = useState(false);
+  const [playbackNotice, setPlaybackNotice] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [playbackSrc, setPlaybackSrc] = useState<string | null>(null);
   const [resumeSeconds, setResumeSeconds] = useState(0);
@@ -429,6 +429,18 @@ export default function MovieDetailPage() {
       }
     }
 
+    // Formats the browser cannot decode (.mkv/.avi/...) must still work: the
+    // player would sit on a spinner forever, so hand over the file instead.
+    if (isUnplayableUrl(url)) {
+      setPreparingPlayback(false);
+      setPlaybackNotice(
+        'This file format can\u2019t be played inside the browser \u2014 we\u2019ve started the download for you instead. You can also open it in VLC or MX Player.'
+      );
+      const fallback = view.sources[0]?.url || view.mediafireUrl;
+      if (fallback) triggerDownload({ label: 'Download', url: fallback });
+      return;
+    }
+
     setSubtitleTracks(subs);
     setResumeSeconds(resume);
     setPlaybackSrc(url);
@@ -484,6 +496,10 @@ export default function MovieDetailPage() {
     }
     if (apiMovie?.fileUrl) {
       triggerDownload({ label: '1080p FHD', url: apiMovie.fileUrl });
+      return;
+    }
+    if (view.mediafireUrl) {
+      triggerDownload({ label: 'Cloud Download', url: view.mediafireUrl });
     }
   };
 
@@ -722,18 +738,18 @@ export default function MovieDetailPage() {
                   </div>
 
                   {view.mediafireUrl && (
-                    <motion.a
+                    <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      href={view.mediafireUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={() =>
+                        triggerDownload({ label: 'Cloud Download', url: view.mediafireUrl! })
+                      }
                       className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-bold text-base shadow-lg shadow-orange-950/40 transition-all hover:scale-105 touch-manipulation"
-                      title="Open & Download on MediaFire at full speed"
+                      title="Direct cloud download — stays on FiestaFlix"
                     >
                       <Flame className="w-5 h-5 fill-white text-orange-200" />
-                      <span>MediaFire</span>
-                    </motion.a>
+                      <span>Cloud Download</span>
+                    </motion.button>
                   )}
 
                   {view.trailer && (
@@ -961,35 +977,26 @@ export default function MovieDetailPage() {
           <AdBanner placement="VIDEO_PLAYER_BANNER" dismissible />
         </div>
 
-        {/* PROMINENT TELEGRAM DOWNLOAD HUB */}
-        <div className="container mx-auto px-4 sm:px-6">
-          <TelegramDownloadHub
-            movieId={view.id}
-            movieTitle={view.title}
-            quality={view.quality}
-            fileSize={view.fileSize}
-            channelPostUrl={view.telegramChannelPost}
-            botLink={view.telegramBotLink}
-          />
-        </div>
-
-        {/* PROMINENT MEDIAFIRE DOWNLOAD & STREAM HUB */}
-        {view.mediafireUrl && (
-          <div className="container mx-auto px-4 sm:px-6">
-            <MediaFireDownloadHub
-              movieTitle={view.title}
-              mediafireUrl={view.mediafireUrl}
-              quality={view.quality}
-              fileSize={view.fileSize}
-              onPlayDirect={(url) => {
-                setPlaybackSrc(url);
-                setWatchSource({ label: 'Direct MediaFire Stream', url });
-                setResumeSeconds(0);
-                setIsPlayerOpen(true);
-              }}
-            />
+        {/* FORMAT NOTICE — files the <video> tag cannot decode still download */}
+        {playbackNotice && (
+          <div className="container mx-auto px-4 sm:px-6 my-4">
+            <div className="flex items-start justify-between gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-sm font-semibold">
+              <span>{playbackNotice}</span>
+              <button
+                type="button"
+                onClick={() => setPlaybackNotice(null)}
+                className="text-amber-300 hover:text-white font-bold shrink-0"
+                aria-label="Dismiss format notice"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         )}
+
+        {/* MOVIE COMMENTS — signed-in users and named guests can both post */}
+        <MovieComments movieId={view.id} movieTitle={view.title} />
+
 
         {/* PROMINENT YOUTUBE DOWNLOAD & STREAMING HUB */}
         {(view.trailer?.includes('youtu') || view.sources.some((s) => s.url.includes('youtu'))) && (

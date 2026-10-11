@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { Bell, Film, CheckCheck, Sparkles, Send, ExternalLink } from 'lucide-react';
 import type { AppNotification } from '@/lib/notificationService';
@@ -11,19 +11,52 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isSendingTest, setIsSendingTest] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevUnreadRef = useRef(0);
 
-  const fetchNotifications = async () => {
+  /** Android/Chrome can only show a tray notification once permission is granted.
+   *  Ask on the first interaction with the bell — never on page load. */
+  const requestNotificationPermission = () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  };
+
+  /** Raise a new notification in the OS tray when the tab is backgrounded —
+   *  the in-app list is invisible in that state on a phone. */
+  const showSystemNotification = (n: AppNotification) => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted' || !document.hidden || !n) return;
+    navigator.serviceWorker?.ready
+      .then((reg) =>
+        reg.showNotification(n.title, {
+          body: n.message,
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
+          data: { url: n.link || '/' },
+          tag: n.id,
+        })
+      )
+      .catch(() => {});
+  };
+
+  const fetchNotifications = useCallback(async () => {
     try {
       const res = await fetch('/api/notifications', { cache: 'no-store' });
       const json = await res.json();
       if (json.success && json.data) {
-        setNotifications(json.data.notifications || []);
-        setUnreadCount(json.data.unreadCount || 0);
+        const list: AppNotification[] = json.data.notifications || [];
+        const unread = json.data.unreadCount || 0;
+        setNotifications(list);
+        setUnreadCount(unread);
+        // Something new while the app is backgrounded → also raise it in the tray.
+        if (unread > prevUnreadRef.current) showSystemNotification(list[0]);
+        prevUnreadRef.current = unread;
       }
     } catch {
       // Quietly ignore network failures in background fetch
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
@@ -42,7 +75,7 @@ export default function NotificationBell() {
       clearInterval(interval);
       window.removeEventListener('fiesta-movie-uploaded' as any, handleCustomUpload);
     };
-  }, []);
+  }, [fetchNotifications]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -145,7 +178,10 @@ export default function NotificationBell() {
   return (
     <div className="relative" ref={containerRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          requestNotificationPermission();
+          setIsOpen(!isOpen);
+        }}
         className="relative p-2 text-zinc-300 hover:text-white hover:bg-zinc-800/80 rounded-full transition-all duration-200"
         aria-label="Notifications"
         title="New movie notifications"

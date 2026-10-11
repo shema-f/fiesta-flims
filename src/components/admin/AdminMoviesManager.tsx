@@ -171,7 +171,7 @@ export default function AdminMoviesManager() {
     narrator: 'Rocky Kimomo',
     description: '',
     rating: 8.5,
-    type: 'Movie' as 'Movie' | 'Series',
+    type: null as 'Movie' | 'Series' | null,
     poster: '',
     backdrop: '',
     fileUrl: '',
@@ -261,7 +261,7 @@ export default function AdminMoviesManager() {
       narrator: 'Rocky Kimomo',
       description: '',
       rating: 8.8,
-      type: 'Movie',
+      type: null,
       poster: '',
       backdrop: '',
       fileUrl: '',
@@ -341,6 +341,13 @@ export default function AdminMoviesManager() {
       return;
     }
 
+    // The form must state explicitly whether this is a movie or a series.
+    if (!form.type) {
+      showToast('Please choose whether this is a Single Movie or an Episodic Series', 'error');
+      return;
+    }
+    const kind: 'Movie' | 'Series' = form.type;
+
     setIsSubmitting(true);
     try {
       if (editingMovie) {
@@ -360,10 +367,10 @@ export default function AdminMoviesManager() {
             backdrop: form.backdrop || form.poster,
             fileUrl: form.fileUrl,
             trailer: form.trailer,
-            type: form.type,
-            seasonsCount: form.type === 'Series' ? form.seasonsCount : undefined,
-            episodesCount: form.type === 'Series' ? form.episodes.length : undefined,
-            episodes: form.type === 'Series' ? form.episodes : undefined,
+            type: kind,
+            seasonsCount: kind === 'Series' ? form.seasonsCount : undefined,
+            episodesCount: kind === 'Series' ? form.episodes.length : undefined,
+            episodes: kind === 'Series' ? form.episodes : undefined,
           }),
         });
 
@@ -385,8 +392,8 @@ export default function AdminMoviesManager() {
                     poster: form.poster || m.poster,
                     image: form.poster || m.image,
                     rating: form.rating,
-                    contentType: form.type === 'Series' ? 'series' : 'movie',
-                    episodes: form.type === 'Series' ? form.episodes : undefined,
+                    contentType: kind === 'Series' ? 'series' : 'movie',
+                    episodes: kind === 'Series' ? form.episodes : undefined,
                   }
                 : m
             )
@@ -413,10 +420,10 @@ export default function AdminMoviesManager() {
             backdrop: form.backdrop || form.poster,
             fileUrl: form.fileUrl,
             trailer: form.trailer,
-            type: form.type,
-            seasonsCount: form.type === 'Series' ? form.seasonsCount : undefined,
-            episodesCount: form.type === 'Series' ? form.episodes.length : undefined,
-            episodes: form.type === 'Series' ? form.episodes : undefined,
+            type: kind,
+            seasonsCount: kind === 'Series' ? form.seasonsCount : undefined,
+            episodesCount: kind === 'Series' ? form.episodes.length : undefined,
+            episodes: kind === 'Series' ? form.episodes : undefined,
           }),
         });
 
@@ -743,7 +750,10 @@ export default function AdminMoviesManager() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              {/* Type Switcher */}
+              {/* Type Switcher — required question before upload */}
+              <label className="block text-zinc-200 font-bold text-sm">
+                Is this a Movie or a Series? <span className="text-rose-400">*</span>
+              </label>
               <div className="flex items-center gap-3 p-1 rounded-xl bg-zinc-900 border border-zinc-800 w-fit">
                 <button
                   type="button"
