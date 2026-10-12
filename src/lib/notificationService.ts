@@ -1,4 +1,6 @@
 import { prisma } from '@/lib/prisma';
+import { interpretersData } from '@/lib/interpreters';
+import { narratorMatches } from '@/lib/interpreterCounts';
 
 export interface AppNotification {
   id: string;
@@ -215,15 +217,63 @@ export async function notifyNewMovieUploaded(movie: {
   genre?: string;
   thumbnailUrl?: string;
   rating?: number;
+  slug?: string;
 }): Promise<AppNotification> {
   const narratorText = movie.narrator ? ` narrated by ${movie.narrator}` : '';
   const yearText = movie.releaseYear ? ` (${movie.releaseYear})` : '';
+  const link = `/movies/${movie.slug || movie.id}`;
+  const title = `🎬 New Movie: ${movie.title}${yearText}`;
+  const message = `Now streaming! ${movie.title}${narratorText} is available in Full HD with high-speed download links.`;
+
+  // Targeted delivery: followers of this movie's interpreter get their own
+  // notification row, so "Follow" on an interpreter profile has a visible
+  // result. When the film has no interpreter followers (e.g. the Rwandan
+  // originals), fall back to the existing site-wide announcement.
+  try {
+    const interpreter = movie.narrator
+      ? interpretersData.find((i) => narratorMatches(i.name, movie.narrator))
+      : undefined;
+    if (interpreter) {
+      const followers = await prisma.follow.findMany({
+        where: { followingId: interpreter.slug, followingType: 'INTERPRETER' },
+        select: { followerId: true },
+      });
+      if (followers.length > 0) {
+        await prisma.notification.createMany({
+          data: followers.map((f) => ({
+            userId: f.followerId,
+            title,
+            message: `${message} — ${interpreter.name} just added this one.`,
+            type: 'NEW_MOVIE',
+            link,
+            isRead: false,
+          })),
+          skipDuplicates: true,
+        });
+        return {
+          id: `notif-${Date.now()}-followers`,
+          userId: null,
+          title,
+          message,
+          type: 'NEW_MOVIE',
+          isRead: false,
+          link,
+          movieId: movie.id,
+          movieTitle: movie.title,
+          thumbnailUrl: movie.thumbnailUrl,
+          createdAt: new Date().toISOString(),
+        };
+      }
+    }
+  } catch {
+    // Follow/notification tables unavailable — fall through to the broadcast.
+  }
 
   return createNotification({
-    title: `🎬 New Movie: ${movie.title}${yearText}`,
-    message: `Now streaming! ${movie.title}${narratorText} is available in Full HD with high-speed download links.`,
+    title,
+    message,
     type: 'NEW_MOVIE',
-    link: `/movies/${movie.id}`,
+    link,
     movieId: movie.id,
     movieTitle: movie.title,
     thumbnailUrl: movie.thumbnailUrl,

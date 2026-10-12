@@ -5,7 +5,10 @@ import Image from 'next/image';
 import { movieUrl } from '@/lib/slugs';
 import { SITE_URL, SITE_NAME } from '@/lib/seo';
 import { getCatalog } from '@/lib/catalog';
+import { filterMoviesForInterpreter } from '@/lib/interpreterCounts';
 import { getInterpreter, interpretersData } from '@/lib/interpreters';
+import { prisma } from '@/lib/prisma';
+import FollowButton from '@/components/interpreter/FollowButton';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { breadcrumbJsonLd, personJsonLd } from '@/components/seo/structuredData';
 import Header from '@/components/Header';
@@ -49,7 +52,15 @@ export default async function InterpreterPage({ params }: { params: Promise<{ sl
   if (!interpreter) notFound();
 
   const { movies } = await getCatalog();
-  const filmography = movies.filter((m) => (m.narrator || '').toLowerCase() === interpreter.name.toLowerCase());
+  // Same alias-aware matcher every count on the site uses — the previous
+  // exact string equality showed "Rocky" an empty catalog while the index
+  // advertised 15 titles, because the database stores "Rocky Kimomo".
+  const filmography = filterMoviesForInterpreter(interpreter.name, movies);
+
+  // Live follower count from the Follow table (the static data starts at 0).
+  const followerCount = await prisma.follow
+    .count({ where: { followingId: interpreter.slug, followingType: 'INTERPRETER' } })
+    .catch(() => interpreter.followers);
 
   const canonical = `${SITE_URL}/interpreters/${interpreter.slug}`;
   const jsonLd = [
@@ -94,6 +105,9 @@ export default async function InterpreterPage({ params }: { params: Promise<{ sl
               <div className="mt-4 flex flex-wrap gap-3 text-xs text-zinc-400">
                 <span>{filmography.length} ifilime mu katalog</span>
                 {interpreter.tags?.map((t) => <span key={t} className="px-2 py-0.5 rounded-full bg-zinc-800 border border-zinc-700">{t}</span>) ?? []}
+              </div>
+              <div className="mt-4">
+                <FollowButton slug={interpreter.slug} initialFollowers={followerCount} />
               </div>
             </div>
           </div>

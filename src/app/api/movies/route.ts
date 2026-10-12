@@ -269,6 +269,7 @@ export async function POST(request: Request) {
 
     const notif = await notifyNewMovieUploaded({
       id: createdMovie.id,
+      slug: createdMovie.slug,
       title: notifTitle,
       releaseYear: createdMovie.releaseYear || undefined,
       narrator: createdMovie.narrator || undefined,
