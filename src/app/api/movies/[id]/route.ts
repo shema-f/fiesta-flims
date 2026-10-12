@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { findMovieOrSeries } from '@/lib/movieData';
 import { sanitizeImage, isSeriesTitle } from '@/lib/catalogMap';
@@ -203,6 +204,17 @@ export async function PUT(
       },
     });
 
+    // ISR caches the movie page for up to 5 minutes. Without this, an admin
+    // who fixes a poster or title would watch the old version keep serving —
+    // bust the specific page and the listing pages that embed the thumbnail.
+    try {
+      revalidatePath(`/movies/${updated.slug || id}`);
+      revalidatePath('/movies');
+      revalidatePath('/');
+    } catch (revalidateErr) {
+      console.warn('[PUT /api/movies] revalidatePath failed:', revalidateErr);
+    }
+
     return NextResponse.json({
       success: true,
       data: updated,
@@ -249,6 +261,15 @@ export async function DELETE(
       where: { id: existing.id },
       data: { isActive: false, status: 'ARCHIVED' },
     });
+
+    // Drop the archived film from the cached pages right away.
+    try {
+      revalidatePath(`/movies/${existing.slug || id}`);
+      revalidatePath('/movies');
+      revalidatePath('/');
+    } catch (revalidateErr) {
+      console.warn('[DELETE /api/movies] revalidatePath failed:', revalidateErr);
+    }
 
     return NextResponse.json({
       success: true,

@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { jsonOk, jsonError, intParam } from '@/lib/api/helpers';
+import { jsonOk, jsonError, intParam, requireAdmin } from '@/lib/api/helpers';
 import { movieData, getAllCatalogContent, type Movie as SeedMovie } from '@/lib/movieData';
 import { notifyNewMovieUploaded } from '@/lib/notificationService';
-import { getCurrentUser } from '@/lib/auth';
 import { sanitizeImage, isSeriesTitle } from '@/lib/catalogMap';
 
 export const dynamic = 'force-dynamic';
@@ -336,19 +336,16 @@ const createMovieSchema = z.object({
     .optional(),
 });
 
-/** POST /api/movies — movie creation + notification broadcast */
+/** POST /api/movies — movie creation + notification broadcast (admin only). */
 export async function POST(request: Request) {
+  // Only admins may create catalogue entries. The old code fell back to "the
+  // first user in the table" which let any signed-in (or even anonymous) caller
+  // publish movies — and a phantom id could later break foreign keys.
+  const guard = await requireAdmin();
+  if (guard.error) return guard.error;
+  const uploaderId = guard.user.id;
+
   try {
-    const user = await getCurrentUser();
-    let uploaderId = user?.id;
-    if (!uploaderId) {
-      try {
-        const defaultAdmin = await prisma.user.findFirst({ select: { id: true } });
-        uploaderId = defaultAdmin?.id || 'admin-01';
-      } catch {
-        uploaderId = 'admin-01';
-      }
-    }
 
     const body = await request.json();
     const data = createMovieSchema.parse(body);
@@ -393,23 +390,11 @@ export async function POST(request: Request) {
         },
       });
     } catch (dbErr) {
-      console.warn('[POST /api/movies] DB create failed, creating virtual movie:', dbErr);
-      createdMovie = {
-        id: isSeries ? `series-${Date.now()}` : `movie-${Date.now()}`,
-        title: data.title,
-        slug,
-        releaseYear: data.releaseYear || new Date().getFullYear(),
-        genre: data.genre || 'Action',
-        narrator: data.narrator || 'Rocky Kimomo',
-        rating: data.rating || 8.6,
-        thumbnailUrl: data.thumbnailUrl || '/fallback-poster.png',
-        createdAt: new Date(),
-        contentType: isSeries ? 'series' : 'movie',
-        type: isSeries ? 'Series' : 'Movie',
-        seasonsCount: data.seasonsCount || (isSeries ? 1 : undefined),
-        episodesCount: data.episodesCount || (data.episodes ? data.episodes.length : (isSeries ? 1 : undefined)),
-        episodes: data.episodes || [],
-      };
+      // Fail loudly. A "virtual movie" that exists only in the response made
+      // the admin UI look successful while nothing was stored — the film then
+      // silently vanished on the next page load.
+      console.error('[POST /api/movies] DB create failed:', dbErr);
+      return jsonError('Could not save the movie to the database. Nothing was created.', 500);
     }
 
     // Attach series metadata to object
@@ -435,6 +420,16 @@ export async function POST(request: Request) {
       thumbnailUrl: createdMovie.thumbnailUrl || undefined,
       rating: createdMovie.rating || undefined,
     });
+
+    // Bust the cached listing/home pages so the new film shows up right away
+    // instead of after the next ISR revalidation window.
+    try {
+      revalidatePath('/movies');
+      revalidatePath('/');
+      if (createdMovie.slug) revalidatePath(`/movies/${createdMovie.slug}`);
+    } catch (revalidateErr) {
+      console.warn('[POST /api/movies] revalidatePath failed:', revalidateErr);
+    }
 
     return jsonOk(
       {

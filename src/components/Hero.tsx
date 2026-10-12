@@ -207,7 +207,9 @@ export default function Hero({ movies }: HeroProps) {
                 aria-current={isActive}
                 className="group text-left focus:outline-none"
               >
-                <span className="block h-[3px] w-full overflow-hidden rounded-full bg-white/10">
+                {/* Progress line is desktop-only: on phones it reads as visual
+                    noise above each title, and the titles alone still navigate. */}
+                <span className="hidden sm:block h-[3px] w-full overflow-hidden rounded-full bg-white/10">
                   <span
                     className={`block h-full rounded-full transition-colors ${
                       isActive ? 'bg-primary' : isPast ? 'bg-primary/40' : 'bg-white/25'
@@ -216,7 +218,7 @@ export default function Hero({ movies }: HeroProps) {
                   />
                 </span>
                 <span
-                  className={`mt-2.5 block truncate text-xs font-semibold transition-colors ${
+                  className={`mt-1 sm:mt-2.5 block truncate text-xs font-semibold transition-colors ${
                     isActive ? 'text-white' : 'text-zinc-500 group-hover:text-zinc-300'
                   }`}
                 >
