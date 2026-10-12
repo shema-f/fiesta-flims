@@ -34,17 +34,30 @@ export async function GET() {
   }
 
   // Persist the computed counts so the database agrees with what the site
-  // shows (best-effort — a read must never fail because of a write).
+  // shows (best-effort — a read must never fail because of a write). Read the
+  // rows ONCE and touch only the counts that actually changed: the previous
+  // sequential upsert-per-interpreter turned this read endpoint into a
+  // 50-roundtrip stall (30s+ against a remote database).
   try {
+    const rows = await prisma.interpreter.findMany({ select: { slug: true, moviesCount: true } });
+    const current = new Map(rows.map((r) => [r.slug, r.moviesCount]));
+    const missing: { name: string; slug: string; moviesCount: number }[] = [];
+    const changed: Promise<unknown>[] = [];
     for (const it of merged) {
       const live = stats.countsBySlug.get(it.slug);
       if (live === undefined) continue;
-      await prisma.interpreter.upsert({
-        where: { slug: it.slug },
-        create: { name: it.name, slug: it.slug, moviesCount: live },
-        update: { moviesCount: live },
-      });
+      if (!current.has(it.slug)) {
+        missing.push({ name: it.name, slug: it.slug, moviesCount: live });
+      } else if (current.get(it.slug) !== live) {
+        changed.push(
+          prisma.interpreter.update({ where: { slug: it.slug }, data: { moviesCount: live } })
+        );
+      }
     }
+    if (missing.length) {
+      await prisma.interpreter.createMany({ data: missing, skipDuplicates: true });
+    }
+    if (changed.length) await Promise.all(changed);
   } catch {
     // No database in this environment — the computed counts still ship.
   }

@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
   const language = sp.get('language')?.trim();
   const country = sp.get('country')?.trim();
   const tier = sp.get('tier')?.trim();
+  const origin = sp.get('origin')?.trim();
   const year = sp.get('year') ? parseInt(sp.get('year') as string, 10) : undefined;
   const minRating = sp.get('minRating') ? parseFloat(sp.get('minRating') as string) : undefined;
   const sortBy = sp.get('sortBy')?.trim().toLowerCase() || 'latest';
@@ -55,6 +56,9 @@ export async function GET(request: NextRequest) {
       where.narrator = { contains: narrator, mode: 'insensitive' };
     }
     if (tier) where.tier = tier;
+    // Origin set: `origin=rwanda` selects the Rwandan cinema originals, which
+    // are marked with a rightsOwner of 'Rwandan Cinema' by the import script.
+    if (origin === 'rwanda') where.rightsOwner = 'Rwandan Cinema';
     if (genre && genre !== 'All') {
       where.OR = [
         ...(where.OR || []),

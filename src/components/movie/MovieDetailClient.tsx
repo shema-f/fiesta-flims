@@ -48,6 +48,7 @@ import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
 import { estimateSizeLabel, DATA_SAVER_TIP } from '@/lib/dataSizes';
 import SupportModal from '@/components/SupportModal';
 import YouTubeDownloadHub from '@/components/YouTubeDownloadHub';
+import { extractYouTubeId } from '@/components/video/FiestaVideoPlayer';
 
 export interface CastMember {
   id: number;
@@ -438,6 +439,27 @@ export default function MovieDetailClient({ movieId }: MovieDetailClientProps) {
       if (isMediaFireLandingPage(url)) {
         url = `/api/download?url=${encodeURIComponent(url)}`;
       }
+    }
+
+    // YouTube-backed titles (the Rwandan cinema originals stream from
+    // YouTube): a <video> tag cannot decode a watch page, but our player
+    // embeds YouTube directly. Links with no video id (search/share pages)
+    // open on YouTube instead of pretending to start a download.
+    if (/youtube\.com|youtu\.be/i.test(url)) {
+      setPreparingPlayback(false);
+      if (extractYouTubeId(url)) {
+        setSubtitleTracks([]);
+        setResumeSeconds(0);
+        setPlaybackSrc(url);
+        setWatchSource(view.sources[0]);
+        setIsPlayerOpen(true);
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+        setPlaybackNotice(
+          'This title streams on YouTube — we\u2019ve opened it in a new tab. Use the download tools below to save it.'
+        );
+      }
+      return;
     }
 
     // Formats the browser cannot decode (.mkv/.avi/...) must still work: the
