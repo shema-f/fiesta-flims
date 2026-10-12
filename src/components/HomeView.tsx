@@ -38,9 +38,29 @@ export default function HomeView({
       <main className="flex-1">
         <Hero movies={trendingMovies} />
 
+        {/* Kinyarwanda-first intro — the phrases people actually search for,
+            written as real copy rather than a keyword list. */}
+        <section className="container-tight py-4 sm:py-6" aria-labelledby="home-intro-heading">
+          <h1 id="home-intro-heading" className="text-xl font-bold tracking-tight sm:text-2xl">
+            Filime zisobanuye mu Kinyarwanda
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+            Reba filime mu Kinyarwanda kuri internet — agasobanuye gashya buri wiki. Streaming ya HD,
+            gukuramo offline, no gukunda abasobanuzi ukunda. Ni aho kurwanda kwa filime.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <Link href="/genres/action" className="btn-ghost">Urwwarwidane</Link>
+            <Link href="/genres/drama" className="btn-ghost">Ubwiru</Link>
+            <Link href="/genres/comedy" className="btn-ghost">Ubwishingizi</Link>
+            <Link href="/genres/indian" className="btn-ghost">Filime z'Indiya</Link>
+            <Link href="/rwandan-movies" className="btn-ghost">Filime za Rwanda</Link>
+            <Link href="/genres/series" className="btn-ghost">Filime z'ibice</Link>
+          </div>
+        </section>
+
         <MovieRail
-          title="🔥 Trending now"
-          subtitle="Agasobanuye everyone is watching"
+          title="🔥 Agasobanuze gashya"
+          subtitle="Filime zisobanuye mu Kinyarwanda buri wese ubona"
           movies={trendingMovies}
           href="/movies"
         />
@@ -93,8 +113,8 @@ export default function HomeView({
         </section>
 
         <MovieRail
-          title="🎬 All-time popular"
-          subtitle="Timeless Rwandan favourites"
+          title="🎬 Filime zikunda cyane"
+          subtitle="Reba filime mu Kinyarwanda zikunda cyane"
           movies={popularMovies}
           href="/movies"
         />

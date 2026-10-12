@@ -605,7 +605,7 @@ export default function AdminMoviesManager() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full min-w-[720px] text-left text-xs">
               <thead className="bg-zinc-900/80 border-b border-zinc-800 text-zinc-400 font-bold uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="px-4 py-3.5">Poster & Title</th>

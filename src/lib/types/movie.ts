@@ -17,6 +17,11 @@ export interface Episode {
 
 export interface Movie {
   id: number | string;
+  /**
+   * Canonical URL slug. Present on database-backed catalogue rows (used by the
+   * sitemap and internal links); seed entries derive one from the title instead.
+   */
+  slug?: string;
   title: string;
   year: number;
   genre: string;

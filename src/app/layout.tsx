@@ -6,6 +6,14 @@ import MobileBottomNav from '@/components/MobileBottomNav';
 import FiestaBot from '@/components/FiestaBot';
 import InstallAppPrompt from '@/components/InstallAppPrompt';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { organizationJsonLd, webSiteJsonLd } from '@/components/seo/structuredData';
+import {
+  SITE_URL,
+  SITE_NAME,
+  DEFAULT_TITLE,
+  DEFAULT_DESCRIPTION,
+} from '@/lib/seo';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -20,14 +28,27 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
+const shareImage = `${SITE_URL}/icon-512.png`;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   referrer: 'no-referrer',
   title: {
-    default: 'Fiesta Flix — Filime. Ijwi. Umuco.',
-    template: '%s · Fiesta Flix',
+    default: DEFAULT_TITLE,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    'The home of Kinyarwanda cinema and Agasobanuye. Stream movies, follow interpreters, download offline, and discover Rwandan film.',
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  keywords: [
+    'agasobanuye',
+    'filime agasobanuye',
+    'filime zisobanuye mu Kinyarwanda',
+    'reba filime mu Kinyarwanda',
+    'Kinyarwanda dubbed movies',
+    'Rwandan movies online',
+    'filime za Rwanda',
+    'umusobanuzi',
+  ],
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -35,9 +56,26 @@ export const metadata: Metadata = {
     title: 'FiestaFlix',
   },
   openGraph: {
-    title: 'Fiesta Flix — Filime. Ijwi. Umuco.',
-    description:
-      'The home of Kinyarwanda cinema and Agasobanuye. Stream, download and follow the voices behind the movies.',
+    type: 'website',
+    siteName: SITE_NAME,
+    locale: 'rw_RW',
+    url: SITE_URL,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [
+      {
+        url: shareImage,
+        width: 512,
+        height: 512,
+        alt: 'Fiesta Flix — Filime zisobanuye mu Kinyarwanda',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [shareImage],
   },
   icons: {
     icon: [
@@ -59,7 +97,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="rw">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -74,6 +112,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="FiestaFlix" />
       </head>
       <body className={`${poppins.variable} font-sans antialiased bg-background text-foreground`}>
+        {/* Site-wide structured data: who runs the site + sitelinks search box. */}
+        <JsonLd data={[organizationJsonLd(), webSiteJsonLd()]} />
         <Providers>
           {children}
           <MobileBottomNav />

@@ -1,11 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import AdBanner from '@/components/AdBanner';
 import CatalogMovieCard from '@/components/CatalogMovieCard';
 import RatingStars from '@/components/RatingStars';
@@ -36,7 +33,17 @@ import {
   Flame,
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import FiestaVideoPlayer from '@/components/video/FiestaVideoPlayer';
+import dynamic from 'next/dynamic';
+
+// The HLS player (hls.js + MSE) is only needed once the visitor presses play.
+// Lazy-loading it keeps ~300 kB of video machinery out of the initial mobile
+// bundle — critical on Rwanda's 3G-heavy networks.
+const FiestaVideoPlayer = dynamic(() => import('@/components/video/FiestaVideoPlayer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full aspect-video rounded-xl bg-black animate-pulse" aria-label="Player iringaniye..." />
+  ),
+});
 import type { SubtitleTrack } from '@/components/video/SubtitleSelector';
 import { estimateSizeLabel, DATA_SAVER_TIP } from '@/lib/dataSizes';
 import SupportModal from '@/components/SupportModal';
@@ -125,9 +132,13 @@ function parseSources(fileUrl: string, resolutions: unknown): VideoSource[] {
 const DEFAULT_DESCRIPTION =
   'Experience this amazing title with authentic Kinyarwanda narration. Stream in crystal clear HD quality or download for offline viewing via our high-speed Telegram storage.';
 
-export default function MovieDetailPage() {
-  const params = useParams();
-  const id = params.id as string;
+export interface MovieDetailClientProps {
+  /** Database id or seed numeric id resolved by the server route. */
+  movieId: string;
+}
+
+export default function MovieDetailClient({ movieId }: MovieDetailClientProps) {
+  const id = movieId;
   const staticId = parseInt(id, 10);
   const staticMovie = useMemo(
     () => (Number.isNaN(staticId) ? undefined : findMovieOrSeries(staticId)),
@@ -532,14 +543,12 @@ export default function MovieDetailPage() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <Header />
         <main className="flex-1 flex items-center justify-center py-32">
           <div className="flex flex-col items-center gap-4">
             <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
             <p className="text-zinc-400 font-medium">Loading movie...</p>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -547,7 +556,6 @@ export default function MovieDetailPage() {
   if (status === 'error' || status === 'notfound' || (!staticMovie && !apiMovie)) {
     return (
       <div className="min-h-screen bg-background text-foreground flex flex-col">
-        <Header />
         <main className="flex-1 flex items-center justify-center py-32">
           <div className="text-center max-w-md mx-auto px-6 space-y-4">
             <Film className="w-16 h-16 text-zinc-600 mx-auto" />
@@ -563,14 +571,12 @@ export default function MovieDetailPage() {
             </Link>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col pb-20 md:pb-0">
-      <Header />
 
       <main className="flex-1 pt-20">
         {/* Cinematic Backdrop Header */}
@@ -1385,8 +1391,6 @@ export default function MovieDetailPage() {
         isOpen={isSupportModalOpen}
         onClose={() => setIsSupportModalOpen(false)}
       />
-
-      <Footer />
     </div>
   );
 }

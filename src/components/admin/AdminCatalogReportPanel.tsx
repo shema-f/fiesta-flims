@@ -286,7 +286,7 @@ export default function AdminCatalogReportPanel() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[560px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider">
                     <th className="py-2.5 px-3">Title</th>
@@ -336,7 +336,7 @@ export default function AdminCatalogReportPanel() {
               </span>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[560px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider">
                     <th className="py-2.5 px-3">Title</th>
@@ -387,7 +387,7 @@ export default function AdminCatalogReportPanel() {
               Existing Titles Updated with Additional Episodes or Remastered Sources
             </h3>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[560px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider">
                     <th className="py-2.5 px-3">Title</th>
@@ -466,7 +466,7 @@ export default function AdminCatalogReportPanel() {
               Sample of Titles Stored in Neon Database (Total: {report.totalTitles})
             </h3>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[560px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-400 uppercase tracking-wider">
                     <th className="py-2.5 px-3">Title</th>

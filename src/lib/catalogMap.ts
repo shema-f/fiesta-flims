@@ -185,6 +185,9 @@ export function dbMovieToView(m: DbMovieLike): Movie {
 
   return {
     id: m.id,
+    // Real DB slug when present — the sitemap and canonical links must use this,
+    // not slugify(title), which can drift from the stored slug (e.g. "Ep 06" vs "ep-6").
+    ...(m.slug ? { slug: m.slug } : {}),
     title: m.title,
     year,
     genre: m.genre || seed?.genre || '',

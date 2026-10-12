@@ -81,6 +81,22 @@ export default function FiestaVideoPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pipSupported, setPipSupported] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const hideControlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Touch devices never fire mousemove/mouseleave, so without this the controls
+  // were either unreachable or permanently stuck on screen. Reveal on any
+  // pointer press, then auto-hide after a few seconds while playing.
+  const revealControls = useCallback(() => {
+    setShowControls(true);
+    if (hideControlsTimerRef.current) clearTimeout(hideControlsTimerRef.current);
+    hideControlsTimerRef.current = setTimeout(() => setShowControls(false), 3500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hideControlsTimerRef.current) clearTimeout(hideControlsTimerRef.current);
+    };
+  }, []);
   const [error, setError] = useState<string | null>(null);
 
   // 4K and Adaptive Network Quality state
@@ -586,6 +602,7 @@ export default function FiestaVideoPlayer({
     <div
       ref={containerRef}
       className={`group relative aspect-video w-full overflow-hidden rounded-xl bg-black ${className ?? ''}`}
+      onPointerDown={revealControls}
       onMouseMove={() => setShowControls(true)}
       onMouseLeave={() => setShowControls(false)}
     >

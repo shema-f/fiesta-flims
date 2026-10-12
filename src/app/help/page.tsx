@@ -327,7 +327,7 @@ export default function HelpPage() {
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Android (Google Chrome)
                   </h4>
                   <ol className="list-decimal list-inside space-y-2 text-xs text-zinc-400">
-                    <li>Open <strong>fiesta-flims.vercel.app</strong> in Chrome.</li>
+                    <li>Open <strong>fiesta-flims.PLACEHOLDER_SITE_URL</strong> in Chrome.</li>
                     <li>Look for the floating <strong>"Install on Phone"</strong> prompt at the bottom of the screen.</li>
                     <li>Tap <strong>Install</strong> to add the icon to your app drawer and home screen.</li>
                   </ol>
@@ -339,7 +339,7 @@ export default function HelpPage() {
                     <span className="w-2.5 h-2.5 rounded-full bg-sky-400" /> iPhone (Apple Safari)
                   </h4>
                   <ol className="list-decimal list-inside space-y-2 text-xs text-zinc-400">
-                    <li>Open <strong>fiesta-flims.vercel.app</strong> in Safari.</li>
+                    <li>Open <strong>fiesta-flims.PLACEHOLDER_SITE_URL</strong> in Safari.</li>
                     <li>Tap the <strong>Share</strong> button (box with an arrow pointing up) on the bottom toolbar.</li>
                     <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
                     <li>Tap <strong>Add</strong> in the top-right corner.</li>

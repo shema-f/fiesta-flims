@@ -303,7 +303,7 @@ export default function AdminAdsPanel() {
       {/* Ads List Table */}
       <div className="bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+          <table className="w-full min-w-[640px] text-left border-collapse text-xs">
             <thead>
               <tr className="bg-zinc-900/80 text-zinc-400 border-b border-zinc-800 uppercase text-[10px] font-black tracking-wider">
                 <th className="py-3 px-4">Ad Campaign</th>

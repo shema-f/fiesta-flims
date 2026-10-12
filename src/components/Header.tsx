@@ -135,7 +135,7 @@ export default function Header() {
     { href: '/help', label: 'Help & 4K Guide' },
     { href: '/community', label: 'Community' },
     { href: 'https://t.me/fiestaflix_movies', label: 'Telegram Channel', external: true },
-    { href: 'https://wa.me/250780000000', label: 'WhatsApp Support', external: true },
+    { href: 'https://t.me/FiestaFlixBot', label: 'Telegram Support Bot', external: true },
   ];
 
   return (

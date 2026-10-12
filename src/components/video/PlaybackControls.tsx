@@ -53,14 +53,20 @@ export default function PlaybackControls({
   children,
 }: PlaybackControlsProps) {
   const barRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
 
-  const handleSeek = (clientX: number) => {
+  const seekFromClientX = (clientX: number) => {
     const bar = barRef.current;
     if (!bar || duration <= 0) return;
     const rect = bar.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     onSeek(ratio * duration);
   };
+
+  // Mouse and touch share the same math. Touch needs explicit handling —
+  // otherwise scrubbing silently does nothing on phones, which is the majority
+  // of traffic in Rwanda.
+  const handleSeek = (clientX: number) => seekFromClientX(clientX);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const bufferedPct = duration > 0 ? (buffered / duration) * 100 : 0;
@@ -76,8 +82,30 @@ export default function PlaybackControls({
         aria-valuemax={Math.round(duration)}
         aria-valuenow={Math.round(currentTime)}
         tabIndex={0}
-        onMouseDown={(e) => handleSeek(e.clientX)}
-        className="group relative mb-2 h-1.5 w-full cursor-pointer rounded-full bg-white/20"
+        onMouseDown={(e) => {
+          draggingRef.current = true;
+          handleSeek(e.clientX);
+        }}
+        onMouseMove={(e) => {
+          if (draggingRef.current) handleSeek(e.clientX);
+        }}
+        onMouseUp={() => {
+          draggingRef.current = false;
+        }}
+        onMouseLeave={() => {
+          draggingRef.current = false;
+        }}
+        onTouchStart={(e) => {
+          draggingRef.current = true;
+          handleSeek(e.touches[0].clientX);
+        }}
+        onTouchMove={(e) => {
+          if (draggingRef.current) handleSeek(e.touches[0].clientX);
+        }}
+        onTouchEnd={() => {
+          draggingRef.current = false;
+        }}
+        className="group relative mb-2 h-1.5 w-full cursor-pointer rounded-full bg-white/20 touch-none"
       >
         <div className="absolute inset-y-0 left-0 rounded-full bg-white/30" style={{ width: `${bufferedPct}%` }} />
         <div className="absolute inset-y-0 left-0 rounded-full bg-fuchsia-500" style={{ width: `${progress}%` }} />
@@ -87,8 +115,10 @@ export default function PlaybackControls({
         />
       </div>
 
-      <div className="flex items-center justify-between gap-2 text-white">
-        <div className="flex items-center gap-1">
+      {/* Wrap on narrow screens so the play, time, speed and quality controls
+          never overflow a phone viewport. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-white">
+        <div className="flex flex-wrap items-center gap-1">
           <button
             type="button"
             aria-label="Back 10 seconds"
@@ -140,7 +170,7 @@ export default function PlaybackControls({
           </span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <select
             aria-label="Playback speed"
             value={playbackRate}
