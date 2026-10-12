@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { findMovieOrSeries } from '@/lib/movieData';
 import { sanitizeImage, isSeriesTitle } from '@/lib/catalogMap';
-import { requireAdmin } from '@/lib/api/helpers';
+import { requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,12 +49,21 @@ export async function GET(
         },
       });
     }
-  } catch {
-    // database not reachable, fall through to seed lookup
+  } catch (err) {
+    // Database unreachable. In production this is a hard failure — serving a
+    // bundled stand-in hides the outage from /api/health and from operators.
+    console.error('[GET /api/movies/:id] database read failed:', (err as Error)?.message);
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json(
+        { success: false, error: 'The catalogue database is unavailable. Check /api/health.' },
+        { status: 503 }
+      );
+    }
+    // Development only: fall through to the bundled seed below.
   }
 
-  // Fallback to rich seed/series catalog
-  const staticItem = findMovieOrSeries(id);
+  // Development fallback: the bundled seed/series catalog (never runs in production).
+  const staticItem = process.env.NODE_ENV === 'production' ? null : findMovieOrSeries(id);
   if (staticItem) {
     const isSeries =
       staticItem.contentType === 'series' ||
@@ -112,6 +121,10 @@ export async function PUT(
 ) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`movie-edit:${guard.user.id}`, 60, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   const { id } = await params;
 
   try {
@@ -242,6 +255,10 @@ export async function DELETE(
 ) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`movie-delete:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   const { id } = await params;
 
   try {

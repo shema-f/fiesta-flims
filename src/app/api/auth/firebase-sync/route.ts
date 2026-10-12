@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyFirebaseIdToken } from '@/lib/firebaseVerify';
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,11 @@ export const dynamic = 'force-dynamic';
  * grant elevated privileges.
  */
 export async function POST(req: NextRequest) {
+  // Token verification hits Google's API — keep unauthenticated callers from
+  // turning this into an outbound request amplifier.
+  const limit = await checkRateLimit(`firebase-sync:${getClientIp(req)}`, 20, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   let body: Record<string, unknown> = {};
   try {
     body = await req.json();

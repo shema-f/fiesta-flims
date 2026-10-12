@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { interpretersData } from '@/lib/interpreters';
 import { getCatalog } from '@/lib/catalog';
 import { buildInterpreterStats } from '@/lib/interpreterCounts';
-import { jsonOk, jsonError, requireAdmin } from '@/lib/api/helpers';
+import { jsonOk, jsonError, requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,10 @@ export const dynamic = 'force-dynamic';
 export async function POST() {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  // Scans the whole catalogue — cheap to cap, expensive to loop.
+  const limit = await checkRateLimit(`interpreter-recount:${guard.user.id}`, 10, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   try {
     const { movies, tvShows } = await getCatalog();

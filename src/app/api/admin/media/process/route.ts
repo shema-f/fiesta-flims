@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { createMediaJob } from '@/lib/media/job-service';
-import { jsonOk, jsonError, requireAdmin } from '@/lib/api/helpers';
+import { jsonOk, jsonError, requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +24,9 @@ const processSchema = z.object({
 export async function POST(request: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`media-process:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   try {
     const body = processSchema.parse(await request.json());

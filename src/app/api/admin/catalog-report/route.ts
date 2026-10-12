@@ -4,7 +4,7 @@ import path from 'path';
 import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/lib/notificationService';
 import { VERIFIED_FOLLOWERS } from '@/lib/interpreters';
-import { requireAdmin } from '@/lib/api/helpers';
+import { requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -189,6 +189,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`catalog-report:${guard.user.id}`, 15, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const body = await request.json().catch(() => ({}));
     const note = body.note || 'Catalog synchronization & missing movies report review requested.';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { updateAd, toggleAdActive, deleteAd } from '@/lib/adsData';
-import { requireAdmin } from '@/lib/api/helpers';
+import { requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export async function PATCH(
   req: NextRequest,
@@ -8,6 +8,10 @@ export async function PATCH(
 ) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`ad-edit:${guard.user.id}`, 60, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const { id } = await params;
     const body = await req.json();
@@ -38,6 +42,10 @@ export async function DELETE(
 ) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`ad-delete:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const { id } = await params;
     const deleted = await deleteAd(id);

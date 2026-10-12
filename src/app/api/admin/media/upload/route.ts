@@ -2,7 +2,8 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { storageManager, listProviderDefinitions } from '@/lib/storage';
-import { jsonOk, jsonError, requireAdmin } from '@/lib/api/helpers';
+import { createMediaJob } from '@/lib/media/job-service';
+import { jsonOk, jsonError, requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,9 @@ const MAX_SOURCE_BYTES = Number(process.env.MAX_UPLOAD_BYTES || 20 * 1024 * 1024
 export async function POST(request: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`media-upload:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   let parsed;
   try {
@@ -63,10 +67,41 @@ export async function POST(request: NextRequest) {
     targets.push(target);
   }
 
+  // Every requested provider must be configured; otherwise the browser would
+  // receive placeholder targets and "upload successfully" into nowhere.
+  const presigned = targets.filter((t: any) => t.direct && t.url);
+  if (presigned.length === 0) {
+    return jsonError(
+      'No storage provider is configured for direct uploads. Set CLOUDFLARE_R2_* (or S3_*) credentials and enable the provider.',
+      503
+    );
+  }
+
+  // Record the upload as a QUEUED job so the dashboard sees it and
+  // `/api/admin/media/upload/complete` can close the loop. The worker never
+  // claims UPLOAD jobs — the browser does the transfer, the API verifies it.
+  const job = await createMediaJob({
+    movieId: parsed.movieId,
+    jobType: 'UPLOAD',
+    actorId: guard.user.id,
+    options: {
+      filename: safeName,
+      contentType: parsed.contentType,
+      sizeBytes: parsed.sizeBytes,
+      providers: presigned.map((t: any) => t.provider),
+      keys: presigned.map((t: any) => t.key),
+    },
+  });
+
   return jsonOk({
+    jobId: job.id,
     movieId: parsed.movieId,
     filename: safeName,
     contentType: parsed.contentType,
+    sizeBytes: parsed.sizeBytes,
     targets,
+    // Browser flow: PUT the file to every target[].url, then POST the jobId
+    // to /api/admin/media/upload/complete so the object is verified in R2/S3.
+    completeEndpoint: '/api/admin/media/upload/complete',
   });
 }

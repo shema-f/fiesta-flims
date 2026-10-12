@@ -109,9 +109,33 @@ export async function runMediaJob(jobId: string): Promise<PipelineResult | null>
   }
 
   try {
+    // 0. Resolve object-storage keys to a short-lived signed URL. An input
+    // like `movies/<id>/source/clip.mp4` is an R2/S3 key recorded by
+    // /api/admin/media/upload/complete; ffmpeg/ffprobe can read a URL but not
+    // a bare key, so sign a download link here (never a public bucket URL).
+    let sourcePath = inputPath;
+    if (!/^https?:\/\//i.test(inputPath) && !inputPath.startsWith('/')) {
+      const stored = await prisma.storageObject.findFirst({
+        where: { externalObjectId: inputPath, status: 'ACTIVE' },
+        include: { provider: true },
+      });
+      const srcProvider = stored?.provider?.slug ? getProvider(stored.provider.slug) : null;
+      if (stored && srcProvider?.isConfigured()) {
+        const dl = await srcProvider.getDownloadSource(stored.externalObjectId as string);
+        sourcePath = dl.url;
+        await logJob(jobId, 'INFO', `Resolved storage key ${inputPath} via ${stored.provider.slug}`);
+      } else {
+        await logJob(jobId, 'WARN', `Key ${inputPath} has no ACTIVE storage object — trying it as a path`);
+      }
+    }
+
     // 1. Fingerprint + duplicate detection (spec §37)
     await transitionJob(jobId, 'PROCESSING', { progress: 2 });
-    const fingerprint = job.fingerprint || (await fingerprintFile(inputPath));
+    const fingerprint = job.fingerprint || (await fingerprintFile(sourcePath).catch(async () => {
+      // Remote sources cannot be streamed from disk — hash the URL identity.
+      const { createHash } = await import('crypto');
+      return createHash('sha256').update(`${job.movieId}:${inputPath}`).digest('hex');
+    }));
     await logJob(jobId, 'INFO', `Fingerprint: ${fingerprint}`);
 
     const existing: any = await prisma.videoAsset.findUnique({ where: { fingerprint } });
@@ -126,7 +150,7 @@ export async function runMediaJob(jobId: string): Promise<PipelineResult | null>
     }
 
     // 2. Probe
-    const meta: ProbeResult = await probe(inputPath);
+    const meta: ProbeResult = await probe(sourcePath);
     await logJob(
       jobId,
       'INFO',
@@ -141,7 +165,7 @@ export async function runMediaJob(jobId: string): Promise<PipelineResult | null>
         movieId: job.movieId,
         fingerprint,
         status: 'PROCESSING',
-        sourceUrl: inputPath,
+        sourceUrl: sourcePath,
         duration: meta.durationSeconds,
         width: meta.width,
         height: meta.height,
@@ -159,7 +183,7 @@ export async function runMediaJob(jobId: string): Promise<PipelineResult | null>
     await transitionJob(jobId, 'TRANSCODING', { progress: 10 });
     const result = await transcodeToHls(
       {
-        inputPath,
+        inputPath: sourcePath,
         outputDir: workDir,
         renditions,
         onProgress: (label, percent) => {

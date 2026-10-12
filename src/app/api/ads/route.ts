@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllAds, getActiveAds, createAd, AdPlacement } from '@/lib/adsData';
-import { requireAdmin } from '@/lib/api/helpers';
+import { requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -24,6 +24,10 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`ad-create:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const body = await req.json();
     const {

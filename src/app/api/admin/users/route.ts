@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/lib/api/helpers';
+import { requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,6 +56,10 @@ export async function GET() {
 export async function PATCH(request: Request) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`admin-user-edit:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const { id, role, name } = await request.json();
     if (!id) {
@@ -87,6 +91,10 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`admin-user-delete:${guard.user.id}`, 15, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

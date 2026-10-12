@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { jsonOk, jsonError, requireUser } from '@/lib/api/helpers';
+import { jsonOk, jsonError, requireUser, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 import {
   getNotifications,
   createNotification,
@@ -22,6 +22,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const guard = await requireUser();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`notifications:${guard.user.id}`, 60, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const body = await request.json();
     if (!body.title || !body.message) {
@@ -48,6 +52,10 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const guard = await requireUser();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`notifications:${guard.user.id}`, 60, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const body = await request.json();
     if (body.all) {

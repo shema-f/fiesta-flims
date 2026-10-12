@@ -99,10 +99,14 @@ export async function transitionJob(
 /**
  * Atomically claim the next queued job. Uses updateMany with a status guard so
  * two workers cannot process the same job.
+ *
+ * UPLOAD jobs are excluded: they describe a browser→R2 direct upload that the
+ * API's `/api/admin/media/upload/complete` endpoint finishes. The worker has no
+ * ffmpeg step for them, so claiming one would immediately fail it.
  */
 export async function claimNextQueuedJob(): Promise<any | null> {
   const candidate = await prisma.mediaJob.findFirst({
-    where: { status: 'QUEUED' },
+    where: { status: 'QUEUED', jobType: { not: 'UPLOAD' } },
     orderBy: { createdAt: 'asc' },
   });
   if (!candidate) return null;

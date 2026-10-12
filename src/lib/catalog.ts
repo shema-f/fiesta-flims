@@ -2,13 +2,17 @@
  * Server-side catalog service — the source of truth for movies.
  *
  * Reads published movies from PostgreSQL and maps them to the UI view model.
- * When the database is empty (e.g. before the catalog is imported) it falls
- * back to the bundled seed so the site is never blank.
+ * In development an empty/absent database falls back to the bundled seed so
+ * `npm run dev` works before any import. Production never substitutes seed
+ * data: a missing table or empty database must be visible (empty rails, a
+ * red /api/health), not hidden behind fake movies.
  */
 
 import { prisma } from '@/lib/prisma';
 import { movieData, tvShowsData, type Movie } from '@/lib/movieData';
 import { dbMovieToView, type DbMovieLike } from './catalogMap';
+
+const allowSeedFallback = process.env.NODE_ENV !== 'production';
 
 /**
  * The whole catalogue is served by default — the home page renders every
@@ -25,7 +29,7 @@ export interface CatalogResult {
   source: 'database' | 'seed';
 }
 
-/** Load the published catalog from PostgreSQL, falling back to the seed. */
+/** Load the published catalog from PostgreSQL. */
 export async function getCatalog(): Promise<CatalogResult> {
   try {
     const rows = (await prisma.movie.findMany({
@@ -40,11 +44,28 @@ export async function getCatalog(): Promise<CatalogResult> {
       // bundle. Add a Movie.contentType field to move this fully into the DB.
       return { movies, tvShows: tvShowsData, source: 'database' };
     }
+
+    if (allowSeedFallback) {
+      return { movies: movieData, tvShows: tvShowsData, source: 'seed' };
+    }
+
+    // Production with an empty catalogue: report it loudly and serve nothing.
+    console.error(
+      '[catalog] Movie table is reachable but empty — serving an empty catalogue. ' +
+        'Import the catalogue or check /api/health.'
+    );
   } catch (err) {
-    console.warn('[catalog] database read failed, using seed:', (err as Error)?.message);
+    if (allowSeedFallback) {
+      console.warn('[catalog] database read failed, using seed:', (err as Error)?.message);
+      return { movies: movieData, tvShows: tvShowsData, source: 'seed' };
+    }
+    console.error(
+      '[catalog] database read failed — serving an empty catalogue (no seed fallback in production):',
+      (err as Error)?.message
+    );
   }
 
-  return { movies: movieData, tvShows: tvShowsData, source: 'seed' };
+  return { movies: [], tvShows: [], source: 'database' };
 }
 
 /** Convenience: only the movies list. */

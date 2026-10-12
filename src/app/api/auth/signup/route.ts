@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,11 @@ const signupSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Account creation is the highest-value public write to abuse — cap it hard
+  // per IP (Upstash-backed across instances when configured).
+  const limit = await checkRateLimit(`signup:${getClientIp(request)}`, 5, 60 * 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const body = await request.json();
     const { name, email, password } = signupSchema.parse(body);

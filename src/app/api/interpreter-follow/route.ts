@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getInterpreter } from '@/lib/interpreters';
-import { jsonOk, jsonError, requireUser } from '@/lib/api/helpers';
+import { jsonOk, jsonError, requireUser, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -55,6 +55,9 @@ const bodySchema = z.object({ slug: z.string().min(1) });
 export async function POST(request: NextRequest) {
   const guard = await requireUser();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`follow:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   let slug: string;
   try {

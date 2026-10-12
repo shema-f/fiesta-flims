@@ -5,6 +5,7 @@ import {
   toggleNewsLike,
   getAllCinemaNews,
 } from '@/lib/cinemaNewsData';
+import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/api/helpers';
 
 export async function GET(
   req: NextRequest,
@@ -48,6 +49,10 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Public like-toggle — cap per IP so counters cannot be farmed.
+  const limit = await checkRateLimit(`news-like:${getClientIp(req)}`, 60, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
+
   try {
     const { id } = await params;
     const result = toggleNewsLike(id);

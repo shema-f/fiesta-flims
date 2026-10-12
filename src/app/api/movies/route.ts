@@ -2,86 +2,11 @@ import { NextRequest } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { jsonOk, jsonError, intParam, requireAdmin } from '@/lib/api/helpers';
-import { movieData, getAllCatalogContent, type Movie as SeedMovie } from '@/lib/movieData';
+import { jsonOk, jsonError, intParam, requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 import { notifyNewMovieUploaded } from '@/lib/notificationService';
 import { sanitizeImage, isSeriesTitle } from '@/lib/catalogMap';
 
 export const dynamic = 'force-dynamic';
-
-function seedToApiMovie(seed: SeedMovie, index: number) {
-  const isSeries =
-    seed.contentType === 'series' ||
-    Boolean(seed.duration && seed.duration.includes('Eps')) ||
-    isSeriesTitle(seed.title, seed.description, seed.episodes);
-  const durationSeconds = isSeries
-    ? 45 * 60
-    : seed.duration
-    ? (parseInt(seed.duration.split('h')[0] || '1', 10) * 3600) +
-      (parseInt((seed.duration.split('h')[1] || '').replace('m', '') || '30', 10) * 60)
-    : 7200;
-
-  // Derive realistic popularity/views for sorting
-  const baseViews = 15000 + ((index * 3749) % 45000);
-  const views = seed.trending ? baseViews + 35000 : baseViews;
-
-  return {
-    id: String(seed.id),
-    slug: seed.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-    title: seed.title,
-    originalTitle: seed.title,
-    description: seed.description || null,
-    synopsis: seed.description || null,
-    releaseYear: seed.year,
-    duration: durationSeconds,
-    durationString: seed.duration,
-    ageRating: 'PG-13',
-    status: 'PUBLISHED',
-    tier: 'COLD',
-    poster: seed.image,
-    backdrop: seed.backdrop || null,
-    trailer: null,
-    rating: seed.rating,
-    ratingCount: Math.round(views / 35),
-    viewCount: views,
-    downloadCount: Math.round(views / 4),
-    contentRightsStatus: 'LICENSED',
-    licenseStart: null,
-    licenseEnd: null,
-    rightsOwner: 'Fiesta Flix Media',
-    distributionTerritories: ['RW', 'UG', 'KE', 'CD', 'BI'],
-    narrator: seed.narrator || 'Rocky Kimomo',
-    genre: seed.genre,
-    fileUrl: seed.directStreamUrl || null,
-    thumbnailUrl: seed.image,
-    resolutions: null,
-    views: views,
-    downloads: Math.round(views / 4),
-    isFeatured: Boolean(seed.trending),
-    isActive: true,
-    contentType: isSeries ? 'series' : 'movie',
-    type: isSeries ? 'Series' : 'Movie',
-    seasonsCount: seed.seasonsCount || (isSeries ? 1 : undefined),
-    episodesCount: seed.episodesCount || (seed.episodes ? seed.episodes.length : (isSeries ? 8 : undefined)),
-    episodes: seed.episodes || null,
-    uploaderId: 'system-admin',
-    createdAt: new Date(Date.now() - index * 86400000 * 2),
-    updatedAt: new Date(Date.now() - index * 86400000 * 2),
-    publishedAt: new Date(Date.now() - index * 86400000 * 2),
-    lastAccessedAt: new Date(),
-    uploader: { id: 'admin', name: 'FiestaFlix Studio' },
-    genres: [{ genre: { id: seed.genre, name: seed.genre, slug: seed.genre.toLowerCase() } }],
-    interpreters: [
-      {
-        interpreter: {
-          id: seed.narrator || 'rocky',
-          name: seed.narrator || 'Rocky Kimomo',
-          slug: (seed.narrator || 'rocky').toLowerCase().replace(/\s+/g, '-'),
-        },
-      },
-    ],
-  };
-}
 
 /**
  * GET /api/movies
@@ -210,108 +135,32 @@ export async function GET(request: NextRequest) {
         filteredDbMovies = filteredDbMovies.filter((m: any) => m.contentType === 'movie');
       }
 
-      // If series requested and none in DB, fall through to rich catalog of series
-      if (typeReq === 'series' && filteredDbMovies.length === 0) {
-        // fall through to catalog fallback
-      } else {
-        const pageRows = typeFiltered
-          ? filteredDbMovies.slice(skip, skip + limit)
-          : filteredDbMovies;
-        const totalCount = typeFiltered ? filteredDbMovies.length : total;
-        return jsonOk(pageRows, {
-          headers: {
-            'X-Total-Count': String(totalCount),
-            'X-Page': String(page),
-            'X-Limit': String(limit),
-          },
-        });
-      }
+      const pageRows = typeFiltered
+        ? filteredDbMovies.slice(skip, skip + limit)
+        : filteredDbMovies;
+      const totalCount = typeFiltered ? filteredDbMovies.length : total;
+      return jsonOk(pageRows, {
+        headers: {
+          'X-Total-Count': String(totalCount),
+          'X-Page': String(page),
+          'X-Limit': String(limit),
+        },
+      });
     }
+
+    // The database answered but nothing matched. An empty catalogue is the
+    // honest result — bundled seed data is never substituted, because Neon is
+    // the single source of truth and faking rows hides a broken deployment.
+    return jsonOk([], {
+      headers: { 'X-Total-Count': '0', 'X-Page': String(page), 'X-Limit': String(limit) },
+    });
   } catch (err) {
-    console.warn('[api/movies] DB query failed or unavailable, falling back to rich catalog:', err);
-  }
-
-  // 2. Resilient Seed Catalog Fallback
-  // Ensure the app functions completely and seamlessly in all environments
-  let catalog = getAllCatalogContent().map((m, idx) => seedToApiMovie(m, idx));
-
-  // Filter by content type: 'movie' | 'series'
-  const typeFilter = sp.get('type')?.toLowerCase();
-  if (typeFilter === 'series') {
-    catalog = catalog.filter((m) => m.contentType === 'series');
-  } else if (typeFilter === 'movie') {
-    catalog = catalog.filter((m) => m.contentType === 'movie');
-  }
-
-  // Filter query
-  if (q) {
-    const term = q.toLowerCase();
-    catalog = catalog.filter(
-      (m) =>
-        m.title.toLowerCase().includes(term) ||
-        (m.narrator && m.narrator.toLowerCase().includes(term)) ||
-        (m.genre && m.genre.toLowerCase().includes(term)) ||
-        String(m.releaseYear).includes(term)
+    console.error('[api/movies] Database query failed — serving no fallback data:', err);
+    return jsonError(
+      'The catalogue database is unavailable. Check DATABASE_URL and run "prisma migrate deploy".',
+      503
     );
   }
-
-  // Filter genre
-  if (genre && genre !== 'All') {
-    const gLower = genre.toLowerCase();
-    catalog = catalog.filter((m) => m.genre && m.genre.toLowerCase().includes(gLower));
-  }
-
-  // Filter narrator
-  if (narrator && narrator !== 'All') {
-    const nLower = narrator.toLowerCase();
-    catalog = catalog.filter((m) => m.narrator && m.narrator.toLowerCase().includes(nLower));
-  }
-
-  // Filter year
-  if (year) {
-    catalog = catalog.filter((m) => m.releaseYear === year);
-  }
-
-  // Filter minRating
-  if (minRating) {
-    catalog = catalog.filter((m) => m.rating >= minRating);
-  }
-
-  // Sort
-  catalog.sort((a, b) => {
-    if (sortBy === 'rating') {
-      return order === 'asc' ? a.rating - b.rating : b.rating - a.rating;
-    }
-    if (sortBy === 'popularity') {
-      return order === 'asc' ? a.views - b.views : b.views - a.views;
-    }
-    if (sortBy === 'year') {
-      return order === 'asc'
-        ? (a.releaseYear || 0) - (b.releaseYear || 0)
-        : (b.releaseYear || 0) - (a.releaseYear || 0);
-    }
-    if (sortBy === 'title') {
-      return order === 'asc'
-        ? a.title.localeCompare(b.title)
-        : b.title.localeCompare(a.title);
-    }
-    // Default 'latest'
-    const timeA = new Date(a.createdAt).getTime();
-    const timeB = new Date(b.createdAt).getTime();
-    return order === 'asc' ? timeA - timeB : timeB - timeA;
-  });
-
-  const total = catalog.length;
-  const startIndex = (page - 1) * limit;
-  const paged = catalog.slice(startIndex, startIndex + limit);
-
-  return jsonOk(paged, {
-    headers: {
-      'X-Total-Count': String(total),
-      'X-Page': String(page),
-      'X-Limit': String(limit),
-    },
-  });
 }
 
 const createMovieSchema = z.object({
@@ -344,6 +193,9 @@ export async function POST(request: Request) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
   const uploaderId = guard.user.id;
+
+  const limit = await checkRateLimit(`movie-create:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   try {
 

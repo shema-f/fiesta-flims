@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { retryJob } from '@/lib/media/job-service';
-import { jsonOk, jsonError, requireAdmin } from '@/lib/api/helpers';
+import { jsonOk, jsonError, requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,6 +8,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`media-retry:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   const { id } = await params;
   const existing = await prisma.mediaJob.findUnique({ where: { id } }).catch(() => null);

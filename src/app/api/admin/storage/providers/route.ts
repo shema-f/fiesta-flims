@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { storageManager, getProvider } from '@/lib/storage';
-import { jsonOk, jsonError, requireAdmin } from '@/lib/api/helpers';
+import { jsonOk, jsonError, requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +48,9 @@ const updateSchema = z.object({
 export async function PATCH(request: NextRequest) {
   const guard = await requireAdmin();
   if (guard.error) return guard.error;
+
+  const limit = await checkRateLimit(`admin-provider-edit:${guard.user.id}`, 30, 60_000);
+  if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
   try {
     const body = await request.json();

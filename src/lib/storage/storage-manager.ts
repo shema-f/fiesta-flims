@@ -282,10 +282,12 @@ class StorageManager {
       movie = null;
     }
 
-    // Same graceful degradation as the rest of the catalogue: when the row —
-    // or the whole database — is unavailable, fall back to the bundled seed so
-    // the title still plays instead of 404ing.
+    // When the row is missing entirely the title is not in the catalogue.
+    // In production that is a hard "no source" — falling back to a bundled
+    // stream URL would keep dead titles playable and hide the missing row.
+    // Development keeps the fallback so `npm run dev` works before an import.
     if (!movie) {
+      if (process.env.NODE_ENV === 'production') return null;
       const seed = findMovieOrSeries(movieId);
       const seedUrl = seed?.directStreamUrl;
       if (seedUrl) {
