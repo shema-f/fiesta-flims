@@ -17,9 +17,11 @@ interface RwandaTitle {
   image: string;
   description?: string | null;
   isFeatured?: boolean;
+  contentType?: 'movie' | 'series';
+  episodesCount?: number;
 }
 
-type Category = 'all' | 'Movie' | 'Documentary';
+type Category = 'all' | 'Movie' | 'Series' | 'Documentary';
 type SortKey = 'newest' | 'az' | 'rating';
 
 const PAGE_SIZE = 100; // the API clamps limit to 100
@@ -27,6 +29,7 @@ const PAGE_SIZE = 100; // the API clamps limit to 100
 const CATEGORIES: { id: Category; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'Movie', label: 'Movies' },
+  { id: 'Series', label: 'Series' },
   { id: 'Documentary', label: 'Documentaries' },
 ];
 
@@ -36,7 +39,10 @@ const SORTS: { id: SortKey; label: string }[] = [
   { id: 'rating', label: 'Top rated' },
 ];
 
-function typeOf(title: RwandaTitle): 'Movie' | 'Documentary' {
+function typeOf(title: RwandaTitle): 'Movie' | 'Series' | 'Documentary' {
+  if (title.contentType === 'series' || (title.episodesCount && title.episodesCount > 1)) {
+    return 'Series';
+  }
   return title.genre?.toLowerCase().includes('documentary') ? 'Documentary' : 'Movie';
 }
 

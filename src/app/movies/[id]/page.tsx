@@ -82,6 +82,15 @@ interface MovieView {
   episodes?: Episode[];
   trailer?: string | null;
   mediafireUrl?: string | null;
+  creator?: string | null;
+  channelName?: string | null;
+  rightsOwner?: string | null;
+}
+
+/** Rwandan originals stream the creator's own audio — no interpreter overlay. */
+function isOriginalAudio(view: Pick<MovieView, 'narrator' | 'rightsOwner'>): boolean {
+  if (view.rightsOwner === 'Rwandan Cinema') return true;
+  return !view.narrator || view.narrator.trim() === '';
 }
 
 function formatDuration(seconds: number) {
@@ -260,6 +269,39 @@ export default function MovieDetailPage() {
         (anyApi.fileUrl?.includes('mediafire.com') ? anyApi.fileUrl : null) ||
         (parsed.find((s) => s.url?.includes('mediafire.com'))?.url ?? null);
 
+      // Normalize DB episode rows ({ episodeNumber, title, url, videoId,
+      // thumbnail, ... } stored inside `resolutions.episodes`) into the Episode
+      // shape the player, episode cards, and download modal consume.
+      const rawEpisodes: any[] = Array.isArray(anyApi.episodes) ? anyApi.episodes : [];
+      const normalizedEpisodes: Episode[] = rawEpisodes.map((raw: any, index: number) => {
+        const epYtId =
+          raw.videoId ||
+          (typeof raw.url === 'string' && raw.url.includes('watch?v=')
+            ? raw.url.split('watch?v=')[1]?.slice(0, 11)
+            : undefined) ||
+          (typeof raw.directStreamUrl === 'string' && raw.directStreamUrl.includes('watch?v=')
+            ? raw.directStreamUrl.split('watch?v=')[1]?.slice(0, 11)
+            : undefined);
+        const epThumb =
+          raw.thumbnail ||
+          (epYtId ? `https://img.youtube.com/vi/${epYtId}/hqdefault.jpg` : undefined);
+        return {
+          id: raw.id || `${apiMovie.id}-ep-${raw.episodeNumber ?? index + 1}`,
+          episodeNumber: raw.episodeNumber ?? index + 1,
+          seasonNumber: raw.seasonNumber || 1,
+          title: raw.title || `Episode ${raw.episodeNumber ?? index + 1}`,
+          duration: raw.duration,
+          description: raw.description,
+          thumbnail: epThumb,
+          videoUrl: raw.url,
+          youtubeId: epYtId,
+          directStreamUrl: raw.directStreamUrl || raw.url,
+          downloadUrl: raw.downloadUrl,
+          quality: raw.quality,
+          narrator: raw.narrator || '',
+        } as Episode;
+      });
+
       return {
         id: apiMovie.id,
         title: apiMovie.title,
@@ -283,9 +325,12 @@ export default function MovieDetailPage() {
         quality: '1080p FHD',
         contentType: isApiSeries ? 'series' : 'movie',
         seasonsCount: anyApi.seasonsCount || (isApiSeries ? 1 : undefined),
-        episodesCount: anyApi.episodesCount || (anyApi.episodes ? anyApi.episodes.length : (isApiSeries ? 8 : undefined)),
-        episodes: anyApi.episodes || [],
+        episodesCount: anyApi.episodesCount || (normalizedEpisodes.length > 0 ? normalizedEpisodes.length : (isApiSeries ? 8 : undefined)),
+        episodes: normalizedEpisodes,
         mediafireUrl: mfLink,
+        creator: anyApi.creator || anyApi.resolutions?.creator,
+        channelName: anyApi.channelName || anyApi.resolutions?.channel,
+        rightsOwner: anyApi.rightsOwner,
       };
     }
 
@@ -650,13 +695,22 @@ export default function MovieDetailPage() {
                   {view.title}
                 </h1>
 
-                {/* Narrator Pill */}
-                <div className="flex items-center justify-center md:justify-start gap-3">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-semibold backdrop-blur">
-                    <Volume2 className="w-4 h-4" />
-                    <span>Agasobanuye na: <strong className="text-emerald-300 font-bold">{view.narrator}</strong></span>
+                {/* Narrator Pill — hidden for Rwandan originals (no interpreter) */}
+                {isOriginalAudio(view) ? (
+                  <div className="flex items-center justify-center md:justify-start gap-3">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-semibold backdrop-blur">
+                      <Volume2 className="w-4 h-4" />
+                      <span>Original Sound <strong className="text-emerald-300 font-bold">• No Interpreter</strong></span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-center md:justify-start gap-3">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-semibold backdrop-blur">
+                      <Volume2 className="w-4 h-4" />
+                      <span>Agasobanuye na: <strong className="text-emerald-300 font-bold">{view.narrator}</strong></span>
+                    </div>
+                  </div>
+                )}
 
                 <p className="text-zinc-300 max-w-2xl text-sm sm:text-base leading-relaxed">
                   {view.description}
@@ -916,10 +970,17 @@ export default function MovieDetailPage() {
                         </div>
 
                         <div className="pt-2 border-t border-zinc-800 flex items-center justify-between text-xs">
-                          <span className="text-emerald-400 font-semibold flex items-center gap-1 text-[11px]">
-                            <Volume2 className="w-3 h-3" />
-                            {ep.narrator || view.narrator}
-                          </span>
+                          {isOriginalAudio(view) ? (
+                            <span className="text-emerald-400/80 font-semibold flex items-center gap-1 text-[11px]">
+                              <Volume2 className="w-3 h-3" />
+                              Original Sound
+                            </span>
+                          ) : (
+                            <span className="text-emerald-400 font-semibold flex items-center gap-1 text-[11px]">
+                              <Volume2 className="w-3 h-3" />
+                              {ep.narrator || view.narrator}
+                            </span>
+                          )}
 
                           <div className="flex items-center gap-1.5">
                             {mediaLink && (
@@ -1002,9 +1063,12 @@ export default function MovieDetailPage() {
                   : view.sources.find((s) => s.url.includes('youtu'))?.url || ''
               }
               isRwandanCinema={Boolean(
-                (view.genre && view.genre.toLowerCase().includes('nyarwanda')) ||
+                view.rightsOwner === 'Rwandan Cinema' ||
+                  (view.genre && view.genre.toLowerCase().includes('nyarwanda')) ||
                   (view.narrator && view.narrator.toLowerCase().includes('rwandan'))
               )}
+              creator={view.creator || undefined}
+              channelName={view.channelName || undefined}
             />
           </div>
         )}
@@ -1333,8 +1397,17 @@ export default function MovieDetailPage() {
                             <span>Season {ep.seasonNumber}</span>
                             <span>•</span>
                             <span>{ep.duration || '45m'}</span>
-                            <span>•</span>
-                            <span className="text-emerald-400 font-medium">Agasobanuye: {ep.narrator || view.narrator}</span>
+                            {!(ep.narrator || view.narrator) ? (
+                              <>
+                                <span>•</span>
+                                <span className="text-emerald-400 font-medium">Original Sound</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>•</span>
+                                <span className="text-emerald-400 font-medium">Agasobanuye: {ep.narrator || view.narrator}</span>
+                              </>
+                            )}
                           </p>
                         </div>
                       </div>
