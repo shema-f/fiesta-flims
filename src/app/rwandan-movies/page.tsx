@@ -19,6 +19,9 @@ interface RwandaTitle {
   isFeatured?: boolean;
   contentType?: 'movie' | 'series';
   episodesCount?: number;
+  /** Credited maker — the list API keeps it inside `resolutions`. */
+  creator?: string | null;
+  channel?: string | null;
 }
 
 type Category = 'all' | 'Movie' | 'Series' | 'Documentary';
@@ -61,7 +64,15 @@ async function fetchAllRwandanTitles(): Promise<RwandaTitle[]> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const rows: RwandaTitle[] = Array.isArray(json?.data) ? json.data : [];
-    all.push(...rows);
+    // Attribution rides along inside `resolutions` on list rows; lift it out so
+    // the cards can credit the maker the same way the detail page does.
+    all.push(
+      ...rows.map((r) => ({
+        ...r,
+        creator: r.creator || (r as any).resolutions?.creator || null,
+        channel: r.channel || (r as any).resolutions?.channel || null,
+      }))
+    );
     const total = Number(res.headers.get('x-total-count') || all.length);
     if (rows.length < PAGE_SIZE || all.length >= total) break;
   }
@@ -277,6 +288,14 @@ export default function RwandaCinemaPage() {
                     <h3 className="mt-2.5 truncate text-sm font-semibold group-hover:text-primary">
                       {title.title}
                     </h3>
+                    {(title.creator || title.channel) && (
+                      <p className="mt-0.5 truncate text-[11px] text-primary/85 font-medium">
+                        By {title.creator || title.channel}
+                        {title.creator && title.channel && title.creator !== title.channel
+                          ? ` · ${title.channel}`
+                          : ''}
+                      </p>
+                    )}
                     <p className="mt-0.5 truncate text-[11px] text-muted">
                       {title.year} · {title.genre} · Kinyarwanda
                     </p>
