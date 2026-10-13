@@ -10,10 +10,21 @@ import MovieTile from '@/components/MovieTile';
 import type { Movie } from '@/lib/movieData';
 import { topInterpreters, formatFollowers } from '@/lib/interpreters';
 
+/** One browse-by-category rail (Action, Drama, Sci-Fi, Indian, Rwandan, …). */
+export interface HomeRail {
+  title: string;
+  subtitle?: string;
+  href: string;
+  movies: Movie[];
+}
+
 interface HomeViewProps {
   trendingMovies: Movie[];
   popularMovies: Movie[];
+  /** Real series from the catalogue — never the bundled placeholders. */
   tvShows: Movie[];
+  /** Classification rails: action, drama, sci-fi, animation, comedy, romance, indian, rwandan. */
+  rails: HomeRail[];
   /** The complete uncapped catalogue — every published title. */
   allMovies: Movie[];
 }
@@ -22,6 +33,7 @@ export default function HomeView({
   trendingMovies,
   popularMovies,
   tvShows,
+  rails,
   allMovies,
 }: HomeViewProps) {
   const interpreters = topInterpreters(10);
@@ -147,7 +159,19 @@ export default function HomeView({
           <AdBanner placement="HOME_INTERSTITIAL" dismissible />
         </section>
 
-        <MovieRail title="📺 Series" subtitle="Binge the full season" movies={tvShows} href="/movies" />
+        <MovieRail title="📺 Series" subtitle="Binge the full season" movies={tvShows} href="/genres/series" />
+
+        {/* Browse by classification — action, drama, sci-fi, animation,
+            comedy, romance, plus the Indian and Rwandan collections. */}
+        {rails.map((rail) => (
+          <MovieRail
+            key={rail.href}
+            title={rail.title}
+            subtitle={rail.subtitle}
+            movies={rail.movies}
+            href={rail.href}
+          />
+        ))}
 
         {/* Complete catalogue — every published title, no pagination. */}
         <section className="container-tight py-6" aria-label="All movies">

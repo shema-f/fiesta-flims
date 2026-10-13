@@ -42,6 +42,11 @@ const nextConfig = {
   images: {
     // Explicit allow-list. The previous catch-all `hostname: "**"` let any
     // origin through, which turned the image optimiser into an open proxy.
+    // SVG is allowed only for our own generated posters (/api/poster draws a
+    // per-title poster for catalogue rows that have no key art); the sandbox
+    // CSP below keeps a served SVG from ever running script.
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       { protocol: 'https', hostname: 'm.media-amazon.com' },
       { protocol: 'https', hostname: '*.media-amazon.com' },

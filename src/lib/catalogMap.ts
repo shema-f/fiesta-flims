@@ -46,6 +46,8 @@ export interface DbMovieLike {
   fileUrl?: string | null;
   status?: string | null;
   createdAt?: string | Date | null;
+  /** 'Rwandan Cinema' for the Rwanda-cinema originals. */
+  rightsOwner?: string | null;
 }
 
 export const BROKEN_PATTERNS = [
@@ -56,6 +58,9 @@ export const BROKEN_PATTERNS = [
   'polygamist2026Poster500',
   'myCountryNewAgePoster500',
   'vikingsValhallaS3Poster500',
+  // The stored placeholder path is not artwork — treating it as usable kept
+  // 85 Rwandan titles rendering the identical Fiesta Flix card.
+  'fallback-poster',
 ];
 
 export const FIESTAFLIX_FALLBACK_POSTER = '/fallback-poster.png';
@@ -138,7 +143,16 @@ export function sanitizeImage(rawUrl: string | null | undefined, title?: string,
     return rawUrl;
   }
 
-  // 4. Default to official FiestaFlix fallback poster
+  // 4. No artwork anywhere — draw a distinct poster from the title instead of
+  // repeating the same placeholder across the whole rail. 85 Rwandan classics
+  // (Umurabyo, Munyurangabo, Sometimes in April, …) have no key art in the
+  // database, so every one of their cards used to look identical.
+  if (title) {
+    const query = new URLSearchParams({ title });
+    if (genre) query.set('genre', genre);
+    return `/api/poster?${query.toString()}`;
+  }
+
   return FIESTAFLIX_FALLBACK_POSTER;
 }
 
@@ -183,6 +197,15 @@ export function dbMovieToView(m: DbMovieLike): Movie {
   const rawBackdrop = m.backdrop || seed?.backdrop || m.thumbnailUrl;
   const backdrop = sanitizeImage(rawBackdrop, m.title, m.genre || seed?.genre);
 
+  // Episodes live inside `resolutions` — without them a grouped series like
+  // "Deceitful Love" classified as a movie here while the API called it a
+  // series, so the homepage Series rail and the catalogue disagreed.
+  const resolutions =
+    m.resolutions && typeof m.resolutions === 'object' && !Array.isArray(m.resolutions)
+      ? (m.resolutions as { episodes?: unknown[] })
+      : null;
+  const episodes = Array.isArray(resolutions?.episodes) ? resolutions!.episodes : undefined;
+
   return {
     id: m.id,
     // Real DB slug when present — the sitemap and canonical links must use this,
@@ -196,7 +219,8 @@ export function dbMovieToView(m: DbMovieLike): Movie {
     backdrop,
     trending: Boolean(m.isFeatured ?? (seed?.trending ?? true)),
     narrator: m.narrator || seed?.narrator || undefined,
-    contentType: isSeriesTitle(m.title, m.description) ? 'series' : 'movie',
+    rightsOwner: m.rightsOwner || undefined,
+    contentType: isSeriesTitle(m.title, m.description, episodes) ? 'series' : 'movie',
     duration: formatDuration(m.duration) || seed?.duration,
     quality: seed?.quality || '1080p FHD',
     fileSize: seed?.fileSize || '1.4 GB',
