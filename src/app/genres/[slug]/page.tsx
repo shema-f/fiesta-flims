@@ -48,7 +48,18 @@ export default async function GenreLandingPage({ params }: { params: Promise<{ s
   if (!genre) notFound();
 
   const { movies } = await getCatalog();
-  const matches = movies.filter((m) => slugify(m.genre || '').includes(slug) || (m.genre || '').toLowerCase().includes(genre.slug));
+
+  // Category-aware matching. "Rwandan" and "series" are not genre strings —
+  // they live in rightsOwner and contentType — and "indian" is a marker on the
+  // genre string. Matching genre text alone made five sitemap-listed pages
+  // answer 404, which is exactly the kind of broken URL Search Console punishes.
+  const matches = movies.filter((m) => {
+    if (slug === 'rwandan') return m.rightsOwner === 'Rwandan Cinema';
+    if (slug === 'series') return m.contentType === 'series';
+    const genreText = (m.genre || '').toLowerCase();
+    if (slug === 'indian') return genreText.includes('indian');
+    return slugify(genreText).includes(slug) || genreText.includes(genre.slug);
+  });
 
   // Thin/empty pages must not be indexed — a category with no films is a
   // doorway page, which Google Search Essentials discourages.

@@ -36,6 +36,20 @@ export const GENRES: GenreLanding[] = [
     introRw: 'Ubwishingizi ni ubwo busobanura imirasire y’amagambo n’imirasire y’abakozi mu Kinyarwanda. Ifilime zubwishingizi zigaragaza amakosa, amagambo y’umuti, n’imirasire y’abakozi.',
   },
   {
+    slug: 'sci-fi',
+    name: 'Sci-Fi',
+    labelRw: 'Filime z’Imibereho',
+    descriptionRw: 'Reba filime z’imibereho n’ikoranabuhanga mu Kinyarwanda — amanyaruguru, robots, n’iminsi y’imbere.',
+    introRw: 'Filime z’imibereho zerekana imibereho y’imbere n’ikoranabuhanga binyuze mu Kinyarwanda. Ni ifilime zitonderwa ku buryo bushya bw’ikoranabuhanga n’imibereho y’abantu.',
+  },
+  {
+    slug: 'animation',
+    name: 'Animation',
+    labelRw: 'Filime z’Ubwubatsi',
+    descriptionRw: 'Reba filime z’animation mu Kinyarwanda — ifilime z’ubwubatsi zikunzwe n’abana n’abakuru.',
+    introRw: 'Filime z’animation mu Kinyarwanda zikoresha ubwubatsi n’imyanda yo kubwira inkuru. Ni ifilime zikunzwe n’abana n’abakuru bose mu Rwanda.',
+  },
+  {
     slug: 'horror',
     name: 'Horror',
     labelRw: 'Ubwoba',
