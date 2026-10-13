@@ -43,4 +43,7 @@ export interface Movie {
   episodesCount?: number;
   episodes?: Episode[];
   trailer?: string;
+  rightsOwner?: string;
+  creator?: string;
+  channelName?: string;
 }

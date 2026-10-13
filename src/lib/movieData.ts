@@ -510,12 +510,16 @@ export const tvShowsData: Movie[] = [
   },
 ];
 
+import { RWANDAN_SERIES_DATA, getRwandanSeriesMovieModel } from './rwandanSeriesData';
+
+export const rwandanSeriesData: Movie[] = RWANDAN_SERIES_DATA.map(getRwandanSeriesMovieModel);
+
 export function getAllCatalogContent(): Movie[] {
   const moviesWithContentType: Movie[] = movieData.map((m) => ({
     ...m,
     contentType: 'movie' as const,
   }));
-  const baseCatalog = [...moviesWithContentType, ...tvShowsData];
+  const baseCatalog = [...moviesWithContentType, ...tvShowsData, ...rwandanSeriesData];
   const baseTitles = new Set(baseCatalog.map((m) => m.title.toLowerCase().trim()));
 
   let csvMovies: Movie[] = [];

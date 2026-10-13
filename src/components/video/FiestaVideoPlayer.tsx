@@ -37,6 +37,31 @@ export function extractYouTubeId(urlOrId: string | null | undefined): string | n
   return match ? match[1] : null;
 }
 
+export function getYouTubeEmbedUrl(urlOrId: string | null | undefined): string | null {
+  if (!urlOrId || typeof urlOrId !== 'string') return null;
+  const str = urlOrId.trim();
+  const id = extractYouTubeId(str);
+  if (id) {
+    return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+  }
+  if (str.includes('youtube.com/embed')) {
+    return str.includes('autoplay') ? str : `${str}${str.includes('?') ? '&' : '?'}autoplay=1&rel=0&modestbranding=1`;
+  }
+  if (str.includes('youtube.com/playlist') && str.includes('list=')) {
+    const listMatch = str.match(/list=([a-zA-Z0-9_-]+)/);
+    if (listMatch) {
+      return `https://www.youtube-nocookie.com/embed/videoseries?list=${listMatch[1]}&autoplay=1&rel=0&modestbranding=1`;
+    }
+  }
+  if (str.includes('youtube.com/results') && str.includes('search_query=')) {
+    const queryMatch = str.match(/search_query=([^&]+)/);
+    if (queryMatch) {
+      return `https://www.youtube-nocookie.com/embed?listType=search&list=${queryMatch[1]}&autoplay=1&rel=0&modestbranding=1`;
+    }
+  }
+  return null;
+}
+
 function trackLabel(height: number | undefined, index: number): string {
   if (height) return `${height}p`;
   return `Level ${index + 1}`;
@@ -53,7 +78,7 @@ export default function FiestaVideoPlayer({
   onError,
   className,
 }: FiestaVideoPlayerProps) {
-  const ytId = useMemo(() => extractYouTubeId(src), [src]);
+  const ytEmbedUrl = useMemo(() => getYouTubeEmbedUrl(src), [src]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -484,16 +509,23 @@ export default function FiestaVideoPlayer({
     }
   }, []);
 
-  if (ytId) {
+  if (ytEmbedUrl) {
     return (
-      <div className={`relative aspect-video w-full overflow-hidden rounded-xl bg-black ${className ?? ''}`}>
+      <div className={`group relative aspect-video w-full overflow-hidden rounded-xl bg-black border border-white/10 shadow-2xl ${className ?? ''}`}>
         <iframe
-          src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1&playsinline=1`}
-          title="Video Playback"
+          src={ytEmbedUrl}
+          title="Official Rwandan Cinema Stream"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowFullScreen
           className="w-full h-full border-0"
         />
+        {/* Transparent top overlay badge indicating official creator attribution */}
+        <div className="pointer-events-none absolute top-3 left-3 z-10 hidden sm:flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/80 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>🇷🇼 Official Stream • 100% Creator Views & Engagement</span>
+          </span>
+        </div>
       </div>
     );
   }
