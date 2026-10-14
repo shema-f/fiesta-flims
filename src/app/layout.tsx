@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
@@ -112,6 +113,21 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="FiestaFlix" />
       </head>
       <body className={`${poppins.variable} font-sans antialiased bg-background text-foreground`}>
+        {/* Google Analytics (gtag.js). Declared once in the root layout so it
+            is present on every page, including ones reached by client-side
+            navigation. The loader tag is emitted in the server HTML; the
+            config runs as soon as the app hydrates. */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-3R25V151MV"
+          strategy="afterInteractive"
+        />
+        <Script id="ga-gtag-config" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-3R25V151MV');`}
+        </Script>
+
         {/* Site-wide structured data: who runs the site + sitelinks search box. */}
         <JsonLd data={[organizationJsonLd(), webSiteJsonLd()]} />
         <Providers>
