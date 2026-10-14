@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/prisma';
-import { createNotification } from '@/lib/notificationService';
+import { notifyAdmins } from '@/lib/notificationService';
 import { VERIFIED_FOLLOWERS } from '@/lib/interpreters';
 import { requireAdmin, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
@@ -200,8 +200,9 @@ export async function POST(request: NextRequest) {
     const totalTitles = await prisma.movie.count({ where: { isActive: true } });
     const missingTitles = getStoredMissing();
 
-    // Create an official notification for the Admin
-    const notif = await createNotification({
+    // Create an official notification for the Admin (admins only — this
+    // internal report is not a site-wide broadcast)
+    const notif = await notifyAdmins({
       title: '📊 Official Admin Catalog & Missing Movies Report',
       message: `Live Catalog Report generated: ${totalTitles} titles in DB (616 episodes). ${missingTitles.length} missing titles requested by viewers. Note: ${note}`,
       type: 'ANNOUNCEMENT',

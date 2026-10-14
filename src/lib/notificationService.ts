@@ -16,93 +16,46 @@ export interface AppNotification {
   createdAt: string;
 }
 
-// Global in-memory storage fallback to ensure reliable operation
-// across all environments even when PostgreSQL connection is unavailable.
-declare global {
-  // eslint-disable-next-line no-var
-  var __fiesta_notifications: AppNotification[] | undefined;
-}
-
-const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'notif-1',
-    title: '🎬 New Movie Alert: Echoes of Tomorrow (2025)',
-    message: 'Sci-Fi blockbuster narrated by Rocky Kimomo is now streaming in Full HD 1080p!',
-    type: 'NEW_MOVIE',
-    isRead: false,
-    link: '/movies/1',
-    movieId: 1,
-    movieTitle: 'Echoes of Tomorrow',
-    thumbnailUrl: '/fallback-poster.png',
-    createdAt: new Date(Date.now() - 1000 * 60 * 18).toISOString(), // 18 mins ago
-  },
-  {
-    id: 'notif-2',
-    title: '🔥 Rwandan Cinema: Bamporiki (2024)',
-    message: 'Acclaimed Rwandan cultural drama is now available with crystal-clear audio and subtitles.',
-    type: 'NEW_MOVIE',
-    isRead: false,
-    link: '/movies/4',
-    movieId: 4,
-    movieTitle: 'Bamporiki',
-    thumbnailUrl: '/fallback-poster.png',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-  },
-  {
-    id: 'notif-3',
-    title: '⭐ New Interpreter Added: Sankara Live Hub',
-    message: 'Sankara has added 4 new action films to the catalog with high-speed Telegram downloads.',
-    type: 'ANNOUNCEMENT',
-    isRead: true,
-    link: '/interpreters',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-  },
-];
-
-function getStore(): AppNotification[] {
-  if (!globalThis.__fiesta_notifications) {
-    globalThis.__fiesta_notifications = [...INITIAL_NOTIFICATIONS];
-  }
-  return globalThis.__fiesta_notifications;
-}
-
+/**
+ * Notifications live in PostgreSQL only. `userId: null` marks a site-wide
+ * broadcast that every visitor (signed in or not) receives — this is how an
+ * admin upload reaches the whole audience. There is deliberately no seeded
+ * or in-memory fallback: an unreadable database means an empty bell, never
+ * fake notifications.
+ */
 export async function getNotifications(userId?: string): Promise<{
   notifications: AppNotification[];
   unreadCount: number;
 }> {
-  try {
-    if (userId) {
-      const dbNotifs = await prisma.notification.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        take: 30,
-      });
+  const rows = await prisma.notification
+    .findMany({
+      where: userId ? { OR: [{ userId }, { userId: null }] } : { userId: null },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+    })
+    .catch(() => []);
 
-      if (dbNotifs && dbNotifs.length > 0) {
-        const notifications: AppNotification[] = dbNotifs.map((n) => ({
-          id: n.id,
-          userId: n.userId,
-          title: n.title,
-          message: n.message,
-          type: (n.type as AppNotification['type']) || 'SYSTEM',
-          isRead: n.isRead,
-          link: n.link || undefined,
-          createdAt: n.createdAt.toISOString(),
-        }));
-        const unreadCount = notifications.filter((n) => !n.isRead).length;
-        return { notifications, unreadCount };
-      }
-    }
-  } catch {
-    // Database unavailable, gracefully fall through to in-memory store
-  }
+  const notifications: AppNotification[] = rows.map((n) => ({
+    id: n.id,
+    userId: n.userId,
+    title: n.title,
+    message: n.message,
+    type: (n.type as AppNotification['type']) || 'SYSTEM',
+    // A broadcast row (userId = null) is shared by every visitor, so it has no
+    // per-user read state — it renders as informational and never counts
+    // towards the badge. Only a user's own rows can be unread/marked read.
+    isRead: n.userId === null ? true : n.isRead,
+    link: n.link || undefined,
+    movieId: undefined,
+    movieTitle: undefined,
+    thumbnailUrl: undefined,
+    createdAt: n.createdAt.toISOString(),
+  }));
 
-  const store = getStore();
-  const sorted = [...store].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-  const unreadCount = sorted.filter((n) => !n.isRead).length;
-  return { notifications: sorted, unreadCount };
+  return {
+    notifications,
+    unreadCount: notifications.filter((n) => !n.isRead).length,
+  };
 }
 
 export async function createNotification(params: {
@@ -113,10 +66,25 @@ export async function createNotification(params: {
   movieId?: string | number;
   movieTitle?: string;
   thumbnailUrl?: string;
+  /** Omit for a site-wide broadcast visible to every visitor. */
   userId?: string;
 }): Promise<AppNotification> {
-  const newNotif: AppNotification = {
-    id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+  const row = await prisma.notification
+    .create({
+      data: {
+        userId: params.userId ?? null,
+        title: params.title,
+        message: params.message,
+        type: params.type || 'NEW_MOVIE',
+        link: params.link,
+        isRead: false,
+      },
+    })
+    .catch(() => null);
+
+  return {
+    id: row?.id ?? `notif-${Date.now()}`,
+    userId: params.userId ?? null,
     title: params.title,
     message: params.message,
     type: params.type || 'NEW_MOVIE',
@@ -125,87 +93,66 @@ export async function createNotification(params: {
     movieId: params.movieId,
     movieTitle: params.movieTitle,
     thumbnailUrl: params.thumbnailUrl,
-    createdAt: new Date().toISOString(),
-    userId: params.userId || null,
+    createdAt: (row?.createdAt ?? new Date()).toISOString(),
   };
-
-  const store = getStore();
-  store.unshift(newNotif);
-
-  // If DB available and userId provided, persist
-  try {
-    if (params.userId) {
-      await prisma.notification.create({
-        data: {
-          id: newNotif.id,
-          userId: params.userId,
-          title: newNotif.title,
-          message: newNotif.message,
-          type: newNotif.type,
-          link: newNotif.link,
-          isRead: false,
-        },
-      });
-    } else {
-      // Broadcast to all users in DB if any
-      const users = await prisma.user.findMany({ select: { id: true }, take: 100 });
-      if (users.length > 0) {
-        await prisma.notification.createMany({
-          data: users.map((u) => ({
-            userId: u.id,
-            title: newNotif.title,
-            message: newNotif.message,
-            type: newNotif.type,
-            link: newNotif.link,
-            isRead: false,
-          })),
-          skipDuplicates: true,
-        });
-      }
-    }
-  } catch {
-    // Database write failed, safe to ignore since stored in-memory
-  }
-
-  return newNotif;
 }
 
-export async function markNotificationAsRead(id: string): Promise<boolean> {
-  const store = getStore();
-  const target = store.find((n) => n.id === id);
-  if (target) {
-    target.isRead = true;
-  }
-
+/** Deliver a notification to every ADMIN account (never a public broadcast). */
+export async function notifyAdmins(params: {
+  title: string;
+  message: string;
+  type?: 'NEW_MOVIE' | 'ANNOUNCEMENT' | 'SYSTEM' | 'COMMUNITY';
+  link?: string;
+  movieTitle?: string;
+}): Promise<AppNotification> {
   try {
-    await prisma.notification.update({
-      where: { id },
-      data: { isRead: true },
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
     });
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map((a) => ({
+          userId: a.id,
+          title: params.title,
+          message: params.message,
+          type: params.type || 'ANNOUNCEMENT',
+          link: params.link,
+          isRead: false,
+        })),
+        skipDuplicates: true,
+      });
+    }
   } catch {
-    // Ignore DB error
+    // Database unavailable — admin reports are best-effort.
   }
 
+  return {
+    id: `notif-${Date.now()}-admins`,
+    userId: null,
+    title: params.title,
+    message: params.message,
+    type: params.type || 'ANNOUNCEMENT',
+    isRead: false,
+    link: params.link,
+    movieTitle: params.movieTitle,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+/** Mark one of the caller's own rows read. Scoped by userId so a user can
+ *  never flip someone else's (or the shared broadcast's) read state. */
+export async function markNotificationAsRead(id: string, userId: string): Promise<boolean> {
+  await prisma.notification
+    .updateMany({ where: { id, userId }, data: { isRead: true } })
+    .catch(() => null);
   return true;
 }
 
-export async function markAllNotificationsAsRead(userId?: string): Promise<boolean> {
-  const store = getStore();
-  store.forEach((n) => {
-    n.isRead = true;
-  });
-
-  try {
-    if (userId) {
-      await prisma.notification.updateMany({
-        where: { userId, isRead: false },
-        data: { isRead: true },
-      });
-    }
-  } catch {
-    // Ignore DB error
-  }
-
+export async function markAllNotificationsAsRead(userId: string): Promise<boolean> {
+  await prisma.notification
+    .updateMany({ where: { userId, isRead: false }, data: { isRead: true } })
+    .catch(() => null);
   return true;
 }
 
@@ -225,10 +172,8 @@ export async function notifyNewMovieUploaded(movie: {
   const title = `🎬 New Movie: ${movie.title}${yearText}`;
   const message = `Now streaming! ${movie.title}${narratorText} is available in Full HD with high-speed download links.`;
 
-  // Targeted delivery: followers of this movie's interpreter get their own
-  // notification row, so "Follow" on an interpreter profile has a visible
-  // result. When the film has no interpreter followers (e.g. the Rwandan
-  // originals), fall back to the existing site-wide announcement.
+  // Followers of this film's interpreter also get a personalized copy, so
+  // "Follow" on an interpreter profile has a visible result.
   try {
     const interpreter = movie.narrator
       ? interpretersData.find((i) => narratorMatches(i.name, movie.narrator))
@@ -239,36 +184,27 @@ export async function notifyNewMovieUploaded(movie: {
         select: { followerId: true },
       });
       if (followers.length > 0) {
-        await prisma.notification.createMany({
-          data: followers.map((f) => ({
-            userId: f.followerId,
-            title,
-            message: `${message} — ${interpreter.name} just added this one.`,
-            type: 'NEW_MOVIE',
-            link,
-            isRead: false,
-          })),
-          skipDuplicates: true,
-        });
-        return {
-          id: `notif-${Date.now()}-followers`,
-          userId: null,
-          title,
-          message,
-          type: 'NEW_MOVIE',
-          isRead: false,
-          link,
-          movieId: movie.id,
-          movieTitle: movie.title,
-          thumbnailUrl: movie.thumbnailUrl,
-          createdAt: new Date().toISOString(),
-        };
+        await prisma.notification
+          .createMany({
+            data: followers.map((f) => ({
+              userId: f.followerId,
+              title,
+              message: `${message} — ${interpreter.name} just added this one.`,
+              type: 'NEW_MOVIE',
+              link,
+              isRead: false,
+            })),
+            skipDuplicates: true,
+          })
+          .catch(() => null);
       }
     }
   } catch {
-    // Follow/notification tables unavailable — fall through to the broadcast.
+    // Follow table unavailable — the global broadcast below still reaches everyone.
   }
 
+  // Site-wide broadcast: every visitor sees this in the bell when they open
+  // the app, signed in or not.
   return createNotification({
     title,
     message,

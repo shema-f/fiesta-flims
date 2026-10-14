@@ -22,26 +22,43 @@ export async function GET() {
             downloads: true,
             watchHistory: true,
             requests: true,
+            viewEvents: true,
           },
         },
+        downloads: { select: { createdAt: true }, orderBy: { createdAt: 'desc' }, take: 1 },
+        watchHistory: { select: { lastWatchedAt: true }, orderBy: { lastWatchedAt: 'desc' }, take: 1 },
+        viewEvents: { select: { startedAt: true }, orderBy: { startedAt: 'desc' }, take: 1 },
       },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
 
-    const formatted = users.map((u) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      role: u.role,
-      image: u.image,
-      joined: new Date(u.createdAt).toISOString().split('T')[0],
-      status: 'active',
-      moviesWatched: u._count.watchHistory || 0,
-      favoritesCount: u._count.favorites || 0,
-      downloadsCount: u._count.downloads || 0,
-      requestsCount: u._count.requests || 0,
-    }));
+    const formatted = users.map((u) => {
+      // Most recent trace of the user doing anything: downloading, watching,
+      // or streaming. Null when the account has never been used.
+      const candidates = [
+        u.downloads[0]?.createdAt,
+        u.watchHistory[0]?.lastWatchedAt,
+        u.viewEvents[0]?.startedAt,
+      ].filter((d): d is Date => Boolean(d));
+      const lastActive = candidates.length > 0 ? new Date(Math.max(...candidates.map((d) => d.getTime()))) : null;
+
+      return {
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        image: u.image,
+        joined: new Date(u.createdAt).toISOString().split('T')[0],
+        status: 'active',
+        moviesWatched: u._count.watchHistory || 0,
+        favoritesCount: u._count.favorites || 0,
+        downloadsCount: u._count.downloads || 0,
+        requestsCount: u._count.requests || 0,
+        viewsCount: u._count.viewEvents || 0,
+        lastActive: lastActive ? lastActive.toISOString() : null,
+      };
+    });
 
     return NextResponse.json({ success: true, data: formatted });
   } catch (error: any) {

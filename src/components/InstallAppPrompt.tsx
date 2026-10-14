@@ -13,6 +13,7 @@ export default function InstallAppPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [showIOSTip, setShowIOSTip] = useState(false);
 
@@ -33,10 +34,12 @@ export default function InstallAppPrompt() {
       return;
     }
 
-    // Detect iOS
+    // Detect platform so the button can install directly on Android/desktop
+    // Chrome (via beforeinstallprompt) and guide iOS Safari users instead.
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isAppleDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isAppleDevice);
+    setIsDesktop(!isAppleDevice && !/android/.test(userAgent));
 
     // Listen for Chrome/Android install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -64,6 +67,8 @@ export default function InstallAppPrompt() {
 
   const handleInstallClick = async () => {
     if (deferredPrompt) {
+      // Android + desktop Chrome/Edge: the browser installs the PWA on the
+      // device (home screen on phones, app window on PCs) after this prompt.
       await deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
       if (choiceResult.outcome === 'accepted') {
@@ -72,6 +77,8 @@ export default function InstallAppPrompt() {
       }
       setDeferredPrompt(null);
     } else if (isIOS) {
+      // iOS Safari has no programmatic install — show the Share → Add to
+      // Home Screen steps instead of a dead button.
       setShowIOSTip(true);
     } else {
       // Fallback for browsers that don't support beforeinstallprompt
@@ -79,6 +86,17 @@ export default function InstallAppPrompt() {
       window.location.href = '/help#pwa';
     }
   };
+
+  // Any element on the page (e.g. the footer "Install App" ad) can trigger
+  // the install flow by dispatching this event.
+  useEffect(() => {
+    const triggerInstall = () => {
+      if (isInstalled) return;
+      setShowPrompt(true);
+    };
+    window.addEventListener('fiesta-install-app', triggerInstall);
+    return () => window.removeEventListener('fiesta-install-app', triggerInstall);
+  }, [isInstalled]);
 
   const handleDismiss = () => {
     setShowPrompt(false);
@@ -117,7 +135,7 @@ export default function InstallAppPrompt() {
           <div className="space-y-1 pr-4">
             <div className="flex items-center gap-2">
               <h4 className="font-extrabold text-sm sm:text-base text-white tracking-tight">
-                Install FiestaFlix on Phone
+                {isDesktop ? 'Install FiestaFlix App on This Computer' : 'Install FiestaFlix on Phone'}
               </h4>
               <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
                 App
@@ -166,7 +184,13 @@ export default function InstallAppPrompt() {
             className="flex-1 py-2 px-3.5 rounded-xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-600 text-white text-xs font-bold transition-all shadow-md shadow-primary/25 hover:scale-[1.02] flex items-center justify-center gap-1.5"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>{isIOS ? 'Show iOS Instructions' : 'Install on Phone'}</span>
+            <span>
+              {isIOS
+                ? 'Show iOS Instructions'
+                : isDesktop
+                  ? 'Install App on This PC'
+                  : 'Install on Phone'}
+            </span>
           </button>
           <button
             onClick={handleDismiss}

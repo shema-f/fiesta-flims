@@ -36,8 +36,23 @@ export interface Interpreter {
 export const TOTAL_PLATFORM_MOVIES = 138;
 export const TOTAL_PLATFORM_EPISODES = 616;
 
-// All interpreters start with real zero followers as requested. Real followers increment as registered users follow.
-export const VERIFIED_FOLLOWERS: Record<string, number> = {};
+// Rocky Kimomo is the platform's flagship voice and starts at the 100-follower
+// ceiling. Everyone else gets a deterministic seed count that scales with how
+// many titles they have actually translated in the database (more films → more
+// followers), plus a small per-name jitter, capped at 100. Real Follow rows
+// created by signed-in users are added on top at read time.
+export const VERIFIED_FOLLOWERS: Record<string, number> = {
+  Rocky: 100,
+};
+
+/** Seed followers for an interpreter from their real catalog count. */
+export function seedFollowers(name: string, catalogCount: number): number {
+  const override = VERIFIED_FOLLOWERS[name];
+  if (override !== undefined) return override;
+  const s = seed(name);
+  const jitter = s % 9; // 0–8, stable per name
+  return Math.min(100, 20 + catalogCount * 2 + jitter);
+};
 
 /** Exact counts of movies translated by each interpreter in our live database */
 export const CATALOG_MOVIES_COUNT: Record<string, number> = {
@@ -168,8 +183,9 @@ function build(name: string, index: number): Interpreter {
   const realCatalogCount = CATALOG_MOVIES_COUNT[name] ?? 0;
   const careerEstimate = realCatalogCount;
   
-  // Real verified followers start at 0
-  const followers = VERIFIED_FOLLOWERS[name] ?? 0;
+  // Deterministic seeded followers: Rocky = 100, others scale with their
+  // real catalog size, always ≤ 100 (plus any real follows on top).
+  const followers = seedFollowers(name, realCatalogCount);
   const isFeatured = FEATURED.includes(name);
 
   const bio =

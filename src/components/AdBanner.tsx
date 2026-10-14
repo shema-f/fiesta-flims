@@ -53,9 +53,16 @@ export default function AdBanner({
 
   if (isDismissed) return null;
 
-  // Track click handler
-  const handleClick = () => {
+  // Track click handler. The official "Install App" campaign points at the
+  // PWA help anchor — intercept it and open the real install flow instead of
+  // navigating away, so one tap installs the app on the visitor's device.
+  const handleClick = (e?: React.MouseEvent) => {
     if (!ad) return;
+    if (ad.targetUrl === '/help#pwa') {
+      e?.preventDefault();
+      window.dispatchEvent(new CustomEvent('fiesta-install-app'));
+      return;
+    }
     fetch(`/api/ads/${ad.id}/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

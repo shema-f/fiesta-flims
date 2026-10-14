@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { prisma } from '@/lib/prisma';
-import { createNotification } from '@/lib/notificationService';
+import { notifyAdmins } from '@/lib/notificationService';
 import { getClientIp, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
@@ -285,9 +285,10 @@ export async function POST(request: NextRequest) {
       // best effort
     }
 
-    // 4. CRITICAL: "adminalso should receive the report"
-    // Send an immediate Admin Report Notification
-    await createNotification({
+    // 4. CRITICAL: "admin also should receive the report"
+    // Delivered to ADMIN accounts only — a viewer reporting a missing title
+    // must not spam every visitor's notification bell.
+    await notifyAdmins({
       title: `📋 Missing Movie Report: "${cleanTitle}"`,
       message: `A user reported missing movie "${cleanTitle}" (NOT in database). Requested Interpreter: ${narratorRequest || 'Community'}. Queued in Admin Catalog Report.`,
       type: 'ANNOUNCEMENT',

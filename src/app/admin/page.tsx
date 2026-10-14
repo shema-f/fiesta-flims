@@ -61,6 +61,8 @@ interface UserItem {
   favoritesCount: number;
   downloadsCount: number;
   requestsCount: number;
+  viewsCount?: number;
+  lastActive?: string | null;
 }
 
 interface InterpreterItem {
@@ -114,14 +116,15 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [loadingStats, setLoadingStats] = useState(true);
   const [stats, setStats] = useState<LiveStats>({
-    totalMovies: 138,
-    seriesCount: 42,
-    singleMoviesCount: 96,
-    totalInterpreters: 70,
-    totalUsers: 1,
-    activeUsers: 1,
-    totalViews: 58400,
-    totalDownloads: 24800,
+    // Honest zeros while loading — the dashboard never invents numbers.
+    totalMovies: 0,
+    seriesCount: 0,
+    singleMoviesCount: 0,
+    totalInterpreters: 0,
+    totalUsers: 0,
+    activeUsers: 0,
+    totalViews: 0,
+    totalDownloads: 0,
     pendingRequests: 0,
     pendingClips: 0,
     recentActivity: [],
@@ -798,8 +801,17 @@ export default function AdminPage() {
                                 <td className="px-4 py-3 text-zinc-400">{u.joined}</td>
 
                                 <td className="px-4 py-3 text-zinc-400">
-                                  <span>{u.favoritesCount} favs</span> •{' '}
-                                  <span>{u.downloadsCount} dls</span>
+                                  <div className="flex flex-col gap-0.5">
+                                    <span>
+                                      {u.moviesWatched} watched • {u.downloadsCount} dls •{' '}
+                                      {u.favoritesCount} favs
+                                    </span>
+                                    <span className="text-[10px] text-zinc-600">
+                                      {u.lastActive
+                                        ? `Last active ${new Date(u.lastActive).toLocaleDateString()}`
+                                        : 'No activity yet'}
+                                    </span>
+                                  </div>
                                 </td>
 
                                 <td className="px-4 py-3 text-right">

@@ -57,10 +57,12 @@ export default async function InterpreterPage({ params }: { params: Promise<{ sl
   // advertised 15 titles, because the database stores "Rocky Kimomo".
   const filmography = filterMoviesForInterpreter(interpreter.name, movies);
 
-  // Live follower count from the Follow table (the static data starts at 0).
-  const followerCount = await prisma.follow
+  // Follower count = the interpreter's seeded base (see interpreters.ts) plus
+  // every real Follow row signed-in users have created.
+  const liveFollows = await prisma.follow
     .count({ where: { followingId: interpreter.slug, followingType: 'INTERPRETER' } })
-    .catch(() => interpreter.followers);
+    .catch(() => 0);
+  const followerCount = interpreter.followers + liveFollows;
 
   const canonical = `${SITE_URL}/interpreters/${interpreter.slug}`;
   const jsonLd = [
