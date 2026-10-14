@@ -10,6 +10,7 @@ import MediaJobsPanel from '@/components/admin/MediaJobsPanel';
 import AdminNewsPanel from '@/components/admin/AdminNewsPanel';
 import AdminAdsPanel from '@/components/admin/AdminAdsPanel';
 import AdminCatalogReportPanel from '@/components/admin/AdminCatalogReportPanel';
+import AdminBroadcastPanel from '@/components/admin/AdminBroadcastPanel';
 import AdminMoviesManager from '@/components/admin/AdminMoviesManager';
 import {
   Film,
@@ -33,6 +34,7 @@ import {
   Loader2,
   Smartphone,
   Clapperboard,
+  Megaphone,
 } from 'lucide-react';
 
 interface LiveStats {
@@ -80,6 +82,7 @@ const TABS = [
   { id: 'movies', label: 'Movies & Series', icon: Film },
   { id: 'interpreters', label: 'Interpreters', icon: Mic2 },
   { id: 'users', label: 'Users', icon: Users },
+  { id: 'broadcasts', label: 'Broadcasts', icon: Megaphone },
   { id: 'catalog-report', label: 'Catalog Report', icon: Clapperboard },
   { id: 'news', label: 'Fiesta News', icon: TrendingUp },
   { id: 'ads', label: 'Ads & Banners', icon: Smartphone },
@@ -842,19 +845,22 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* TAB 5: CATALOG & IMPORT REPORT */}
+              {/* TAB 5: SITE-WIDE BROADCAST COMPOSER */}
+              {activeTab === 'broadcasts' && <AdminBroadcastPanel />}
+
+              {/* TAB 6: CATALOG & IMPORT REPORT */}
               {activeTab === 'catalog-report' && <AdminCatalogReportPanel />}
 
-              {/* TAB 6: NEWS */}
+              {/* TAB 7: NEWS */}
               {activeTab === 'news' && <AdminNewsPanel />}
 
-              {/* TAB 7: ADS */}
+              {/* TAB 8: ADS */}
               {activeTab === 'ads' && <AdminAdsPanel />}
 
-              {/* TAB 8: STORAGE HEALTH */}
+              {/* TAB 9: STORAGE HEALTH */}
               {activeTab === 'storage' && <StoragePanel />}
 
-              {/* TAB 9: MEDIA JOBS */}
+              {/* TAB 10: MEDIA JOBS */}
               {activeTab === 'media' && <MediaJobsPanel />}
             </div>
           </div>

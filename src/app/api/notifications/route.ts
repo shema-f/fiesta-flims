@@ -3,6 +3,7 @@ import { jsonOk, jsonError, requireAdmin, requireUser, checkRateLimit, rateLimit
 import { getCurrentUser } from '@/lib/auth';
 import {
   getNotifications,
+  getBroadcasts,
   createNotification,
   markNotificationAsRead,
   markAllNotificationsAsRead,
@@ -16,9 +17,20 @@ export const dynamic = 'force-dynamic';
  * Resolves the viewer from the session — never from a client-supplied param,
  * so one user can never read (or mark read) another user's notifications.
  * Anonymous visitors receive the site-wide broadcasts (userId = null).
+ *
+ * `?scope=broadcasts` is the admin composer's outbox: every broadcast ever
+ * sent, regardless of who is asking — refused unless the viewer is an ADMIN.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    if (request.nextUrl.searchParams.get('scope') === 'broadcasts') {
+      const guard = await requireAdmin();
+      if (guard.error) return guard.error;
+
+      const notifications = await getBroadcasts();
+      return jsonOk({ notifications });
+    }
+
     const user = await getCurrentUser().catch(() => null);
     const data = await getNotifications(user?.id);
     return jsonOk(data);

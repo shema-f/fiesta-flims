@@ -58,6 +58,34 @@ export async function getNotifications(userId?: string): Promise<{
   };
 }
 
+/**
+ * Admin view: every site-wide broadcast (`userId = null`), newest first.
+ * Used by the broadcast composer so an admin can see what was already sent.
+ */
+export async function getBroadcasts(limit = 30): Promise<AppNotification[]> {
+  const rows = await prisma.notification
+    .findMany({
+      where: { userId: null },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    })
+    .catch(() => []);
+
+  return rows.map((n) => ({
+    id: n.id,
+    userId: null,
+    title: n.title,
+    message: n.message,
+    type: (n.type as AppNotification['type']) || 'ANNOUNCEMENT',
+    isRead: true,
+    link: n.link || undefined,
+    movieId: undefined,
+    movieTitle: undefined,
+    thumbnailUrl: undefined,
+    createdAt: n.createdAt.toISOString(),
+  }));
+}
+
 export async function createNotification(params: {
   title: string;
   message: string;
