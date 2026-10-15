@@ -14,6 +14,7 @@ import ModernRatingSystem from '@/components/ModernRatingSystem';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { movieData, findMovieOrSeries, type Movie, type Episode } from '@/lib/movieData';
 import { isMediaFireLandingPage } from '@/lib/media/directLink';
+import { trackEvent } from '@/lib/analytics';
 import { sanitizeImage } from '@/lib/catalogMap';
 import type { ApiMovie } from '@/lib/apiTypes';
 import { 
@@ -393,6 +394,11 @@ export default function MovieDetailPage() {
 
   const triggerDownload = (source: VideoSource) => {
     if (!source || !source.url) return;
+    trackEvent('download', {
+      item_id: String(id),
+      item_name: view.title,
+      content_type: source.label,
+    });
     const url = source.url;
 
     // Route MediaFire URLs through /api/download to bypass MediaFire landing page and trigger direct binary download
@@ -413,6 +419,11 @@ export default function MovieDetailPage() {
   const handleWatch = async () => {
     if (view.sources.length === 0) return;
     setPreparingPlayback(true);
+    trackEvent('play_movie', {
+      item_id: String(id),
+      item_name: view.title,
+      content_type: 'movie',
+    });
 
     let url = view.sources[0].url;
     let resume = 0;
@@ -502,6 +513,12 @@ export default function MovieDetailPage() {
 
   const handlePlayEpisode = (ep: Episode) => {
     setSelectedEpisode(ep);
+    trackEvent('play_movie', {
+      item_id: String(id),
+      item_name: ep.title || view.title,
+      content_type: 'episode',
+      episode_number: ep.episodeNumber ?? 0,
+    });
     const src =
       ep.directStreamUrl ||
       (ep.youtubeId ? `https://www.youtube.com/watch?v=${ep.youtubeId}` : view.sources[0]?.url);
@@ -988,7 +1005,14 @@ export default function MovieDetailPage() {
                                 href={mediaLink.includes('mediafire.com') ? `/api/download?url=${encodeURIComponent(mediaLink)}` : mediaLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  trackEvent('download', {
+                                    item_id: String(id),
+                                    item_name: ep.title || view.title,
+                                    content_type: 'episode',
+                                  });
+                                }}
                                 className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white text-[11px] font-bold transition-colors flex items-center gap-1 border border-zinc-700"
                                 title="Direct download video file"
                               >
@@ -1431,6 +1455,13 @@ export default function MovieDetailPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-primary/20 hover:scale-105"
+                            onClick={() =>
+                              trackEvent('download', {
+                                item_id: String(id),
+                                item_name: view.title,
+                                content_type: 'episode',
+                              })
+                            }
                             title="Direct download file immediately"
                           >
                             <Download className="w-3.5 h-3.5" />

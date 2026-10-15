@@ -11,6 +11,7 @@ import AdminNewsPanel from '@/components/admin/AdminNewsPanel';
 import AdminAdsPanel from '@/components/admin/AdminAdsPanel';
 import AdminCatalogReportPanel from '@/components/admin/AdminCatalogReportPanel';
 import AdminBroadcastPanel from '@/components/admin/AdminBroadcastPanel';
+import AdminBehaviorReportPanel from '@/components/admin/AdminBehaviorReportPanel';
 import AdminMoviesManager from '@/components/admin/AdminMoviesManager';
 import {
   Film,
@@ -35,6 +36,7 @@ import {
   Smartphone,
   Clapperboard,
   Megaphone,
+  Activity,
 } from 'lucide-react';
 
 interface LiveStats {
@@ -79,6 +81,7 @@ interface InterpreterItem {
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+  { id: 'behavior', label: 'Behavior Report', icon: Activity },
   { id: 'movies', label: 'Movies & Series', icon: Film },
   { id: 'interpreters', label: 'Interpreters', icon: Mic2 },
   { id: 'users', label: 'Users', icon: Users },
@@ -850,6 +853,7 @@ export default function AdminPage() {
 
               {/* TAB 6: CATALOG & IMPORT REPORT */}
               {activeTab === 'catalog-report' && <AdminCatalogReportPanel />}
+              {activeTab === 'behavior' && <AdminBehaviorReportPanel />}
 
               {/* TAB 7: NEWS */}
               {activeTab === 'news' && <AdminNewsPanel />}

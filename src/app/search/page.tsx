@@ -10,6 +10,7 @@ import InterpreterCard from '@/components/interpreter/InterpreterCard';
 import { Search as SearchIcon, X, Sparkles, Filter, Film, Mic2 } from 'lucide-react';
 import type { Movie } from '@/lib/movieData';
 import type { Interpreter } from '@/lib/interpreters';
+import { trackEvent } from '@/lib/analytics';
 
 interface ParsedQuery {
   interpreters: string[];
@@ -58,6 +59,9 @@ function SearchContent() {
     }
     const controller = new AbortController();
     setStatus('loading');
+    // Behavior signal for GA: one event per executed search (the header's
+    // live-as-you-type requests are intentionally not counted).
+    trackEvent('search', { search_term: query });
     fetch(`/api/search?q=${encodeURIComponent(query)}`, {
       cache: 'no-store',
       signal: controller.signal,

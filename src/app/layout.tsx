@@ -1,8 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import { Suspense } from 'react';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
+import AnalyticsTracker from '@/components/AnalyticsTracker';
+import { GA_MEASUREMENT_ID } from '@/lib/analytics';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import FiestaBot from '@/components/FiestaBot';
 import InstallAppPrompt from '@/components/InstallAppPrompt';
@@ -118,15 +121,20 @@ export default function RootLayout({
             navigation. The loader tag is emitted in the server HTML; the
             config runs as soon as the app hydrates. */}
         <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-3R25V151MV"
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
           strategy="afterInteractive"
         />
         <Script id="ga-gtag-config" strategy="afterInteractive">
           {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', 'G-3R25V151MV');`}
+gtag('config', '${GA_MEASUREMENT_ID}');`}
         </Script>
+        {/* App Router navigations never reload the page, so the config above
+            only ever fires one page_view. This re-fires it per route change. */}
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
 
         {/* Site-wide structured data: who runs the site + sitelinks search box. */}
         <JsonLd data={[organizationJsonLd(), webSiteJsonLd()]} />

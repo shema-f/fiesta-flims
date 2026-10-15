@@ -3,6 +3,7 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { firebaseAuth, googleAuthProvider, signInWithPopup, initFirebaseAnalytics } from '@/lib/firebase';
+import { trackEvent } from '@/lib/analytics';
 
 interface User {
   id: string;
@@ -57,7 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       redirect: false,
     });
-    return !result?.error;
+    const ok = !result?.error;
+    if (ok) trackEvent('login', { method: 'password' });
+    return ok;
   };
 
   const signup = async (name: string, email: string, password: string): Promise<boolean> => {
@@ -76,7 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         redirect: false,
       });
 
-      return !result?.error;
+      const ok = !result?.error;
+      if (ok) trackEvent('sign_up', { method: 'email' });
+      return ok;
     } catch {
       return false;
     }
@@ -98,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('[Auth] Google session could not be established:', session.error);
         return false;
       }
+      trackEvent('login', { method: 'google' });
 
       // Persist/refresh the row. The server verifies the token itself and
       // decides the role — we never infer it from the email address.

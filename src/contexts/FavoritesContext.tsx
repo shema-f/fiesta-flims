@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import type { Movie } from '@/lib/movieData';
+import { trackEvent } from '@/lib/analytics';
 
 interface FavoritesContextType {
   favorites: Movie[];
@@ -77,8 +78,10 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       const strId = String(movie.id);
       const exists = favorites.some((m) => String(m.id) === strId);
       if (exists) {
+        trackEvent('remove_from_favorites', { item_id: strId, item_name: movie.title });
         saveFavorites(favorites.filter((m) => String(m.id) !== strId));
       } else {
+        trackEvent('add_to_favorites', { item_id: strId, item_name: movie.title });
         saveFavorites([movie, ...favorites]);
       }
     },

@@ -114,3 +114,26 @@ body {
 #searchInput:focus {
   animation: searchSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Visible, consistent keyboard focus — modern a11y baseline. Mouse users
+   keep the clean look because the ring only shows for :focus-visible. */
+:focus-visible {
+  outline: 2px solid rgba(255, 107, 107, 0.75);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Respect the OS motion preference: collapse every animation/transition to
+   an instant state change instead of forcing movement on the user. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
