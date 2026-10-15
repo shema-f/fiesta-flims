@@ -155,6 +155,10 @@ export default function AdminMoviesManager() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterNarrator, setFilterNarrator] = useState('all');
   const [filterType, setFilterType] = useState('all');
+
+  // Full interpreter roster from the database — feeds the narrator dropdowns
+  // so uploading a movie can credit ANY interpreter, not just the popular few.
+  const [interpreterNames, setInterpreterNames] = useState<string[]>([]);
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -198,6 +202,42 @@ export default function AdminMoviesManager() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/interpreters');
+        if (!res.ok) return;
+        const json = await res.json();
+        const names = ((json?.data ?? []) as Array<{ name?: string }>)
+          .map((i) => (i?.name || '').trim())
+          .filter(Boolean);
+        if (!cancelled && names.length > 0) setInterpreterNames(names);
+      } catch {
+        // Network hiccup — the hardcoded POPULAR_NARRATORS fallback still renders.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Every interpreter first (sorted by movie count on the server), then the
+  // popular fallbacks and the currently selected value so an existing movie
+  // with a custom narrator never loses its selection in the dropdown.
+  const narratorOptions = useMemo(() => {
+    const current = form.narrator?.trim();
+    const seen = new Set<string>();
+    const options: string[] = [];
+    for (const name of [...interpreterNames, ...POPULAR_NARRATORS, ...(current ? [current] : [])]) {
+      const clean = name.trim();
+      if (!clean || seen.has(clean)) continue;
+      seen.add(clean);
+      options.push(clean);
+    }
+    return options;
+  }, [interpreterNames, form.narrator]);
 
   const handleFetchTmdb = async () => {
     if (!form.title.trim()) {
@@ -570,7 +610,7 @@ export default function AdminMoviesManager() {
             className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-primary"
           >
             <option value="all">All Narrators</option>
-            {POPULAR_NARRATORS.map((n) => (
+            {narratorOptions.map((n) => (
               <option key={n} value={n}>
                 {n}
               </option>
@@ -855,7 +895,7 @@ export default function AdminMoviesManager() {
                     onChange={(e) => setForm((p) => ({ ...p, narrator: e.target.value }))}
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-primary"
                   >
-                    {POPULAR_NARRATORS.map((n) => (
+                    {narratorOptions.map((n) => (
                       <option key={n} value={n}>
                         {n}
                       </option>
