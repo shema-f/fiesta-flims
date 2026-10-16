@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -15,6 +15,7 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import { movieData, findMovieOrSeries, type Movie, type Episode } from '@/lib/movieData';
 import { isMediaFireLandingPage } from '@/lib/media/directLink';
 import { trackEvent } from '@/lib/analytics';
+import { getVisitorSessionId } from '@/components/SessionTracker';
 import { sanitizeImage } from '@/lib/catalogMap';
 import type { ApiMovie } from '@/lib/apiTypes';
 import { 
@@ -167,8 +168,21 @@ export default function MovieDetailPage() {
   const [allCopied, setAllCopied] = useState(false);
   const [cast, setCast] = useState<CastMember[]>([]);
   const [tmdbPoster, setTmdbPoster] = useState<string | null>(null);
+  const [tmdbTrailer, setTmdbTrailer] = useState<string | null>(null);
   const [tmdbEpisodes, setTmdbEpisodes] = useState<any[]>([]);
   const [castLoading, setCastLoading] = useState(false);
+
+  // Playback analytics: one id per play session, shared with /play and
+  // /view so a session is a single ViewEvent with real watch-time/completion.
+  const viewSessionRef = useRef<string | null>(null);
+  const lastViewPostRef = useRef(0);
+  const startupMsRef = useRef<number | null>(null);
+  const bufferEventsRef = useRef(0);
+
+  const newViewSession = () =>
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `s-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
   const loadMovie = useCallback(async () => {
     if (staticMovie) {
@@ -249,6 +263,7 @@ export default function MovieDetailPage() {
         seasonsCount: staticMovie.seasonsCount || (staticMovie.duration?.includes('Eps') ? 1 : undefined),
         episodesCount: staticMovie.episodesCount || (staticMovie.episodes ? staticMovie.episodes.length : (staticMovie.duration?.includes('Eps') ? 8 : undefined)),
         episodes: staticMovie.episodes || [],
+        trailer: staticMovie.trailer || null,
         mediafireUrl: staticMovie.directStreamUrl?.includes('mediafire.com') ? staticMovie.directStreamUrl : null,
       };
     }
@@ -370,6 +385,9 @@ export default function MovieDetailPage() {
           if (Array.isArray(data.episodes) && data.episodes.length > 0) {
             setTmdbEpisodes(data.episodes);
           }
+          if (typeof data.trailer === 'string' && data.trailer) {
+            setTmdbTrailer(data.trailer);
+          }
         }
       })
       .catch(() => {})
@@ -383,6 +401,9 @@ export default function MovieDetailPage() {
   }, [view.title]);
 
   const effectivePoster = tmdbPoster || view.image || '/fallback-poster.jpg';
+  // Prefer the catalogue's own trailer; fall back to the official TMDB
+  // trailer so the button is present and playable on every matched title.
+  const effectiveTrailer = view.trailer || tmdbTrailer;
 
   const downloadFileName = (source: VideoSource) => {
     const extension = source.url.match(/\.(mp4|webm|mkv|mov|m4v)(?=$|\?)/i)?.[0] || '.mp4';
@@ -399,6 +420,20 @@ export default function MovieDetailPage() {
       item_name: view.title,
       content_type: source.label,
     });
+    // Record the download in our own analytics (behavior report) — the file
+    // itself is fetched straight from storage, so without this beacon the
+    // Download table never filled up. Fire-and-forget, never blocks the click.
+    // The visitor session id keeps guest downloads attributable.
+    void fetch(`/api/movies/${id}/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({
+        quality: source.label,
+        source: 'direct',
+        sessionId: getVisitorSessionId() ?? undefined,
+      }),
+    }).catch(() => {});
     const url = source.url;
 
     // Route MediaFire URLs through /api/download to bypass MediaFire landing page and trigger direct binary download
@@ -429,9 +464,16 @@ export default function MovieDetailPage() {
     let resume = 0;
     let subs: SubtitleTrack[] = [];
 
+    // One session id per play — /play records the view, /view merges progress.
+    const sessionId = newViewSession();
+    viewSessionRef.current = sessionId;
+    lastViewPostRef.current = 0;
+    startupMsRef.current = null;
+    bufferEventsRef.current = 0;
+
     // Resolve the delivery URL through the provider-agnostic API (spec §22).
     try {
-      const playRes = await fetch(`/api/movies/${id}/play`);
+      const playRes = await fetch(`/api/movies/${id}/play?sid=${encodeURIComponent(sessionId)}`);
       if (playRes.ok) {
         const playJson = await playRes.json();
         const resolvedUrl = playJson?.data?.url;
@@ -494,6 +536,8 @@ export default function MovieDetailPage() {
   };
 
   // Persist progress sparingly (the player already throttles to ~5s).
+  // The same callback feeds the behavior report: it merges watchedSeconds and
+  // completion into the ViewEvent created at play start (same sessionId).
   const handleProgress = useCallback(
     (positionSeconds: number, durationSeconds: number) => {
       if (!durationSeconds) return;
@@ -507,12 +551,38 @@ export default function MovieDetailPage() {
           completed: positionSeconds / durationSeconds > 0.95,
         }),
       }).catch(() => {});
+
+      // Behavior report feed — throttle to ~15s so a 2h film isn't ~1400 posts.
+      const sessionId = viewSessionRef.current;
+      if (!sessionId) return;
+      const now = Date.now();
+      const completed = positionSeconds / durationSeconds > 0.95;
+      if (!completed && now - lastViewPostRef.current < 15_000) return;
+      lastViewPostRef.current = now;
+      void fetch(`/api/movies/${id}/view`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          quality: watchSource?.label,
+          provider: 'resolved',
+          watchedSeconds: Math.round(positionSeconds),
+          completed,
+          startupTimeMs: startupMsRef.current ?? undefined,
+          bufferEvents: bufferEventsRef.current,
+        }),
+      }).catch(() => {});
     },
-    [id]
+    [id, watchSource?.label]
   );
 
   const handlePlayEpisode = (ep: Episode) => {
     setSelectedEpisode(ep);
+    // Each episode play is its own analytics session.
+    viewSessionRef.current = newViewSession();
+    lastViewPostRef.current = 0;
+    startupMsRef.current = null;
+    bufferEventsRef.current = 0;
     trackEvent('play_movie', {
       item_id: String(id),
       item_name: ep.title || view.title,
@@ -554,7 +624,10 @@ export default function MovieDetailPage() {
       toggleFavorite(staticMovie);
     } else if (apiMovie) {
       const mockAsMovie: Movie = {
-        id: Number(apiMovie.id) || Date.now(),
+        // Keep the real (string) catalogue id — Number(cuid) is NaN and the
+        // old `|| Date.now()` fallback broke both favorite state matching and
+        // the server-side favorite sync for every database-backed title.
+        id: apiMovie.id,
         title: apiMovie.title,
         year: apiMovie.releaseYear || 2025,
         genre: apiMovie.genre,
@@ -807,12 +880,18 @@ export default function MovieDetailPage() {
                     </motion.a>
                   )}
 
-                  {view.trailer && (
+                  {effectiveTrailer && (
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => {
-                        const trUrl = view.trailer!;
+                        const trUrl = effectiveTrailer!;
+                        trackEvent('watch_trailer', {
+                          item_id: String(id),
+                          item_name: view.title,
+                        });
+                        // Trailer time must not pollute the movie's view metrics.
+                        viewSessionRef.current = null;
                         setPlaybackSrc(trUrl);
                         setWatchSource({ label: 'Trailer', url: trUrl });
                         setResumeSeconds(0);
@@ -1077,13 +1156,13 @@ export default function MovieDetailPage() {
         )}
 
         {/* PROMINENT YOUTUBE DOWNLOAD & STREAMING HUB */}
-        {(view.trailer?.includes('youtu') || view.sources.some((s) => s.url.includes('youtu'))) && (
+        {(effectiveTrailer?.includes('youtu') || view.sources.some((s) => s.url.includes('youtu'))) && (
           <div className="container mx-auto px-4 sm:px-6">
             <YouTubeDownloadHub
               movieTitle={view.title}
               youtubeUrl={
-                view.trailer?.includes('youtu')
-                  ? view.trailer
+                effectiveTrailer?.includes('youtu')
+                  ? effectiveTrailer
                   : view.sources.find((s) => s.url.includes('youtu'))?.url || ''
               }
               isRwandanCinema={Boolean(
@@ -1259,6 +1338,12 @@ export default function MovieDetailPage() {
                     subtitles={subtitleTracks}
                     startPositionSeconds={resumeSeconds}
                     onProgress={handleProgress}
+                    onStartup={(ms) => {
+                      startupMsRef.current = ms;
+                    }}
+                    onBufferEvent={() => {
+                      bufferEventsRef.current += 1;
+                    }}
                   />
                 )}
               </div>

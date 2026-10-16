@@ -37,6 +37,7 @@ export type BehaviorEvent =
   | 'search'
   | 'select_content'
   | 'play_movie'
+  | 'watch_trailer'
   | 'download'
   | 'add_to_favorites'
   | 'remove_from_favorites'

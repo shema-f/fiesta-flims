@@ -98,6 +98,42 @@ export async function GET(req: NextRequest) {
           ? `https://image.tmdb.org/t/p/w1280${best.backdrop_path}`
           : '/fallback-poster.jpg';
 
+        // Official trailer (YouTube) so every matched title has a playable
+        // trailer even when the catalogue row has none. Prefer an official
+        // English trailer, then any trailer/teaser, then the first YouTube clip.
+        let trailerUrl: string | null = null;
+        try {
+          let videosRes = await fetch(
+            `https://api.themoviedb.org/3/${mediaType}/${tmdbId}/videos?language=en-US`,
+            {
+              headers: { Authorization: `Bearer ${TMDB_READ_TOKEN}` },
+              next: { revalidate: 86400 },
+            }
+          );
+          if (!videosRes.ok && TMDB_API_KEY) {
+            videosRes = await fetch(
+              `https://api.themoviedb.org/3/${mediaType}/${tmdbId}/videos?api_key=${encodeURIComponent(
+                TMDB_API_KEY
+              )}&language=en-US`,
+              { next: { revalidate: 86400 } }
+            );
+          }
+          if (videosRes.ok) {
+            const videosData = await videosRes.json();
+            const videos: any[] = Array.isArray(videosData.results) ? videosData.results : [];
+            const youtube = videos.filter((v) => v.site === 'YouTube' && v.key);
+            const pick =
+              youtube.find((v) => v.type === 'Trailer' && v.official && (v.language || 'en') === 'en') ||
+              youtube.find((v) => v.type === 'Trailer' && v.official) ||
+              youtube.find((v) => v.type === 'Trailer') ||
+              youtube.find((v) => v.type === 'Teaser') ||
+              youtube[0];
+            if (pick) trailerUrl = `https://www.youtube.com/watch?v=${pick.key}`;
+          }
+        } catch (e) {
+          console.warn('[api/tmdb/movie] Videos fetch error:', e);
+        }
+
         // Fetch TV Season 1 episodes if it is a television series
         let seasonEpisodes: any[] = [];
         if (mediaType === 'tv') {
@@ -154,6 +190,7 @@ export async function GET(req: NextRequest) {
             ? parseInt(best.first_air_date.split('-')[0], 10)
             : undefined,
           cast: finalCast,
+          trailer: trailerUrl,
           episodes: seasonEpisodes.length > 0 ? seasonEpisodes : undefined,
         });
       }

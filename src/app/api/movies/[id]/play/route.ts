@@ -2,26 +2,46 @@ import { NextRequest } from 'next/server';
 import { storageManager } from '@/lib/storage';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { jsonOk, jsonError, getClientIp, checkRateLimit, rateLimitResponse } from '@/lib/api/helpers';
+import {
+  jsonOk,
+  jsonError,
+  getClientIp,
+  deviceLabel,
+  checkRateLimit,
+  rateLimitResponse,
+} from '@/lib/api/helpers';
 import { resolveDirectUrl, isMediaFireLandingPage, isUnplayableUrl } from '@/lib/media/directLink';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/movies/:id/play?quality=1080p
+ * GET /api/movies/:id/play?quality=1080p&sid=<sessionId>
  *
  * Returns a short-lived media URL for the best available streaming source.
  * The client never learns which provider satisfied the request.
  * Vercel never proxies the video bytes (spec §22).
+ *
+ * `sid` ties the auto-recorded view event to the playback session, so the
+ * client's later progress posts (/api/movies/:id/view) merge into the same
+ * ViewEvent row instead of double-counting the play.
  */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const quality = request.nextUrl.searchParams.get('quality') || undefined;
+  const sessionId = request.nextUrl.searchParams.get('sid') || undefined;
 
   const limit = await checkRateLimit(`play:${getClientIp(request)}`, 120, 60_000);
   if (!limit.allowed) return rateLimitResponse(limit.retryAfterSeconds);
 
-  const resolved = await storageManager.getStreamingSource({ movieId: id, quality });
+  // Pages may be opened by slug; storage lookups and the ViewEvent foreign
+  // key both need the canonical Movie.id.
+  let movieId = id;
+  const movie = await prisma.movie
+    .findFirst({ where: { OR: [{ id }, { slug: id }] }, select: { id: true } })
+    .catch(() => null);
+  if (movie) movieId = movie.id;
+
+  const resolved = await storageManager.getStreamingSource({ movieId: movieId, quality });
   if (!resolved) {
     return jsonError('No streaming source available for this movie', 404);
   }
@@ -45,7 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   // Best-effort view analytics (spec §28) — never block playback on this.
-  void recordView(id, quality, request).catch(() => {});
+  void recordView(movieId, quality, sessionId, request).catch(() => {});
 
   return jsonOk({
     url,
@@ -58,15 +78,21 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   });
 }
 
-async function recordView(movieId: string, quality: string | undefined, request: NextRequest) {
+async function recordView(
+  movieId: string,
+  quality: string | undefined,
+  sessionId: string | undefined,
+  request: NextRequest
+) {
   const user = await getCurrentUser().catch(() => null);
   await prisma.viewEvent.create({
     data: {
       movieId,
       userId: user?.id,
+      sessionId,
       quality,
       provider: 'resolved',
-      device: request.headers.get('user-agent')?.slice(0, 120),
+      device: deviceLabel(request.headers.get('user-agent')),
     } as any,
   });
 }

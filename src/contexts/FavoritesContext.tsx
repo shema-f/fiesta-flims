@@ -20,6 +20,25 @@ const FavoritesContext = createContext<FavoritesContextType | undefined>(undefin
 const FAVORITES_STORAGE_KEY = 'fiesta_flix_favorites_v1';
 const RATINGS_STORAGE_KEY = 'fiesta_flix_user_ratings_v1';
 
+/**
+ * Mirror a favorite toggle to the server so first-party analytics (the admin
+ * behavior report) sees real data. Best-effort: anonymous users get a 401 and
+ * static seed ids get a 404 — both are silently ignored, the localStorage
+ * copy remains the source of truth for the UI.
+ */
+function syncFavoriteToServer(movieId: string | number, action: 'add' | 'remove') {
+  try {
+    void fetch('/api/favorites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({ movieId: String(movieId), action }),
+    }).catch(() => {});
+  } catch {
+    // Never let analytics break favoriting.
+  }
+}
+
 export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const [favorites, setFavorites] = useState<Movie[]>([]);
   const [userRatings, setUserRatings] = useState<Record<string, number>>({});
@@ -79,9 +98,11 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
       const exists = favorites.some((m) => String(m.id) === strId);
       if (exists) {
         trackEvent('remove_from_favorites', { item_id: strId, item_name: movie.title });
+        syncFavoriteToServer(movie.id, 'remove');
         saveFavorites(favorites.filter((m) => String(m.id) !== strId));
       } else {
         trackEvent('add_to_favorites', { item_id: strId, item_name: movie.title });
+        syncFavoriteToServer(movie.id, 'add');
         saveFavorites([movie, ...favorites]);
       }
     },
@@ -91,6 +112,7 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
   const removeFavorite = useCallback(
     (id: string | number) => {
       const strId = String(id);
+      syncFavoriteToServer(id, 'remove');
       saveFavorites(favorites.filter((m) => String(m.id) !== strId));
     },
     [favorites, saveFavorites]

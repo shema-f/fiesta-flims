@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/lib/api/helpers';
+import { requireAdmin, deviceLabel } from '@/lib/api/helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,8 +101,6 @@ export async function GET() {
           by: ['device'],
           where: { startedAt: { gte: windowStart } },
           _count: { _all: true },
-          orderBy: { _count: { device: 'desc' } },
-          take: 6,
         }),
         prisma.viewEvent.groupBy({
           by: ['quality'],
@@ -200,10 +198,22 @@ export async function GET() {
     const completionRate =
       windowViews > 0 ? Math.round((completedViews / windowViews) * 1000) / 10 : 0;
     const avgWatchSeconds = Math.round(watchAgg._avg.watchedSeconds ?? 0);
-    const deviceBreakdown = deviceGroups.map((g) => ({
-      device: g.device || 'Unknown',
-      count: g._count._all,
-    }));
+    const deviceBreakdown = (() => {
+      // Rows written before the device-label change stored the raw UA; classify
+      // anything that isn't already a known bucket so the panel always renders
+      // comparable labels (Mobile, Desktop, …) instead of browser strings.
+      const KNOWN = new Set(['Mobile', 'Desktop', 'Tablet', 'TV', 'Bot', 'Unknown', 'Other']);
+      const buckets = new Map<string, number>();
+      for (const g of deviceGroups) {
+        const raw = g.device || 'Unknown';
+        const label = KNOWN.has(raw) ? raw : deviceLabel(raw);
+        buckets.set(label, (buckets.get(label) || 0) + g._count._all);
+      }
+      return [...buckets.entries()]
+        .map(([device, count]) => ({ device, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 6);
+    })();
     const qualityBreakdown = qualityGroups.map((g) => ({
       quality: g.quality || 'Auto',
       count: g._count._all,
@@ -330,6 +340,132 @@ export async function GET() {
       });
     }
 
+    // --- Visitors: guests vs signed-in users, time spent ------------------
+    // VisitorSession rows are written by the SessionTracker heartbeat, so
+    // this covers ALL site time (browse + idle-browsing pages), not just
+    // playback. Downloads/favorites are attributed by userId when signed in
+    // and by sessionId otherwise, so guest behaviour stays visible too.
+    const sessionWhere = { lastSeenAt: { gte: windowStart } };
+    const [sessionGroups, guestSessions, userSessions, windowFavGroups, windowDownloadRows] =
+      await Promise.all([
+        prisma.visitorSession.groupBy({
+          by: ['userId'],
+          where: sessionWhere,
+          _count: { _all: true },
+          _sum: { activeSeconds: true },
+        }),
+        prisma.visitorSession.aggregate({
+          where: { ...sessionWhere, userId: null },
+          _count: { _all: true },
+          _sum: { activeSeconds: true },
+        }),
+        prisma.visitorSession.aggregate({
+          where: { ...sessionWhere, userId: { not: null } },
+          _count: { _all: true },
+          _sum: { activeSeconds: true },
+        }),
+        prisma.favorite.groupBy({
+          by: ['userId'],
+          where: { createdAt: { gte: windowStart } },
+          _count: { _all: true },
+          orderBy: { _count: { userId: 'desc' } },
+          take: 10,
+        }),
+        prisma.download.findMany({
+          where: { createdAt: { gte: windowStart } },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          select: {
+            id: true,
+            quality: true,
+            providerId: true,
+            createdAt: true,
+            userId: true,
+            sessionId: true,
+            movie: { select: { title: true } },
+            user: { select: { name: true, email: true } },
+          },
+        }),
+      ]);
+
+    // Guest-vs-user download counts over the whole window.
+    const allWindowDownloads = await prisma.download.findMany({
+      where: { createdAt: { gte: windowStart } },
+      select: { userId: true, sessionId: true },
+    });
+    const guestDownloads = allWindowDownloads.filter((d) => d.userId === null).length;
+    const userDownloads = allWindowDownloads.length - guestDownloads;
+    const favUserIds = windowFavGroups.map((g) => g.userId);
+    const favUsers = await prisma.user.findMany({
+      where: { id: { in: favUserIds } },
+      select: { id: true, name: true, email: true },
+    });
+    const favUserById = new Map(favUsers.map((u) => [u.id, u]));
+
+    const guestsActiveSeconds = Number(guestSessions._sum.activeSeconds ?? 0);
+    const usersActiveSeconds = Number(userSessions._sum.activeSeconds ?? 0);
+    const visitors = {
+      guests: {
+        sessions: guestSessions._count._all,
+        totalSeconds: guestsActiveSeconds,
+        avgSeconds:
+          guestSessions._count._all > 0
+            ? Math.round(guestsActiveSeconds / guestSessions._count._all)
+            : 0,
+        downloads: guestDownloads,
+      },
+      users: {
+        sessions: userSessions._count._all,
+        totalSeconds: usersActiveSeconds,
+        avgSeconds:
+          userSessions._count._all > 0
+            ? Math.round(usersActiveSeconds / userSessions._count._all)
+            : 0,
+        downloads: userDownloads,
+        favorites: windowFavGroups.reduce((s, g) => s + g._count._all, 0),
+      },
+      totalSessions: sessionGroups.reduce((s, g) => s + g._count._all, 0),
+    };
+
+    const topFavoriters = windowFavGroups.map((g) => ({
+      name: favUserById.get(g.userId)?.name ?? 'Removed user',
+      email: favUserById.get(g.userId)?.email ?? '—',
+      favorites: g._count._all,
+    }));
+
+    // Recent downloads with WHO did it (name for users, "Guest" otherwise)
+    // and HOW (quality + provider) — the admin literally asked for this.
+    const recentDownloads = windowDownloadRows.map((d) => ({
+      movie: d.movie?.title ?? 'Removed title',
+      quality: d.quality || 'default',
+      provider: d.providerId || '—',
+      who: d.user ? d.user.name : 'Guest',
+      userType: d.userId ? ('USER' as const) : ('GUEST' as const),
+      at: d.createdAt.toISOString(),
+    }));
+
+    // Extra insight: is the audience mostly guests, and do they stay?
+    if (visitors.guests.sessions + visitors.users.sessions > 0) {
+      const guestShare = Math.round(
+        (visitors.guests.sessions / Math.max(visitors.totalSessions, 1)) * 100
+      );
+      if (guestShare >= 60) {
+        insights.push({
+          tone: 'info',
+          title: `${guestShare}% of visits come from guests`,
+          detail: `Guests stay ~${visitors.guests.avgSeconds}s on average (signed-in: ~${visitors.users.avgSeconds}s).`,
+          action: 'Consider a light sign-in prompt mid-browse to convert the biggest guest sessions into accounts.',
+        });
+      } else {
+        insights.push({
+          tone: 'good',
+          title: `${100 - guestShare}% of visits are signed-in fans`,
+          detail: `Signed-in users stay ~${visitors.users.avgSeconds}s and favorited ${visitors.users.favorites} titles this window.`,
+          action: 'Loyalty is real — keep favorites and continue-watching prominent for returning fans.',
+        });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -368,6 +504,9 @@ export async function GET() {
               ? Math.round((Math.max(anonViews, 0) / windowViews) * 100)
               : 0,
         },
+        visitors,
+        topFavoriters,
+        recentDownloads,
         daily,
         topViewed,
         topDownloaded,

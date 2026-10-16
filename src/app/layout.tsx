@@ -5,6 +5,7 @@ import { Poppins } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
+import SessionTracker from '@/components/SessionTracker';
 import { GA_MEASUREMENT_ID } from '@/lib/analytics';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import FiestaBot from '@/components/FiestaBot';
@@ -134,6 +135,9 @@ gtag('config', '${GA_MEASUREMENT_ID}');`}
             only ever fires one page_view. This re-fires it per route change. */}
         <Suspense fallback={null}>
           <AnalyticsTracker />
+          {/* First-party visitor sessions: time on site per guest/user for the
+              admin behavior report. Silent, best-effort, never blocks UI. */}
+          <SessionTracker />
         </Suspense>
 
         {/* Site-wide structured data: who runs the site + sitelinks search box. */}

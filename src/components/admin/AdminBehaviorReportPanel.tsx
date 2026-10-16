@@ -57,6 +57,37 @@ interface BehaviorReport {
   topDownloaded: { id: string; title: string; genre: string; downloads: number }[];
   topGenres: { genre: string; views: number }[];
   insights: Insight[];
+  // Visitors: site-wide time spent, guest vs signed-in split (VisitorSession).
+  visitors: {
+    guests: { sessions: number; totalSeconds: number; avgSeconds: number; downloads: number };
+    users: {
+      sessions: number;
+      totalSeconds: number;
+      avgSeconds: number;
+      downloads: number;
+      favorites: number;
+    };
+    totalSessions: number;
+  };
+  topFavoriters: { name: string; email: string; favorites: number }[];
+  recentDownloads: {
+    movie: string;
+    quality: string;
+    provider: string;
+    who: string;
+    userType: 'USER' | 'GUEST';
+    at: string;
+  }[];
+}
+
+/** "1h 04m" / "12m 05s" / "48s" — readable durations for time-spent stats. */
+function formatDuration(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds));
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ${String(s % 60).padStart(2, '0')}s`;
+  const h = Math.floor(m / 60);
+  return `${h}h ${String(m % 60).padStart(2, '0')}m`;
 }
 
 const nf = new Intl.NumberFormat('en-US');
@@ -211,8 +242,9 @@ export default function AdminBehaviorReportPanel() {
     );
   }
 
-  const { totals, quality, audience, daily, topViewed, topDownloaded, topGenres, insights } =
+  const { totals, quality, audience, daily, topViewed, topDownloaded, topGenres, insights, visitors, topFavoriters, recentDownloads } =
     report;
+  const hasVisitorData = visitors && visitors.totalSessions > 0;
   const maxViews = Math.max(1, ...daily.map((d) => d.views));
   const maxDownloads = Math.max(1, ...daily.map((d) => d.downloads));
   const topViewTotal = topViewed.reduce((s, t) => s + t.views, 0) || 1;
@@ -314,6 +346,185 @@ export default function AdminBehaviorReportPanel() {
           accent="bg-rose-500/15 text-rose-300 border border-rose-500/25"
         />
       </div>
+
+      {/* VISITORS: GUESTS VS USERS — time spent, downloads, favorites */}
+      {hasVisitorData && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950/80 border border-zinc-800/80">
+          <h3 className="text-sm font-black text-white flex items-center gap-2 mb-1">
+            <Users className="w-4 h-4 text-emerald-300" />
+            Visitors: Guests vs Signed-in Users
+          </h3>
+          <p className="text-[11px] text-zinc-500 mb-4">
+            {nf.format(visitors.totalSessions)} browser sessions in the window — how long each
+            group stayed, and what they did.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+            {/* Guests card */}
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-black text-zinc-300">🧍 Guests</span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25">
+                  not signed in
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-2xl font-black text-white leading-none">
+                    {nf.format(visitors.guests.sessions)}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-1">sessions</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-white leading-none">
+                    {formatDuration(visitors.guests.avgSeconds)}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    avg time on site ({formatDuration(visitors.guests.totalSeconds)} total)
+                  </p>
+                </div>
+                <div>
+                  <p className="text-lg font-black text-sky-300 leading-none">
+                    {nf.format(visitors.guests.downloads)}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-1">downloads</p>
+                </div>
+                <div>
+                  <p className="text-lg font-black text-zinc-500 leading-none">—</p>
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    favorites (sign-in required)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Users card */}
+            <div className="p-4 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-black text-zinc-300">✅ Signed-in Users</span>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
+                  accounts
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-2xl font-black text-white leading-none">
+                    {nf.format(visitors.users.sessions)}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-1">sessions</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-white leading-none">
+                    {formatDuration(visitors.users.avgSeconds)}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-1">
+                    avg time on site ({formatDuration(visitors.users.totalSeconds)} total)
+                  </p>
+                </div>
+                <div>
+                  <p className="text-lg font-black text-sky-300 leading-none">
+                    {nf.format(visitors.users.downloads)}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-1">downloads</p>
+                </div>
+                <div>
+                  <p className="text-lg font-black text-rose-300 leading-none">
+                    {nf.format(visitors.users.favorites)}
+                  </p>
+                  <p className="text-[10px] text-zinc-500 mt-1">favorites added</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Recent downloads — who, what, how */}
+            <div>
+              <h4 className="text-xs font-black text-zinc-300 mb-3">Recent Downloads (who & how)</h4>
+              {recentDownloads.length === 0 ? (
+                <p className="text-xs text-zinc-600">No downloads recorded in this window yet.</p>
+              ) : (
+                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                  {recentDownloads.map((d, i) => (
+                    <div
+                      key={`${d.movie}-${d.at}-${i}`}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60"
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          d.userType === 'USER' ? 'bg-emerald-400' : 'bg-amber-400'
+                        }`}
+                        title={d.userType === 'USER' ? 'Signed-in user' : 'Guest'}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-xs font-bold text-zinc-200 truncate">
+                            {d.movie}
+                          </span>
+                          <span className="text-[10px] text-zinc-500 shrink-0">
+                            {new Date(d.at).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span
+                            className={`text-[10px] font-bold ${
+                              d.userType === 'USER' ? 'text-emerald-300' : 'text-amber-300'
+                            }`}
+                          >
+                            {d.who}
+                          </span>
+                          <span className="text-[10px] text-zinc-600">
+                            · {d.quality} · {d.provider}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Top favoriters — who is saving what */}
+            <div>
+              <h4 className="text-xs font-black text-zinc-300 mb-3">Most Active Favoriters (14d)</h4>
+              {topFavoriters.length === 0 ? (
+                <p className="text-xs text-zinc-600">
+                  No favorites added yet — they appear here the moment a signed-in user taps the
+                  heart.
+                </p>
+              ) : (
+                <ol className="space-y-1.5">
+                  {topFavoriters.map((u, i) => (
+                    <li
+                      key={`${u.email}-${i}`}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60"
+                    >
+                      <span
+                        className={`w-5 h-5 shrink-0 rounded-md flex items-center justify-center text-[10px] font-black ${
+                          i < 3
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
+                        }`}
+                      >
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-xs font-bold text-zinc-200 truncate">{u.name}</span>
+                          <span className="text-[10px] font-black text-rose-300 shrink-0">
+                            {nf.format(u.favorites)} ❤
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-zinc-600 truncate block">{u.email}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DAILY CHART + DEVICES */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">

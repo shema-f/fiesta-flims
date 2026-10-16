@@ -126,6 +126,7 @@ model User {
   watchHistory    WatchHistory[]
   viewEvents      ViewEvent[]
   downloads       Download[]
+  sessions        VisitorSession[]
   mediaJobs       MediaJob[]      @relation("JobActor")
 
   @@index([email])
@@ -480,6 +481,9 @@ model Download {
   movie      Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
   userId     String?
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Ties the download to the browser session (VisitorSession.id) so guest
+  // downloads stay attributable even without an account.
+  sessionId  String?
   quality    String?
   providerId String?
   status     String   @default("STARTED")
@@ -488,7 +492,32 @@ model Download {
 
   @@index([movieId])
   @@index([userId])
+  @@index([sessionId])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Visitor sessions — who was on the site, for how long, guest or signed-in
+// ---------------------------------------------------------------------------
+
+// One row per browser session (id is generated client-side and persisted in
+// localStorage). The SessionTracker heartbeat upserts it every ~30s while the
+// tab is visible, so the admin behavior report can answer "how many guests,
+// how long did they stay" — questions ViewEvent/Download alone cannot (they
+// only cover individual plays and downloads, not idle browsing).
+model VisitorSession {
+  id           String    @id // client-generated session id, not a cuid
+  userId       String? // attached on the first heartbeat after sign-in
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  device       String    @default("Unknown")
+  activeSeconds Int      @default(0) // accumulated visible-tab seconds
+  pageViews    Int       @default(0)
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([lastSeenAt])
+  @@index([firstSeenAt])
 }
 
 model ViewEvent {

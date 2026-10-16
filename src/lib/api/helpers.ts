@@ -63,6 +63,26 @@ export async function requireUser(): Promise<
   return { user, error: null };
 }
 
+/**
+ * Coarse device category derived from a User-Agent string.
+ *
+ * ViewEvent.device used to store the raw UA (up to 120 chars), which made the
+ * admin behavior report's device breakdown unreadable. Routes now store this
+ * short label instead so the report renders real, comparable buckets.
+ */
+export function deviceLabel(userAgent: string | null | undefined): string {
+  const ua = (userAgent || '').toLowerCase();
+  if (!ua) return 'Unknown';
+  if (/bot|crawl|spider|slurp|preview|headless/i.test(ua)) return 'Bot';
+  if (/ipad|tablet|silk|playbook|sm-T/i.test(ua)) return 'Tablet';
+  if (/mobi|android|iphone|ipod|windows phone|harmonyos/i.test(ua)) return 'Mobile';
+  if (/smart-?tv|googletv|appletv|crkey|hbbtv|roku|web0s|netcast/i.test(ua)) return 'TV';
+  if (/x11; linux|cros|linux/i.test(ua)) return 'Desktop';
+  if (/macintosh|mac os x/i.test(ua)) return 'Desktop';
+  if (/windows nt/i.test(ua)) return 'Desktop';
+  return 'Other';
+}
+
 /** Parse and clamp a numeric query param. */
 export function intParam(value: string | null, fallback: number, min: number, max: number): number {
   const parsed = value ? parseInt(value, 10) : NaN;
